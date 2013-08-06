@@ -20,8 +20,8 @@
   </licenses>
   
   <scm>
-    <connection>scm:git:git@github.com:jenkinsci/kiuwan-plugin.git</connection>
-    <developerConnection>scm:git:git@github.com:jenkinsci/kiuwan-plugin.git</developerConnection>
+    <connection>scm:git:ssh://git@github.com/jenkinsci/kiuwan-plugin.git</connection>
+    <developerConnection>scm:git:ssh://git@github.com/jenkinsci/kiuwan-plugin.git</developerConnection>
     <url>https://github.com/jenkinsci/kiuwan-plugin.git</url>
   </scm>
   
@@ -64,6 +64,14 @@
   </properties>
   
   <build>
+  	<extensions>
+      <!-- Extension required to deploy a snapshot or a release to the CloudBees remote maven repository using Webdav -->
+      <extension>
+        <groupId>org.apache.maven.wagon</groupId>
+        <artifactId>wagon-webdav</artifactId>
+        <version>1.0-beta-2</version>
+      </extension>
+    </extensions>
     <plugins>
       <plugin>
         <artifactId>maven-release-plugin</artifactId>
