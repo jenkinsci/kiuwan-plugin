@@ -6,10 +6,31 @@
     <version>1.509.1</version><!-- which version of Jenkins is this plugin built against? -->
   </parent>
 
-  <groupId>com.kiuwan.plugins</groupId>
   <artifactId>kiuwanJenkinsPlugin</artifactId>
   <version>1.0-SNAPSHOT</version>
   <packaging>hpi</packaging>
+  <name>Jenkins Kiuwan plugin</name>
+  <description>Run Kiuwan static analysis of your code as part of your continuous integration process with Jenkins.</description>
+  <url>http://wiki.jenkins-ci.org/display/JENKINS/Kiuwan+Plugin</url>
+  <licenses>
+    <license>
+      <name>MIT license</name>
+      <comments>All source code is under the MIT license.</comments>
+    </license>
+  </licenses>
+  
+  <scm>
+    <connection>scm:git:ssh://github.com/jenkinsci/kiuwan-plugin.git</connection>
+    <developerConnection>scm:git:ssh://git@github.com:jenkinsci/kiuwan-plugin.git</developerConnection>
+    <url>https://github.com/jenkinsci/kiuwan-plugin</url>
+  </scm>
+  
+  <developers>
+    <developer>
+      <id>jptejela</id>
+      <name>Juan Pablo</name>
+    </developer>
+  </developers>
 
   <!-- get every artifact through repo.jenkins-ci.org, which proxies all the artifacts that we need -->
   <repositories>
