@@ -1,0 +1,27 @@
+<div>
+<p>
+Comma-separated <a href="http://ant.apache.org/manual/dirtasks.html#patterns" target="_blank">Ant-style</a> patterns for including or excluding source code files.
+</p>
+<p>
+Ant patterns use * and ? as wildcard (** corresponds to multiple directories).
+</p>
+Examples:
+<ul type='circle'>
+<li>To exclude all java test files with name ending with "Test", use 
+<br/><code>**/*Test.java</code><br/>
+as exclude pattern.</li>
+<li>To exclude all auto-generated source files in directories named "generated", use
+<br/><code>**/generated/**</code><br/>
+as exclude pattern.</li>
+</ul>
+
+Rules are:
+<ol>
+<li>If excludes provided, any input file matching one of the patterns will be ignored.</li>
+<li>If includes provided and no exclude pattern rejected the file, to be accepted input file must match at least one include pattern.</li>
+<li>If excludes provided but no explicit includes, any input file not rejected by one exclude pattern will be accepted.</li>
+<li>If includes provided with no explicit excludes, input file will be accepted only when matches at least one include pattern.</li>
+<li>If both explicit includes and excludes, excludes are checked before includes; a file will be accepted if does not match any exclude pattern but matches at least one include pattern.</li>
+</ol>
+</p>
+</div>
