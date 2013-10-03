@@ -1,0 +1,42 @@
+<j:jelly xmlns:j="jelly:core" xmlns:st="jelly:stapler" xmlns:d="jelly:define" xmlns:l="/lib/layout" xmlns:t="/lib/hudson" xmlns:f="/lib/form">
+    
+    <f:entry title="Kiuwan Application Name" field="applicationName" help="/plugin/kiuwanJenkinsPlugin/help/help-appName.html">
+        <f:textbox default="${it.name}"/>
+    </f:entry>
+    
+    <f:entry title="Analysis label" field="label" help="/plugin/kiuwanJenkinsPlugin/help/help-analysisLabel.html">
+        <f:textbox/>
+    </f:entry>
+    <f:entry title="Threshold measure" field="measure">
+    	  <f:select />
+    </f:entry>
+    <f:entry help="/plugin/kiuwanJenkinsPlugin/help/help-thresholds.html">
+        <img src="${rootURL}/images/16x16/yellow.gif" />Unstable threshold <input class="validated" name="unstableThreshold" value="${instance.unstableThreshold}"
+    		checkUrl="descriptorByName/com.kiuwan.plugins.kiuwanJenkinsPlugin.KiuwanRecorder/checkThresholds"
+    		checkdependson="measure unstableThreshold failureThreshold" />
+        <img src="${rootURL}/images/16x16/red.gif" />Failure threshold <input class="validated" name="failureThreshold" value="${instance.failureThreshold}"
+        	checkUrl="descriptorByName/com.kiuwan.plugins.kiuwanJenkinsPlugin.KiuwanRecorder/checkThresholds"
+    		checkdependson="measure unstableThreshold failureThreshold" />
+    </f:entry>
+    <f:advanced>
+    	<f:entry title="Encoding" field="encoding" help="/plugin/kiuwanJenkinsPlugin/help/help-encoding.html">
+		<f:textbox default="UTF-8"/>
+    	</f:entry>
+    	<f:entry title="Include pattern" field="includes" help="/plugin/kiuwanJenkinsPlugin/help/help-includes.html">
+		<f:textbox default=""/>
+    	</f:entry>
+    	<f:entry title="Exclude pattern" field="excludes">
+		<f:textbox default="**/src/test/**,**/*.Designer.vb,**/*Reference.vb,**/*Service.vb,**/*Silverlight.vb,**/*.Designer.cs,**/*Reference.cs,**/*Service.cs,**/*Silverlight.cs"/>
+    	</f:entry>
+ 	<f:entry title="Timeout (minutes)" field="timeout" help="/plugin/kiuwanJenkinsPlugin/help/help-timeout.html">
+		<f:number default="60"/>
+    	</f:entry>
+    </f:advanced>
+    
+    <j:if test="${empty descriptor.getPassword() || empty descriptor.getUsername()}">
+    	  <p class="error">
+    	  Kiuwan account's data not configured. Configure it in <a href="${rootURL}/configure" target="_blank">global settings</a>.
+    	  </p>
+    </j:if>
+    
+</j:jelly>

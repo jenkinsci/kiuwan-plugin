@@ -11,9 +11,17 @@
     tags they use. Views are always organized according to its owner class,
     so it should be straightforward to find them.
   -->
-    <f:section title="Kiuwan Global Settings">
-    <f:entry title="Kiuwan local analyzer installation folder" help="/plugin/kiuwanJenkinsPlugin/help/help-localAnalyzer.html">
-        <f:textbox field="localAnalyzerFolder" default="~/KiuwanLocalAnalyzer"/>
+  <f:section title="Kiuwan Global Settings">
+    <f:entry title="Kiuwan account username" help="/plugin/kiuwanJenkinsPlugin/help/help-username.html">
+        <f:textbox field="username" />
     </f:entry>
+    <f:entry title="Kiuwan account password" help="/plugin/kiuwanJenkinsPlugin/help/help-password.html">
+	  <f:password field="password" />
+    </f:entry>
+    <f:validateButton
+        title="Validate credentials"
+        progress="Validating..."
+        method="testConnection" 
+        with="username,password" />
   </f:section>
 </j:jelly>
