@@ -170,7 +170,6 @@ public class KiuwanRecorder extends Recorder {
 	 */
 	@Override
 	public boolean perform(AbstractBuild<?, ?> build, Launcher launcher, BuildListener listener) throws InterruptedException, IOException {
-		boolean performResult = true;
 		long startTime = System.currentTimeMillis();
 		long endTime = startTime+TimeUnit.MILLISECONDS.convert(timeout, TimeUnit.MINUTES);
 		
@@ -191,14 +190,12 @@ public class KiuwanRecorder extends Recorder {
 				thread.interrupt();
 			}
 			build.setResult(Result.ABORTED);
-			performResult = false;
 			throw interruptedException;
 		}
 
 		if(thread.isAlive()){
 			listener.getLogger().println("Aborted by timeout.");
 			build.setResult(Result.ABORTED);
-			performResult = false;
 		}
 
 		Throwable throwable = exceptionReference.get();
@@ -211,19 +208,14 @@ public class KiuwanRecorder extends Recorder {
 			}
 			else{
 				build.setResult(Result.FAILURE);
-				performResult = false;
 			}
 		}
 		
 		Result result = resultReference.get();
 		if(result != null){
-			if(result.isWorseThan(Result.UNSTABLE)){
-				performResult = false;
-			}
 			build.setResult(result);
 		}
 		
-//		return performResult;
 		return true;
 	}
 
