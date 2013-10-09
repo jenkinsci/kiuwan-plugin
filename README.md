@@ -7,7 +7,7 @@ http://wiki.jenkins-ci.org/display/JENKINS/Kiuwan+Plugin
 
 Installing
 ----------
-You should usually just install the Bazaar plugin from your Jenkins
+You should usually just install the Jenkins Kiuwan plugin from your Jenkins
 Management console (look under available plugins)
 
 
