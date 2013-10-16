@@ -4,8 +4,11 @@ import hudson.EnvVars;
 import hudson.Extension;
 import hudson.FilePath;
 import hudson.Launcher;
+import hudson.Launcher.ProcStarter;
+import hudson.Proc;
 import hudson.model.BuildListener;
 import hudson.model.Result;
+import hudson.model.TaskListener;
 import hudson.model.AbstractBuild;
 import hudson.model.AbstractProject;
 import hudson.model.Computer;
@@ -19,11 +22,8 @@ import hudson.util.Secret;
 import hudson.util.ListBoxModel;
 
 import java.io.BufferedReader;
-import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileNotFoundException;
-import java.io.FileReader;
-import java.io.FileWriter;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
@@ -157,7 +157,7 @@ public class KiuwanRecorder extends Recorder {
 	
 	@Override
 	public boolean needsToRunAfterFinalized() {
-		return true;
+		return false;
 	}
 
 	public BuildStepMonitor getRequiredMonitorService() {
@@ -264,7 +264,7 @@ public class KiuwanRecorder extends Recorder {
 		return thread;
 	}
 
-	private void performScan(AbstractBuild<?, ?> build, Launcher launcher, BuildListener listener, AtomicReference<Result> resultReference) throws KiuwanException, IOException, InterruptedException {
+	private void performScan(AbstractBuild<?, ?> build, Launcher launcher, final BuildListener listener, AtomicReference<Result> resultReference) throws KiuwanException, IOException, InterruptedException {
 		String name = this.applicationName;
 		if (StringUtils.isEmpty(name)) {
 			name = build.getProject().getName();
@@ -281,9 +281,7 @@ public class KiuwanRecorder extends Recorder {
 		}
 
 		FilePath srcFolder = build.getModuleRoot();
-
-		Computer currentComputer = Computer.currentComputer();
-		FilePath rootPath = currentComputer.getNode().getRootPath();
+		FilePath rootPath = srcFolder.getParent().getParent();
 
 		FilePath remoteDir = rootPath.child(KiuwanComputerListener.INSTALL_DIR);
 		FilePath agentHome = remoteDir.child(KiuwanComputerListener.AGENT_HOME);
@@ -295,66 +293,56 @@ public class KiuwanRecorder extends Recorder {
 
 		String command = launcher.isUnix() ? "agent.sh" : "agent.cmd";
 		FilePath agentBinDir = agentHome.child("bin");
-		String script = agentBinDir.child(command).getRemote();
+		FilePath script = agentBinDir.child(command);
 
-		EnvVars env = build.getEnvironment(listener);
+		EnvVars env = agentBinDir.act(new KiuwanRemoteEnvironment());
 		env.overrideAll(build.getBuildVariables());
 
 		final PrintStream loggerStream = listener.getLogger();
 		
 		if (launcher.isUnix()) {
 			loggerStream.println("Changing "+command+" permission");
-			launcher.launch().cmdAsSingleString("chmod u+x \"" + agentBinDir.child("agent.sh").getRemote()+"\"").envs(env).stdout(loggerStream).pwd(agentBinDir.getRemote()).join();
+			agentBinDir.child("agent.sh").chmod(0755);
 		}
 		
-		saveCredentials(launcher, descriptor, agentBinDir, script, env, loggerStream);
+		saveCredentials(build, launcher, descriptor, agentBinDir, script, env, listener);
 		
 		printExecutionConfiguration(listener, name, analysisLabel, analysisEncoding, srcFolder, script);
 
 		String analysisCode = null;
 		int result = -1;
 		
-		BufferedReader bufferedReader = null;
-		try{
-			List<String> args = buildAgentCommand(launcher, name, analysisLabel, analysisEncoding, srcFolder, command, agentBinDir);
-			
+		List<String> args = buildAgentCommand(launcher, name, analysisLabel, analysisEncoding, srcFolder, command, agentBinDir, listener);
+		
+		ProcStarter procStarter = null;
+		if(launcher.isUnix()){
+			procStarter = launcher.launch().cmds(args);
+		}
+		else{
 			StringBuilder stringBuilder = new StringBuilder();
 			for (String arg : args) {
 				stringBuilder.append(arg+" ");
 			}
-			
-			ProcessBuilder processBuilder = null;
-			
-			if(launcher.isUnix()){
-				processBuilder = new ProcessBuilder(args);
-			}
-			else{
-				processBuilder = new ProcessBuilder(stringBuilder.toString());
-			}
-			processBuilder.directory(new File(agentBinDir.getRemote()));
-			processBuilder.environment().putAll(env);
-			processBuilder.redirectErrorStream(true);
-			
-			Process process = processBuilder.start();
-
-			bufferedReader = new BufferedReader(new InputStreamReader(process.getInputStream()));
-
-			Pattern pattern = Pattern.compile(".*Analysis created in Kiuwan with code: (.*)$");
-			String line = null;
-			while((line = bufferedReader.readLine()) != null){
-				Matcher matcher = pattern.matcher(line);
-				boolean found = matcher.find();
-				if(found){
-					analysisCode = matcher.group(1);
-				}
-				listener.getLogger().println(line);
-			}
-
-			result = process.waitFor();
-		}finally{
-			IOUtils.closeQuietly(bufferedReader);
+			procStarter = launcher.launch().cmdAsSingleString(stringBuilder.toString());
 		}
 
+		procStarter = procStarter.envs(env).readStdout().pwd(script.getParent());
+		Proc process = procStarter.start();
+		
+		BufferedReader bufferedReader = null;
+		Pattern pattern = Pattern.compile(".*Analysis created in Kiuwan with code: (.*)$");
+		bufferedReader = new BufferedReader(new InputStreamReader(process.getStdout()));
+		String line = null;
+		while((line = bufferedReader.readLine()) != null){
+			Matcher matcher = pattern.matcher(line);
+			boolean found = matcher.find();
+			if(found){
+				analysisCode = matcher.group(1);
+			}
+			listener.getLogger().println(line);
+		}
+		result = process.join();
+		
 		if (result != 0 || analysisCode == null) {
 			resultReference.set(Result.NOT_BUILT);
 		} else {
@@ -412,50 +400,24 @@ public class KiuwanRecorder extends Recorder {
 		}
 	}
 
-	private void saveCredentials(Launcher launcher, DescriptorImpl descriptor, FilePath agentBinDir, String script, EnvVars env, final PrintStream loggerStream) throws IOException, InterruptedException {
-		encryptSecret(launcher, descriptor, agentBinDir, script, env, loggerStream);
-		saveCredentialsInProperties(descriptor, agentBinDir);
+	private String getRemoteFileAbsolutePath(FilePath filePath, TaskListener listener) throws IOException, InterruptedException {
+		String path = filePath.act(new KiuwanRemoteFilePath());
+		if(path == null){
+			listener.fatalError("File: \""+getRemoteFileAbsolutePath(filePath, listener)+"\", not found.");
+		}
+		return path;
 	}
 
-	private void saveCredentialsInProperties(DescriptorImpl descriptor, FilePath agentBinDir) throws FileNotFoundException, IOException {
-		FilePath agentProperties = agentBinDir.getParent().child("conf").child("agent.properties");
-		String propertiesFilePath = agentProperties.getRemote();
-
-		StringBuilder stringBuilder = new StringBuilder();
-		BufferedReader bufferedReader = null;
-		try{
-			bufferedReader = new BufferedReader(new FileReader(propertiesFilePath));
-		
-			String line = null;
-			String usernameValue = "";
-			while((line = bufferedReader.readLine()) != null){
-				String cleanLine = line.trim();
-				if(cleanLine.startsWith("username=")){
-					usernameValue = cleanLine.replaceFirst("username=", "");
-					line = "username="+descriptor.getUsername();
-				}
-				else if(cleanLine.startsWith("password=")){
-					line = "password="+usernameValue;
-				}
-				
-				stringBuilder.append(line+"\n");
-			}
-		}
-		finally{
-			IOUtils.closeQuietly(bufferedReader);
-		}
-		
-		BufferedWriter bufferedWriter = null;
-		try{
-			bufferedWriter= new BufferedWriter(new FileWriter(propertiesFilePath));
-			bufferedWriter.write(stringBuilder.toString());
-		}
-		finally{
-			IOUtils.closeQuietly(bufferedWriter);
-		}
+	private void saveCredentials(AbstractBuild<?, ?> build, Launcher launcher, DescriptorImpl descriptor, FilePath agentBinDir, FilePath script, EnvVars env, TaskListener listener) throws IOException, InterruptedException {
+		encryptSecret(build, launcher, descriptor, agentBinDir, script, env, listener);
+		saveCredentialsInProperties(descriptor, agentBinDir, listener);
 	}
 
-	private void encryptSecret(Launcher launcher, DescriptorImpl descriptor, FilePath agentBinDir, String script, EnvVars env, final PrintStream loggerStream) throws IOException, InterruptedException {
+	private void saveCredentialsInProperties(DescriptorImpl descriptor, FilePath agentBinDir, TaskListener listener) throws FileNotFoundException, IOException, InterruptedException {
+		agentBinDir.getParent().child("conf").child("agent.properties").act(new KiuwanAgentProperties(descriptor.getUsername()));
+	}
+
+	private void encryptSecret(AbstractBuild<?, ?> build, Launcher launcher, DescriptorImpl descriptor, FilePath agentBinDir, FilePath script, EnvVars env, TaskListener listener) throws IOException, InterruptedException {
 		PipedInputStream userInput = new PipedInputStream();
 		final PipedOutputStream userKeyboard = new PipedOutputStream(userInput);
 		
@@ -463,6 +425,7 @@ public class KiuwanRecorder extends Recorder {
 		PipedOutputStream console = new PipedOutputStream(consoleReaderStream);
 
 		try{
+			final PrintStream loggerStream = listener.getLogger();
 			final String password = descriptor.getPassword();
 			Runnable consoleRunnable = new Runnable() {
 				
@@ -470,7 +433,8 @@ public class KiuwanRecorder extends Recorder {
 					BufferedReader bufferedReader = new BufferedReader(new InputStreamReader(consoleReaderStream));
 					OutputStreamWriter outputStreamWriter = new OutputStreamWriter(userKeyboard);
 					try {
-						bufferedReader.readLine();
+						String line = bufferedReader.readLine();
+						loggerStream.println(line);
 						outputStreamWriter.write(password);
 						outputStreamWriter.flush();
 					} catch (IOException e) {
@@ -484,8 +448,8 @@ public class KiuwanRecorder extends Recorder {
 			
 			Thread thread = new Thread(consoleRunnable);
 			thread.start();
-			
-			launcher.launch().cmdAsSingleString("\""+script+"\" -e").envs(env).stdin(userInput).stdout(console).pwd(agentBinDir.getRemote()).join();
+
+			launcher.launch().cmds(getRemoteFileAbsolutePath(script, listener), "-e").envs(env).stdin(userInput).stdout(console).pwd(script.getParent()).join();
 
 			thread.join(5000L);
 		}
@@ -495,9 +459,9 @@ public class KiuwanRecorder extends Recorder {
 		}
 	}
 
-	private void printExecutionConfiguration(BuildListener listener, String name, String analysisLabel, String analysisEncoding, FilePath srcFolder, String script) {
-		listener.getLogger().println("Analyze folder: " + srcFolder.getRemote());
-		listener.getLogger().println("Script: " + script);
+	private void printExecutionConfiguration(BuildListener listener, String name, String analysisLabel, String analysisEncoding, FilePath srcFolder, FilePath script) throws IOException, InterruptedException {
+		listener.getLogger().println("Analyze folder: " + getRemoteFileAbsolutePath(srcFolder, listener));
+		listener.getLogger().println("Script: " + getRemoteFileAbsolutePath(script, listener));
 		listener.getLogger().println("kiuwan app name: " + name);
 		listener.getLogger().println("Analysis label: " + analysisLabel);
 		listener.getLogger().println("Threshold measure: " + this.measure);
@@ -548,15 +512,19 @@ public class KiuwanRecorder extends Recorder {
 		listener.getLogger().println();
 	}
 
-	private List<String> buildAgentCommand(Launcher launcher, String name, String analysisLabel, String analysisEncoding, FilePath srcFolder, String command, FilePath agentBinDir) {
+	private List<String> buildAgentCommand(Launcher launcher, String name, String analysisLabel, String analysisEncoding, FilePath srcFolder, String command, FilePath agentBinDir, TaskListener listener) throws IOException, InterruptedException {
 		String timeoutAsString = Long.toString(TimeUnit.MILLISECONDS.convert(this.timeout, TimeUnit.MINUTES)-TIMEOUT_MARGIN);
 		
 		List<String> args = new ArrayList<String>();
 		
-		String commandAbsolutePath = agentBinDir.child(command).getRemote();
+		String commandAbsolutePath = getRemoteFileAbsolutePath(agentBinDir.child(command), listener);
+		if(!launcher.isUnix()){
+			args.add("cmd");
+			args.add("/c");
+		}
 		args.add(buildArgument(launcher, commandAbsolutePath));
 		args.add("-s");
-		args.add(buildArgument(launcher, srcFolder.getRemote()));
+		args.add(buildArgument(launcher, getRemoteFileAbsolutePath(srcFolder, listener)));
 		args.add("-n");
 		args.add(buildArgument(launcher, name));
 		args.add("-l");
@@ -591,7 +559,7 @@ public class KiuwanRecorder extends Recorder {
 			parameterExpression = parameterName+"="+parameterValue;
 		}
 		else{
-			parameterExpression = parameterName+"=\""+parameterValue+"\"";
+			parameterExpression = parameterName+"=\\\""+parameterValue+"\\\"";
 		}
 		return parameterExpression;
 	}
