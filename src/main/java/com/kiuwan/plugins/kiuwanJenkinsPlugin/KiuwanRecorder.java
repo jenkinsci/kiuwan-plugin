@@ -323,7 +323,7 @@ public class KiuwanRecorder extends Recorder {
 			for (String arg : args) {
 				stringBuilder.append(arg+" ");
 			}
-			procStarter = launcher.launch().cmdAsSingleString(stringBuilder.toString());
+			procStarter = launcher.launch().cmds(new String[]{"cmd","/s","/c", stringBuilder.toString()});
 		}
 
 		procStarter = procStarter.envs(env).readStdout().pwd(script.getParent());
@@ -518,10 +518,10 @@ public class KiuwanRecorder extends Recorder {
 		List<String> args = new ArrayList<String>();
 		
 		String commandAbsolutePath = getRemoteFileAbsolutePath(agentBinDir.child(command), listener);
-		if(!launcher.isUnix()){
-			args.add("cmd");
-			args.add("/c");
-		}
+//		if(!launcher.isUnix()){
+//			args.add("cmd");
+//			args.add("/c");
+//		}
 		args.add(buildArgument(launcher, commandAbsolutePath));
 		args.add("-s");
 		args.add(buildArgument(launcher, getRemoteFileAbsolutePath(srcFolder, listener)));
@@ -559,7 +559,7 @@ public class KiuwanRecorder extends Recorder {
 			parameterExpression = parameterName+"="+parameterValue;
 		}
 		else{
-			parameterExpression = parameterName+"=\\\""+parameterValue+"\\\"";
+			parameterExpression = parameterName+"=\""+parameterValue+"\"";
 		}
 		return parameterExpression;
 	}

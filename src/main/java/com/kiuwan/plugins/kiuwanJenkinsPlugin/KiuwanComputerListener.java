@@ -2,16 +2,18 @@ package com.kiuwan.plugins.kiuwanJenkinsPlugin;
 
 import hudson.Extension;
 import hudson.FilePath;
-import hudson.model.Computer;
 import hudson.model.TaskListener;
+import hudson.model.Computer;
 import hudson.remoting.Channel;
 import hudson.slaves.ComputerListener;
-import jenkins.model.Jenkins;
 
-import javax.inject.Inject;
 import java.io.File;
 import java.io.IOException;
 import java.util.Map;
+
+import javax.inject.Inject;
+
+import jenkins.model.Jenkins;
 
 @Extension
 public class KiuwanComputerListener extends ComputerListener {
