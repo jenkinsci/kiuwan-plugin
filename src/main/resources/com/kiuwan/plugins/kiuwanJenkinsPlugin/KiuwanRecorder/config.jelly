@@ -26,7 +26,7 @@
 		<f:textbox default=""/>
     	</f:entry>
     	<f:entry title="Exclude pattern" field="excludes">
-		<f:textbox default="**/src/test/**,**/*.Designer.vb,**/*Reference.vb,**/*Service.vb,**/*Silverlight.vb,**/*.Designer.cs,**/*Reference.cs,**/*Service.cs,**/*Silverlight.cs"/>
+		<f:textbox default="**/src/test/**,**/__MACOSX/**,**/*.min.js,**/*.Designer.vb,**/*Reference.vb,**/*Service.vb,**/*Silverlight.vb,**/*.Designer.cs,**/*Reference.cs,**/*Service.cs,**/*Silverlight.cs"/>
     	</f:entry>
  	<f:entry title="Timeout (minutes)" field="timeout" help="/plugin/kiuwanJenkinsPlugin/help/help-timeout.html">
 		<f:number default="60"/>
