@@ -320,6 +320,7 @@ public class KiuwanRecorder extends Recorder {
 		}
 		else{
 			StringBuilder stringBuilder = new StringBuilder();
+			stringBuilder.append(" ");
 			for (String arg : args) {
 				stringBuilder.append(arg+" ");
 			}
@@ -545,6 +546,10 @@ public class KiuwanRecorder extends Recorder {
 	}
 
 	private String buildArgument(Launcher launcher, String argument) {
+		if(argument.indexOf('"') != -1){
+			throw new IllegalArgumentException("Double quote is not allowed in parameters: "+argument);
+		}
+		
 		if(launcher.isUnix()){
 			return argument;
 		}
@@ -555,6 +560,10 @@ public class KiuwanRecorder extends Recorder {
 
 	private String buildAdditionalParameterExpression(Launcher launcher, String parameterName, String parameterValue) {
 		String parameterExpression = "";
+		if(parameterValue.indexOf('"') != -1){
+			throw new IllegalArgumentException("Double quote is not allowed in parameters: "+parameterValue);
+		}
+		
 		if(launcher.isUnix()){
 			parameterExpression = parameterName+"="+parameterValue;
 		}
