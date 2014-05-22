@@ -11,12 +11,12 @@
     	  <f:select />
     </f:entry>
     <f:entry help="/plugin/kiuwanJenkinsPlugin/help/help-thresholds.html">
-        <img src="${rootURL}/images/16x16/yellow.gif" />Unstable threshold <input class="validated" name="unstableThreshold" value="${instance.unstableThreshold}"
-    		checkUrl="descriptorByName/com.kiuwan.plugins.kiuwanJenkinsPlugin.KiuwanRecorder/checkThresholds"
-    		checkdependson="measure unstableThreshold failureThreshold" />
-        <img src="${rootURL}/images/16x16/red.gif" />Failure threshold <input class="validated" name="failureThreshold" value="${instance.failureThreshold}"
-        	checkUrl="descriptorByName/com.kiuwan.plugins.kiuwanJenkinsPlugin.KiuwanRecorder/checkThresholds"
-    		checkdependson="measure unstableThreshold failureThreshold" />
+    		<f:entry title="Unstable threshold" field="unstableThreshold">
+    			<f:textbox default="0" />
+    		</f:entry>
+    		<f:entry title="Failure threshold" field="failureThreshold">
+    			<f:textbox default="0" />
+    		</f:entry>
     </f:entry>
     <f:advanced>
     	<f:entry title="Encoding" field="encoding" help="/plugin/kiuwanJenkinsPlugin/help/help-encoding.html">
