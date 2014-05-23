@@ -519,10 +519,7 @@ public class KiuwanRecorder extends Recorder {
 		List<String> args = new ArrayList<String>();
 		
 		String commandAbsolutePath = getRemoteFileAbsolutePath(agentBinDir.child(command), listener);
-//		if(!launcher.isUnix()){
-//			args.add("cmd");
-//			args.add("/c");
-//		}
+
 		args.add(buildArgument(launcher, commandAbsolutePath));
 		args.add("-s");
 		args.add(buildArgument(launcher, getRemoteFileAbsolutePath(srcFolder, listener)));
