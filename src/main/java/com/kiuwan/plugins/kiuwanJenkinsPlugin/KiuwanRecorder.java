@@ -231,7 +231,7 @@ public class KiuwanRecorder extends Recorder {
 					}
 					else{
 						listener.getLogger().print("Could not get authorization from Kiuwan. Verify your ");
-						listener.hyperlink(Jenkins.getInstance().getRootUrl()+"/configure", "Kiuwan account settings");
+						listener.hyperlink(Jenkins.getInstance().getRootUrl()+"configure", "Kiuwan account settings");
 						listener.getLogger().println(".");
 						resultReference.set(Result.NOT_BUILT);
 					}

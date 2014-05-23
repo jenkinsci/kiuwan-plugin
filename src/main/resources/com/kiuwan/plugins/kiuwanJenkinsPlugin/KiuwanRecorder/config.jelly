@@ -12,10 +12,10 @@
     </f:entry>
     <f:entry help="/plugin/kiuwanJenkinsPlugin/help/help-thresholds.html">
     		<f:entry title="Unstable threshold" field="unstableThreshold">
-    			<f:textbox default="0" />
+    			<f:textbox />
     		</f:entry>
     		<f:entry title="Failure threshold" field="failureThreshold">
-    			<f:textbox default="0" />
+    			<f:textbox />
     		</f:entry>
     </f:entry>
     <f:advanced>
