@@ -58,10 +58,6 @@ import com.kiuwan.client.model.ApplicationResults;
 
 public class KiuwanRecorder extends Recorder {
 
-	public static final String INSTALL_DIR = "tools/kiuwan";
-
-	public static final String AGENT_HOME = "KiuwanLocalAnalyzer";
-
 	public static final String QUALITY_INDICATOR = "QUALITY_INDICATOR";
 
 	public static final String EFFORT_TO_TARGET = "EFFORT_TO_TARGET";
@@ -231,7 +227,8 @@ public class KiuwanRecorder extends Recorder {
 					}
 					else{
 						listener.getLogger().print("Could not get authorization from Kiuwan. Verify your ");
-						listener.hyperlink(Jenkins.getInstance().getRootUrl()+"configure", "Kiuwan account settings");
+						
+						listener.hyperlink("/configure", "Kiuwan account settings");
 						listener.getLogger().println(".");
 						resultReference.set(Result.NOT_BUILT);
 					}
@@ -404,7 +401,7 @@ public class KiuwanRecorder extends Recorder {
 	private String getRemoteFileAbsolutePath(FilePath filePath, TaskListener listener) throws IOException, InterruptedException {
 		String path = filePath.act(new KiuwanRemoteFilePath());
 		if(path == null){
-			listener.fatalError("File: \""+getRemoteFileAbsolutePath(filePath, listener)+"\", not found.");
+			listener.fatalError("File: "+filePath+" not found.");
 		}
 		return path;
 	}
@@ -572,7 +569,7 @@ public class KiuwanRecorder extends Recorder {
 
 	private void installLocalAnalyzer(FilePath root, BuildListener listener) throws IOException, InterruptedException {
 		KiuwanDownloadable kiuwanDownloadable = new KiuwanDownloadable();
-		FilePath remoteDir = root.child(INSTALL_DIR);
+		FilePath remoteDir = root.child(KiuwanComputerListener.INSTALL_DIR);
 		listener.getLogger().println("Installing KiuwanLocalAnalyzer in " + remoteDir);
 		Map<Object, Object> props = Computer.currentComputer().getSystemProperties();
 		File zip = kiuwanDownloadable.resolve((String) props.get("os.name"), (String) props.get("sun.arch.data.model"), listener);

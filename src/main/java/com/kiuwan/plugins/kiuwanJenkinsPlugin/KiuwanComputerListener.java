@@ -18,7 +18,7 @@ import jenkins.model.Jenkins;
 @Extension
 public class KiuwanComputerListener extends ComputerListener {
 
-    public static final String INSTALL_DIR = "tools/kiuwan";
+    public static final String INSTALL_DIR = "tools/kiuwanAnalyzer";
 	
     public static final String AGENT_HOME = "KiuwanLocalAnalyzer";
     
@@ -40,14 +40,14 @@ public class KiuwanComputerListener extends ComputerListener {
         try {
             FilePath remoteDir = root.child(INSTALL_DIR);
             if (!remoteDir.child(AGENT_HOME).exists()) {
-                listener.getLogger().println("Installing KiuwanLocalAnalyzer to "+remoteDir);
+                listener.getLogger().println("Installing KiuwanAnalyzer to "+remoteDir);
                 Map<Object,Object> props = c.getSystemProperties();
                 File zip = kiuwanDownloadable.resolve((String) props.get("os.name"), (String) props.get("sun.arch.data.model"),listener);
                 remoteDir.mkdirs();
                 new FilePath(zip).unzip(remoteDir);
             }
         } catch (IOException e) {
-            e.printStackTrace(listener.error("Failed to install kiuwanlocalanalyzer"));
+            e.printStackTrace(listener.error("Failed to install KiuwanAnalyzer"));
             // but continuing
         }
     }
