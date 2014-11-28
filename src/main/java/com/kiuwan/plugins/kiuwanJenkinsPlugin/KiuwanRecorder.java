@@ -11,7 +11,6 @@ import hudson.model.Result;
 import hudson.model.TaskListener;
 import hudson.model.AbstractBuild;
 import hudson.model.AbstractProject;
-import hudson.model.Computer;
 import hudson.tasks.BuildStepDescriptor;
 import hudson.tasks.BuildStepMonitor;
 import hudson.tasks.Publisher;
@@ -36,13 +35,11 @@ import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import jenkins.model.Jenkins;
 import net.sf.json.JSONObject;
 
 import org.apache.commons.io.IOUtils;
@@ -283,7 +280,7 @@ public class KiuwanRecorder extends Recorder {
 		FilePath remoteDir = rootPath.child(KiuwanComputerListener.INSTALL_DIR);
 		FilePath agentHome = remoteDir.child(KiuwanComputerListener.AGENT_HOME);
 		if (!agentHome.exists()) {
-			installLocalAnalyzer(rootPath, listener);
+			installLocalAnalyzer(rootPath, listener);	
 		}
 
 		DescriptorImpl descriptor = getDescriptor();
@@ -431,8 +428,18 @@ public class KiuwanRecorder extends Recorder {
 					BufferedReader bufferedReader = new BufferedReader(new InputStreamReader(consoleReaderStream));
 					OutputStreamWriter outputStreamWriter = new OutputStreamWriter(userKeyboard);
 					try {
-						String line = bufferedReader.readLine();
-						loggerStream.println(line);
+						String line = null;
+						do{
+							line = bufferedReader.readLine();
+							loggerStream.println(line);
+							if(!bufferedReader.ready()){
+								try {
+									TimeUnit.SECONDS.sleep(2);
+								} catch (InterruptedException e) {
+									//Ignore
+								}
+							}
+						}while(bufferedReader.ready());
 						outputStreamWriter.write(password);
 						outputStreamWriter.flush();
 					} catch (IOException e) {
@@ -571,8 +578,7 @@ public class KiuwanRecorder extends Recorder {
 		KiuwanDownloadable kiuwanDownloadable = new KiuwanDownloadable();
 		FilePath remoteDir = root.child(KiuwanComputerListener.INSTALL_DIR);
 		listener.getLogger().println("Installing KiuwanLocalAnalyzer in " + remoteDir);
-		Map<Object, Object> props = Computer.currentComputer().getSystemProperties();
-		File zip = kiuwanDownloadable.resolve((String) props.get("os.name"), (String) props.get("sun.arch.data.model"), listener);
+		File zip = kiuwanDownloadable.resolve(null, null, listener);
 		remoteDir.mkdirs();
 		new FilePath(zip).unzip(remoteDir);
 	}

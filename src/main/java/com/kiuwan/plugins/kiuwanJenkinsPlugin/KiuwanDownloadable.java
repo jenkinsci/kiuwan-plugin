@@ -52,7 +52,7 @@ public class KiuwanDownloadable extends Downloadable {
     private File getLocalCacheFile(URL src) {
         String s = src.toExternalForm();
         String fileName = s.substring(s.lastIndexOf('/')+1);
-        return new File(Jenkins.getInstance().getRootDir(),"cache/KiuwanAnalyzer/"+fileName);
+        return new File(Jenkins.getInstance().getRootDir(),"cache/Kiuwan/"+fileName);
     }
     
 }

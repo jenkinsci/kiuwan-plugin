@@ -18,7 +18,7 @@ import jenkins.model.Jenkins;
 @Extension
 public class KiuwanComputerListener extends ComputerListener {
 
-    public static final String INSTALL_DIR = "tools/kiuwanAnalyzer";
+    public static final String INSTALL_DIR = "tools/kiuwan";
 	
     public static final String AGENT_HOME = "KiuwanLocalAnalyzer";
     
