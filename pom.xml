@@ -21,9 +21,9 @@
 	</licenses>
 
 	<scm>
-		<connection>scm:git:https://github.com/jenkinsci/kiuwan-plugin.git</connection>
-		<developerConnection>scm:git:https://github.com/jenkinsci/kiuwan-plugin.git</developerConnection>
-		<url>https://github.com/jenkinsci/kiuwan-plugin.git</url>
+		<connection>scm:git:https://github.com/kiuwan/jenkins-plugin.git</connection>
+		<developerConnection>scm:git:https://github.com/kiuwan/jenkins-plugin.git</developerConnection>
+		<url>https://github.com/kiuwan/jenkins-plugin.git</url>
 	</scm>
 
 	<developers>
