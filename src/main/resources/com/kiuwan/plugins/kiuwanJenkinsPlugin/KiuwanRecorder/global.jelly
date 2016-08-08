@@ -18,10 +18,31 @@
     <f:entry title="Kiuwan account password" help="/plugin/kiuwanJenkinsPlugin/help/help-password.html">
 	  <f:password field="password" />
     </f:entry>
+    
+    <f:optionalBlock name="configureProxy" field="configureProxy" title="Configure Proxy" inline="true">
+	    <f:entry title="Proxy Host" field="proxyHost">
+			<f:textbox />
+		</f:entry>
+		<f:entry title="Proxy Port" field="proxyPort">
+			<f:number default="3128" />
+		</f:entry>
+		<f:entry title="Proxy Protocol" field="proxyProtocol">
+			<f:select />
+		</f:entry>
+		<f:entry title="Proxy Authentication" field="proxyAuthentication">
+			<f:select />
+		</f:entry>
+		<f:entry title="Proxy Username" field="proxyUsername">
+			<f:textbox />
+		</f:entry>
+		<f:entry title="Proxy Password" field="proxyPassword">
+			<f:password />
+		</f:entry>
+	</f:optionalBlock>
     <f:validateButton
         title="Validate credentials"
         progress="Validating..."
         method="testConnection" 
-        with="username,password" />
+        with="username,password,configureProxy,proxyHost,proxyPort,proxyProtocol,proxyAuthentication,proxyUsername,proxyPassword" />
   </f:section>
 </j:jelly>

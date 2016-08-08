@@ -1,38 +1,132 @@
 <j:jelly xmlns:j="jelly:core" xmlns:st="jelly:stapler" xmlns:d="jelly:define" xmlns:l="/lib/layout" xmlns:t="/lib/hudson" xmlns:f="/lib/form">
     
-    <f:entry title="Kiuwan Application Name" field="applicationName" help="/plugin/kiuwanJenkinsPlugin/help/help-appName.html">
-        <f:textbox default="${it.name}"/>
-    </f:entry>
+    <f:radioBlock title="Standard Mode" name="mode" checked="${instance.isInMode('STANDARD_MODE')}" value="STANDARD_MODE" inline="true">
+	    <f:entry title="Kiuwan Application Name" name="applicationName" field="applicationName" help="/plugin/kiuwanJenkinsPlugin/help/help-appName.html">
+	        <f:textbox default="${it.name}"/>
+	    </f:entry>
+	    <f:entry title="Analysis label" name="label" field="label" help="/plugin/kiuwanJenkinsPlugin/help/help-analysisLabel.html">
+	        <f:textbox/>
+	    </f:entry>
+	    
+		<f:advanced>
+			<f:entry title="Encoding" name="encoding" field="encoding" help="/plugin/kiuwanJenkinsPlugin/help/help-encoding.html">
+				<f:textbox default="UTF-8"/>
+			</f:entry>
+			<f:entry title="Include pattern" name="includes" field="includes" help="/plugin/kiuwanJenkinsPlugin/help/help-includes.html">
+				<f:textbox default=""/>
+			</f:entry>
+			<f:entry title="Exclude pattern" name="excludes" field="excludes">
+				<f:textbox default="**/src/test/**,**/__MACOSX/**,**/*.min.js,**/*.Designer.vb,**/*Reference.vb,**/*Service.vb,**/*Silverlight.vb,**/*.Designer.cs,**/*Reference.cs,**/*Service.cs,**/*Silverlight.cs,**/.*,**/Pods/BuildHeaders/**/*.h,**/Pods/Headers/**/*.h"/>
+			</f:entry>
+			<f:entry title="Timeout (minutes)" name="timeout" field="timeout" help="/plugin/kiuwanJenkinsPlugin/help/help-timeout.html">
+				<f:number default="60"/>
+			</f:entry>
+			
+			<f:optionalBlock field="indicateLanguages" name="indicateLanguages" title="Indicate languages" inline="true" help="/plugin/kiuwanJenkinsPlugin/help/help-indicateLanguages.html">			
+				<f:entry title="Languages" name="languages" field="languages" help="/plugin/kiuwanJenkinsPlugin/help/help-languages.html">
+					<f:textbox default="abap,aspnet,c,cobol,cpp,csharp,html,informix,java,javascript,jcl,jsp,natural,objectivec,oracleforms,php,plsql,powerscript,rpg4,ruby,transactsql,vb6,vbnet"/>
+				</f:entry>
+			</f:optionalBlock>
+		</f:advanced>
+	    
+	    <f:entry title="Threshold measure" name="measure" field="measure">
+	    	  <f:select />
+	    </f:entry>
+	    <f:entry help="/plugin/kiuwanJenkinsPlugin/help/help-thresholds.html">
+	    		<f:entry title="Unstable threshold" name="unstableThreshold" field="unstableThreshold">
+	    			<f:textbox />
+	    		</f:entry>
+	    		<f:entry title="Failure threshold" name="failureThreshold" field="failureThreshold">
+	    			<f:textbox />
+	    		</f:entry>
+	    </f:entry>
+    </f:radioBlock>
+
+    <f:radioBlock title="Delivery Mode" name="mode" checked="${instance.isInMode('DELIVERY_MODE')}" value="DELIVERY_MODE" inline="true">
+	    <f:entry title="Kiuwan Application Name" field="applicationName_dm" help="/plugin/kiuwanJenkinsPlugin/help/help-appName.html">
+	        <f:textbox default="${it.name}"/>
+	    </f:entry>
+	    <f:entry title="Analysis label" field="label_dm" help="/plugin/kiuwanJenkinsPlugin/help/help-analysisLabel.html">
+	        <f:textbox/>
+	    </f:entry>
+	    
+		<f:advanced>
+		    <f:entry title="Change request" field="changeRequest_dm" help="/plugin/kiuwanJenkinsPlugin/help/help-changeRequest.html">
+		    	<f:textbox/>
+		    </f:entry>
+		    <f:entry title="Analysis scope" field="analysisScope_dm">
+		    	  <f:select />
+		    </f:entry>
+			<f:entry title="Branch" field="branch_dm" help="/plugin/kiuwanJenkinsPlugin/help/help-branch.html">
+				<f:textbox />
+			</f:entry>
+			<f:entry title="Change Request Status" field="changeRequestStatus_dm" help="/plugin/kiuwanJenkinsPlugin/help/help-changeRequestStatus.html">
+				<f:textbox />
+			</f:entry>
+			<f:entry title="Encoding" field="encoding_dm" help="/plugin/kiuwanJenkinsPlugin/help/help-encoding.html">
+				<f:textbox default="UTF-8"/>
+			</f:entry>
+			<f:entry title="Include pattern" field="includes_dm" help="/plugin/kiuwanJenkinsPlugin/help/help-includes.html">
+				<f:textbox default=""/>
+			</f:entry>
+			<f:entry title="Exclude pattern" field="excludes_dm">
+				<f:textbox default="**/src/test/**,**/__MACOSX/**,**/*.min.js,**/*.Designer.vb,**/*Reference.vb,**/*Service.vb,**/*Silverlight.vb,**/*.Designer.cs,**/*Reference.cs,**/*Service.cs,**/*Silverlight.cs,**/.*,**/Pods/BuildHeaders/**/*.h,**/Pods/Headers/**/*.h"/>
+			</f:entry>
+			<f:entry title="Timeout (minutes)" field="timeout_dm" help="/plugin/kiuwanJenkinsPlugin/help/help-timeout.html">
+				<f:number default="60"/>
+			</f:entry>
+			<f:optionalBlock field="indicateLanguages_dm" name="indicateLanguages_dm" title="Indicate languages" inline="true" help="/plugin/kiuwanJenkinsPlugin/help/help-indicateLanguages.html">
+				<f:entry title="Languages" field="languages_dm" help="/plugin/kiuwanJenkinsPlugin/help/help-languages.html">
+					<f:textbox default="abap,aspnet,c,cobol,cpp,csharp,html,informix,java,javascript,jcl,jsp,natural,objectivec,oracleforms,php,plsql,powerscript,rpg4,ruby,transactsql,vb6,vbnet"/>
+				</f:entry>
+			</f:optionalBlock>
+		</f:advanced>
+	    
+	    <f:optionalBlock field="waitForAuditResults_dm" name="waitForAuditResults_dm" title="Wait For Audit Results" inline="true" help="/plugin/kiuwanJenkinsPlugin/help/help-waitForAuditResults.html">
+		    <f:entry title="On failure, mark build as:" name="markBuildWhenNoPass_dm" field="markBuildWhenNoPass_dm">
+		    	  <f:select default="FAILURE" />
+		    </f:entry>
+	    </f:optionalBlock>
+    </f:radioBlock>
+
+    <f:radioBlock title="Expert Mode" name="mode" checked="${instance.isInMode('EXPERT_MODE')}" value="EXPERT_MODE" inline="true">
+   		<f:entry title="Command Arguments" field="commandArgs_em" help="/plugin/kiuwanJenkinsPlugin/help/help-commandArgs.html">
+		    <f:textbox default="-c -n &quot;${it.name}&quot;" />
+		</f:entry>
+		
+		<f:entry title="Extra Parameters" field="extraParameters_em" help="/plugin/kiuwanJenkinsPlugin/help/help-extraParameters.html">
+		    <f:textarea default="encoding=&quot;UTF-8&quot; supported.technologies=&quot;abap,aspnet,c,cobol,cpp,csharp,html,informix,java,javascript,jcl,jsp,natural,objectivec,oracleforms,php,plsql,powerscript,rpg4,ruby,transactsql,vb6,vbnet&quot; exclude.patterns=&quot;**/src/test/**,**/__MACOSX/**,**/*.min.js,**/*.Designer.vb,**/*Reference.vb,**/*Service.vb,**/*Silverlight.vb,**/*.Designer.cs,**/*Reference.cs,**/*Service.cs,**/*Silverlight.cs,**/.*,**/Pods/BuildHeaders/**/*.h,**/Pods/Headers/**/*.h&quot;" />
+		</f:entry>
     
-    <f:entry title="Analysis label" field="label" help="/plugin/kiuwanJenkinsPlugin/help/help-analysisLabel.html">
-        <f:textbox/>
-    </f:entry>
-    <f:entry title="Threshold measure" field="measure">
-    	  <f:select />
-    </f:entry>
-    <f:entry help="/plugin/kiuwanJenkinsPlugin/help/help-thresholds.html">
-    		<f:entry title="Unstable threshold" field="unstableThreshold">
-    			<f:textbox />
-    		</f:entry>
-    		<f:entry title="Failure threshold" field="failureThreshold">
-    			<f:textbox />
-    		</f:entry>
-    </f:entry>
-    <f:advanced>
-    	<f:entry title="Encoding" field="encoding" help="/plugin/kiuwanJenkinsPlugin/help/help-encoding.html">
-		<f:textbox default="UTF-8"/>
-    	</f:entry>
-    	<f:entry title="Include pattern" field="includes" help="/plugin/kiuwanJenkinsPlugin/help/help-includes.html">
-		<f:textbox default=""/>
-    	</f:entry>
-    	<f:entry title="Exclude pattern" field="excludes">
-		<f:textbox default="**/src/test/**,**/__MACOSX/**,**/*.min.js,**/*.Designer.vb,**/*Reference.vb,**/*Service.vb,**/*Silverlight.vb,**/*.Designer.cs,**/*Reference.cs,**/*Service.cs,**/*Silverlight.cs"/>
-    	</f:entry>
- 	<f:entry title="Timeout (minutes)" field="timeout" help="/plugin/kiuwanJenkinsPlugin/help/help-timeout.html">
-		<f:number default="60"/>
-    	</f:entry>
-    </f:advanced>
-    
+   		<f:advanced>
+	    	<f:entry title="Timeout (minutes)" field="timeout_em" help="/plugin/kiuwanJenkinsPlugin/help/help-timeout.html">
+				<f:number default="60"/>
+			</f:entry>
+			<f:section title="Build result/result codes bindings">
+				<f:entry help="/plugin/kiuwanJenkinsPlugin/help/help-resultCodes.html">
+				    <f:entry title="Result codes for SUCCESS build" field="successResultCodes_em">
+						<f:textbox default="0" />
+					</f:entry>
+				    <f:entry title="Result codes for UNSTABLE build" field="unstableResultCodes_em">
+						<f:textbox default="14" />
+					</f:entry>
+				    <f:entry title="Result codes for FAILURE build" field="failureResultCodes_em">
+						<f:textbox default="1, 10" />
+					</f:entry>
+				    <f:entry title="Result codes for NOT_BUILT build" field="notBuiltResultCodes_em">
+						<f:textbox default="11, 12" />
+					</f:entry>
+				    <f:entry title="Result codes for ABORTED build" field="abortedResultCodes_em">
+						<f:textbox default="13" />
+					</f:entry>	
+					<f:entry title="In other cases, mark the build as:" field="markAsInOtherCases_em">
+						<f:select default="NOT_BUILT" />
+					</f:entry>
+				</f:entry>
+			</f:section>
+		</f:advanced>
+    </f:radioBlock>
+
     <j:if test="${empty descriptor.getPassword() || empty descriptor.getUsername()}">
     	  <p class="error">
     	  Kiuwan account's data not configured. Configure it in <a href="${rootURL}/configure" target="_blank">global settings</a>.

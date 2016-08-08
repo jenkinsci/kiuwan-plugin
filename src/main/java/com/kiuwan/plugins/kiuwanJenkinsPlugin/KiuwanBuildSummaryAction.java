@@ -14,8 +14,8 @@ public class KiuwanBuildSummaryAction implements Action {
 	private String icon;
 	
     @DataBoundConstructor
-    public KiuwanBuildSummaryAction(String applicationName, String analysisLabel) {
-    	this.url = buildKiuwanResultUrl(applicationName, analysisLabel);
+    public KiuwanBuildSummaryAction(String url) {
+    	this.url = url;
     	this.icon = "/plugin/kiuwanJenkinsPlugin/logo.png";
     }
     
@@ -55,9 +55,5 @@ public class KiuwanBuildSummaryAction implements Action {
 	public String getUrlName() {
 		return "";
 	}
-    
-    private String buildKiuwanResultUrl(String applicationName, String analysisLabel) {
-    	return "https://www.kiuwan.com/saas/application?app=" + applicationName + "&label=" + analysisLabel;
-    }
     
 }
