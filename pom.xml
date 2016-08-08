@@ -21,11 +21,10 @@
 	</licenses>
 
 	<scm>
-		<connection>scm:git:https://github.com/kiuwan/jenkins-plugin.gitt</connection>
-		<developerConnection>scm:git:https://github.com/kiuwan/jenkins-plugin.git</developerConnection>
-		<url>https://github.com/kiuwan/jenkins-plugin.git</url>
-	  <tag>kiuwanJenkinsPlugin-1.3.5</tag>
-  </scm>
+		<connection>scm:git:ssh://github.com/jenkinsci/kiuwan-plugin.git</connection>
+		<developerConnection>scm:git:ssh://git@github.com/jenkinsci/kiuwan-plugin.git</developerConnection>
+		<url>https://github.com/jenkinsci/kiuwan-plugin.gitt</url>
+    </scm>
 
 	<developers>
 		<developer>
