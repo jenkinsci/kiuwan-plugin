@@ -1,6 +1,6 @@
 <j:jelly xmlns:j="jelly:core" xmlns:st="jelly:stapler" xmlns:d="jelly:define" xmlns:l="/lib/layout" xmlns:t="/lib/hudson" xmlns:f="/lib/form">
     
-    <f:radioBlock title="Standard Mode" name="mode" checked="${instance.isInMode('STANDARD_MODE')}" value="STANDARD_MODE" inline="true">
+    <f:radioBlock title="Baseline Mode" name="mode" checked="${instance.isInMode('STANDARD_MODE')}" value="STANDARD_MODE" inline="true">
 	    <f:entry title="Kiuwan Application Name" name="applicationName" field="applicationName" help="/plugin/kiuwanJenkinsPlugin/help/help-appName.html">
 	        <f:textbox default="${it.name}"/>
 	    </f:entry>
@@ -84,7 +84,7 @@
 	    
 	    <f:optionalBlock field="waitForAuditResults_dm" name="waitForAuditResults_dm" title="Wait For Audit Results" inline="true" help="/plugin/kiuwanJenkinsPlugin/help/help-waitForAuditResults.html">
 		    <f:entry title="On failure, mark build as:" name="markBuildWhenNoPass_dm" field="markBuildWhenNoPass_dm">
-		    	  <f:select default="FAILURE" />
+		    	  <f:select default="UNSTABLE" />
 		    </f:entry>
 	    </f:optionalBlock>
     </f:radioBlock>
@@ -108,19 +108,19 @@
 						<f:textbox default="0" />
 					</f:entry>
 				    <f:entry title="Result codes for UNSTABLE build" field="unstableResultCodes_em">
-						<f:textbox default="14" />
+						<f:textbox default="10, 13" />
 					</f:entry>
 				    <f:entry title="Result codes for FAILURE build" field="failureResultCodes_em">
-						<f:textbox default="1, 10" />
+						<f:textbox default="1, 11, 12, 14" />
 					</f:entry>
 				    <f:entry title="Result codes for NOT_BUILT build" field="notBuiltResultCodes_em">
-						<f:textbox default="11, 12" />
+						<f:textbox default="" />
 					</f:entry>
 				    <f:entry title="Result codes for ABORTED build" field="abortedResultCodes_em">
-						<f:textbox default="13" />
+						<f:textbox default="" />
 					</f:entry>	
 					<f:entry title="In other cases, mark the build as:" field="markAsInOtherCases_em">
-						<f:select default="NOT_BUILT" />
+						<f:select default="FAILURE" />
 					</f:entry>
 				</f:entry>
 			</f:section>
