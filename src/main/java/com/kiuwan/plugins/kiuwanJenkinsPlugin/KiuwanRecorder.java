@@ -20,6 +20,7 @@ import java.util.concurrent.atomic.AtomicReference;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang.StringUtils;
 import org.apache.commons.lang.exception.ExceptionUtils;
 import org.kohsuke.stapler.DataBoundConstructor;
@@ -53,6 +54,22 @@ import net.sf.json.JSONObject;
 
 public class KiuwanRecorder extends Recorder {
 
+	private static final String PROXY_PASSWORD = "proxy.password";
+
+	private static final String PROXY_USERNAME = "proxy.username";
+
+	private static final String PROXY_AUTHENTICATION = "proxy.authentication";
+
+	private static final String PROXY_PROTOCOL = "proxy.protocol";
+
+	private static final String PROXY_PORT = "proxy.port";
+
+	private static final String PROXY_HOST = "proxy.host";
+
+	private static final String AGENT_PROPERTIES_FILE_NAME = "agent.properties";
+
+	private static final String AGENT_CONF_DIR_NAME = "conf";
+
 	public static final String QUALITY_INDICATOR = "QUALITY_INDICATOR";
 
 	public static final String EFFORT_TO_TARGET = "EFFORT_TO_TARGET";
@@ -69,6 +86,13 @@ public class KiuwanRecorder extends Recorder {
 
 	private final static Long TIMEOUT_MARGIN = 5000L;
 
+	private final static String proxyHostRegExp = "^\\s*proxy\\.host\\s*=.*$";
+	private final static String proxyPortRegExp = "^\\s*proxy\\.port\\s*=.*$";
+	private final static String proxyProtocolRegExp = "^\\s*proxy\\.protocol\\s*=.*$";
+	private final static String proxyAuthenticationRegExp = "^\\s*proxy\\.authentication\\s*=.*$";
+	private final static String proxyUsernameRegExp = "^\\s*proxy\\.username\\s*=.*$";
+	private final static String proxyPasswordRegExp = "^\\s*proxy\\.password\\s*=.*$";
+	
 	public final static Mode DEFAULT_MODE = Mode.STANDARD_MODE;
 	
 	private Mode selectedMode;
@@ -848,23 +872,69 @@ public class KiuwanRecorder extends Recorder {
 			}
 		}
 
-		if (descriptor.isConfigureProxy()) {
-			args.add(buildAdditionalParameterExpression(launcher, "proxy.host", descriptor.getProxyHost()));
-			args.add(buildAdditionalParameterExpression(launcher, "proxy.port",	Integer.toString(descriptor.getProxyPort())));
-			args.add(buildAdditionalParameterExpression(launcher, "proxy.protocol", descriptor.getProxyProtocol()));
+		String proxyHost = descriptor.getProxyHost();
+		String proxyPort = Integer.toString(descriptor.getProxyPort());
+		String proxyProtocol = descriptor.getProxyProtocol();
+		String proxyAuthentication = PROXY_AUTHENTICATION_BASIC;
+		String proxyUsername = descriptor.getProxyUsername();
+		String proxyPassword = descriptor.getProxyPassword();
+				
+		if(!descriptor.isConfigureProxy()){
+			proxyHost="";
+			proxyAuthentication = PROXY_AUTHENTICATION_NONE;
+		}
+		else if(!PROXY_AUTHENTICATION_BASIC.equals(descriptor.getProxyAuthentication())){
+			proxyAuthentication = PROXY_AUTHENTICATION_NONE;
+			proxyUsername = "";
+			proxyPassword = "";
+		}
+		
+		args.add(buildAdditionalParameterExpression(launcher, PROXY_HOST, proxyHost));
+		args.add(buildAdditionalParameterExpression(launcher, PROXY_PORT, proxyPort));
+		args.add(buildAdditionalParameterExpression(launcher, PROXY_PROTOCOL, proxyProtocol));
+		args.add(buildAdditionalParameterExpression(launcher, PROXY_AUTHENTICATION, proxyAuthentication));
+		args.add(buildAdditionalParameterExpression(launcher, PROXY_USERNAME, proxyUsername));
+		args.add(buildAdditionalParameterExpression(launcher, PROXY_PASSWORD, proxyPassword));
+			
+		writeProxyConfigToProperties(agentBinDir, proxyHost, proxyPort, proxyProtocol, proxyAuthentication,	proxyUsername, proxyPassword);
+		
+		return args;
+	}
 
-			if (PROXY_AUTHENTICATION_BASIC.equals(descriptor.getProxyAuthentication())) {
-				args.add(buildAdditionalParameterExpression(launcher, "proxy.authentication", PROXY_AUTHENTICATION_BASIC));
-				args.add(buildAdditionalParameterExpression(launcher, "proxy.username", descriptor.getProxyUsername()));
-				args.add(buildAdditionalParameterExpression(launcher, "proxy.password", descriptor.getProxyPassword()));
-			} else {
-				args.add(buildAdditionalParameterExpression(launcher, "proxy.authentication", PROXY_AUTHENTICATION_NONE));
-				args.add(buildAdditionalParameterExpression(launcher, "proxy.username", ""));
-				args.add(buildAdditionalParameterExpression(launcher, "proxy.password", ""));
+	private void writeProxyConfigToProperties(FilePath agentBinDir, String proxyHost, String proxyPort,
+			String proxyProtocol, String proxyAuthentication, String proxyUsername, String proxyPassword)
+			throws IOException, InterruptedException {
+		FilePath agentPropertiesPath = agentBinDir.getParent().child(AGENT_CONF_DIR_NAME).child(AGENT_PROPERTIES_FILE_NAME);
+		
+		StringBuilder newFileContent = new StringBuilder();
+		BufferedReader reader = null;
+		try{
+			reader = new BufferedReader(new InputStreamReader(agentPropertiesPath.read()));
+			String line = null;
+			while((line = reader.readLine()) != null){
+				if(!Pattern.matches(proxyHostRegExp, line) 
+					&& !Pattern.matches(proxyPortRegExp, line) 
+					&& !Pattern.matches(proxyProtocolRegExp, line)
+					&& !Pattern.matches(proxyAuthenticationRegExp, line)
+					&& !Pattern.matches(proxyUsernameRegExp, line)
+					&& !Pattern.matches(proxyPasswordRegExp, line)
+				){
+					newFileContent.append(line+"\n");
+				}
 			}
 		}
-
-		return args;
+		finally{
+			IOUtils.closeQuietly(reader);
+		}
+		
+		newFileContent.append(PROXY_HOST+"="+proxyHost+"\n");
+		newFileContent.append(PROXY_PORT+"="+proxyPort+"\n");
+		newFileContent.append(PROXY_PROTOCOL+"="+proxyProtocol+"\n");
+		newFileContent.append(PROXY_AUTHENTICATION+"="+proxyAuthentication+"\n");
+		newFileContent.append(PROXY_USERNAME+"="+proxyUsername+"\n");
+		newFileContent.append(PROXY_PASSWORD+"="+proxyPassword+"\n");
+		
+		agentPropertiesPath.write(newFileContent.toString(), "UTF-8");
 	}
 
 	private void parseOptions(List<String> args, Launcher launcher) {
