@@ -479,12 +479,15 @@ public class KiuwanRecorder extends Recorder {
 		}
 
 		FilePath srcFolder = build.getModuleRoot();
-		FilePath rootPath = srcFolder.getParent().getParent();
 
-		FilePath remoteDir = rootPath.child(KiuwanComputerListener.INSTALL_DIR);
+		EnvVars environment = build.getEnvironment(listener);
+		
+		FilePath jenkinsHome = new FilePath(new File(environment.get("JENKINS_HOME")));
+		
+		FilePath remoteDir = jenkinsHome.child(KiuwanComputerListener.INSTALL_DIR);
 		FilePath agentHome = remoteDir.child(KiuwanComputerListener.AGENT_HOME);
 		if (!agentHome.exists()) {
-			installLocalAnalyzer(rootPath, listener);
+			installLocalAnalyzer(jenkinsHome, listener);
 		}
 
 		DescriptorImpl descriptor = getDescriptor();
