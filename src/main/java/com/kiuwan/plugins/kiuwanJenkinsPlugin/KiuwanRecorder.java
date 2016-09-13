@@ -92,6 +92,9 @@ public class KiuwanRecorder extends Recorder {
 	private final static String proxyAuthenticationRegExp = "^\\s*proxy\\.authentication\\s*=.*$";
 	private final static String proxyUsernameRegExp = "^\\s*proxy\\.username\\s*=.*$";
 	private final static String proxyPasswordRegExp = "^\\s*proxy\\.password\\s*=.*$";
+	private final static String kiuwanJenkinsPluginHeaderPrefix = "### KIUWAN JENKINS PLUGIN: ";
+	private final static String kiuwanJenkinsPluginHeaderSuffix = " ###";
+	private final static String kiuwanJenkinsPluginHeaderPattern = kiuwanJenkinsPluginHeaderPrefix+"(.*)"+kiuwanJenkinsPluginHeaderSuffix;
 	
 	public final static Mode DEFAULT_MODE = Mode.STANDARD_MODE;
 	
@@ -848,6 +851,13 @@ public class KiuwanRecorder extends Recorder {
 			String changeRequestStatus = this.changeRequestStatus_dm;
 			if(StringUtils.isNotBlank(changeRequestStatus)){
 				args.add("-crs");
+				if(ChangeRequestStatusType.INPROGRESS.name().equals(changeRequestStatus)){
+					changeRequestStatus = "inprogress";
+				}
+				else{
+					changeRequestStatus = "resolved";
+				}
+				
 				args.add(buildArgument(launcher, changeRequestStatus));				
 			}
 		} else if (Mode.EXPERT_MODE.equals(this.selectedMode)) {
@@ -881,6 +891,7 @@ public class KiuwanRecorder extends Recorder {
 		String proxyAuthentication = PROXY_AUTHENTICATION_BASIC;
 		String proxyUsername = descriptor.getProxyUsername();
 		String proxyPassword = descriptor.getProxyPassword();
+		String configSaveStamp = descriptor.getConfigSaveStamp();
 				
 		if(!descriptor.isConfigureProxy()){
 			proxyHost="";
@@ -891,31 +902,56 @@ public class KiuwanRecorder extends Recorder {
 			proxyUsername = "";
 			proxyPassword = "";
 		}
-		
-		args.add(buildAdditionalParameterExpression(launcher, PROXY_HOST, proxyHost));
-		args.add(buildAdditionalParameterExpression(launcher, PROXY_PORT, proxyPort));
-		args.add(buildAdditionalParameterExpression(launcher, PROXY_PROTOCOL, proxyProtocol));
-		args.add(buildAdditionalParameterExpression(launcher, PROXY_AUTHENTICATION, proxyAuthentication));
-		args.add(buildAdditionalParameterExpression(launcher, PROXY_USERNAME, proxyUsername));
-		args.add(buildAdditionalParameterExpression(launcher, PROXY_PASSWORD, proxyPassword));
 			
-		writeProxyConfigToProperties(agentBinDir, proxyHost, proxyPort, proxyProtocol, proxyAuthentication,	proxyUsername, proxyPassword);
+		writeProxyConfigToProperties(agentBinDir, proxyHost, proxyPort, proxyProtocol, proxyAuthentication,	proxyUsername, proxyPassword, configSaveStamp);
 		
 		return args;
 	}
 
 	private void writeProxyConfigToProperties(FilePath agentBinDir, String proxyHost, String proxyPort,
-			String proxyProtocol, String proxyAuthentication, String proxyUsername, String proxyPassword)
+			String proxyProtocol, String proxyAuthentication, String proxyUsername, String proxyPassword, String configSaveStamp)
 			throws IOException, InterruptedException {
 		FilePath agentPropertiesPath = agentBinDir.getParent().child(AGENT_CONF_DIR_NAME).child(AGENT_PROPERTIES_FILE_NAME);
 		
 		StringBuilder newFileContent = new StringBuilder();
 		BufferedReader reader = null;
+		boolean updateProxyConfig = true;
 		try{
+			boolean firstLineProcessed = false;
 			reader = new BufferedReader(new InputStreamReader(agentPropertiesPath.read()));
 			String line = null;
-			while((line = reader.readLine()) != null){
-				if(!Pattern.matches(proxyHostRegExp, line) 
+			while(updateProxyConfig && (line = reader.readLine()) != null){
+				if(!firstLineProcessed){
+					Matcher matcher = Pattern.compile(kiuwanJenkinsPluginHeaderPattern).matcher(line);
+					if(matcher.find()){
+						
+						if(configSaveStamp != null){
+							String stamp = matcher.group(1);
+							if(configSaveStamp.equals(stamp)){
+								updateProxyConfig = false;
+							}
+						}
+						else{
+							updateProxyConfig = false;
+						}
+					}
+					else{
+						updateProxyConfig = true;
+						
+						if(configSaveStamp == null){
+							configSaveStamp = Long.toHexString(System.currentTimeMillis());
+						}
+					}
+					
+					if(updateProxyConfig){
+						newFileContent.append(kiuwanJenkinsPluginHeaderPrefix+configSaveStamp+kiuwanJenkinsPluginHeaderSuffix+"\n");
+					}
+					
+					firstLineProcessed = true;
+				}
+				
+				if(!Pattern.matches(kiuwanJenkinsPluginHeaderPattern, line) 
+					&& !Pattern.matches(proxyHostRegExp, line) 
 					&& !Pattern.matches(proxyPortRegExp, line) 
 					&& !Pattern.matches(proxyProtocolRegExp, line)
 					&& !Pattern.matches(proxyAuthenticationRegExp, line)
@@ -929,15 +965,17 @@ public class KiuwanRecorder extends Recorder {
 		finally{
 			IOUtils.closeQuietly(reader);
 		}
-		
-		newFileContent.append(PROXY_HOST+"="+proxyHost+"\n");
-		newFileContent.append(PROXY_PORT+"="+proxyPort+"\n");
-		newFileContent.append(PROXY_PROTOCOL+"="+proxyProtocol+"\n");
-		newFileContent.append(PROXY_AUTHENTICATION+"="+proxyAuthentication+"\n");
-		newFileContent.append(PROXY_USERNAME+"="+proxyUsername+"\n");
-		newFileContent.append(PROXY_PASSWORD+"="+proxyPassword+"\n");
-		
-		agentPropertiesPath.write(newFileContent.toString(), "UTF-8");
+				
+		if(updateProxyConfig){
+			newFileContent.append(PROXY_HOST+"="+proxyHost+"\n");
+			newFileContent.append(PROXY_PORT+"="+proxyPort+"\n");
+			newFileContent.append(PROXY_PROTOCOL+"="+proxyProtocol+"\n");
+			newFileContent.append(PROXY_AUTHENTICATION+"="+proxyAuthentication+"\n");
+			newFileContent.append(PROXY_USERNAME+"="+proxyUsername+"\n");
+			newFileContent.append(PROXY_PASSWORD+"="+proxyPassword+"\n");
+			
+			agentPropertiesPath.write(newFileContent.toString(), "UTF-8");
+		}
 	}
 
 	private void parseOptions(List<String> args, Launcher launcher) {
@@ -1173,6 +1211,11 @@ public class KiuwanRecorder extends Recorder {
 		PARTIAL_DELIVERY;
 	}
 	
+	public enum ChangeRequestStatusType {
+		RESOLVED,
+		INPROGRESS;
+	}
+	
 	@Extension
 	public static class DescriptorImpl extends BuildStepDescriptor<Publisher> {
 
@@ -1191,6 +1234,10 @@ public class KiuwanRecorder extends Recorder {
 		private final static String[] deliveryTypeComboNames = { "Complete delivery", "Partial delivery" };
 
 		private final static String[] deliveryTypeComboValues = { DeliveryType.COMPLETE_DELIVERY.name(), DeliveryType.PARTIAL_DELIVERY.name() };
+		
+		private final static String[] changeRequestStatusComboNames = { "Resolved", "In progress" };
+		
+		private final static String[] changeRequestStatusComboValues = { ChangeRequestStatusType.RESOLVED.name(), ChangeRequestStatusType.INPROGRESS.name() };
 
 		private String username;
 
@@ -1200,7 +1247,7 @@ public class KiuwanRecorder extends Recorder {
 
 		private String proxyHost;
 
-		private int proxyPort;
+		private int proxyPort = 3128;
 
 		private String proxyProtocol;
 
@@ -1209,6 +1256,8 @@ public class KiuwanRecorder extends Recorder {
 		private String proxyUsername;
 
 		private String proxyPassword;
+		
+		private String configSaveStamp;
 
 		public DescriptorImpl() {
 			load();
@@ -1239,6 +1288,8 @@ public class KiuwanRecorder extends Recorder {
 			this.proxyUsername = proxyUsername;
 			this.proxyPassword = (proxyPassword == null) ? null : Secret.fromString(proxyPassword).getEncryptedValue();
 
+			this.configSaveStamp = Long.toHexString(System.currentTimeMillis());
+			
 			save();
 			return true;
 		}
@@ -1316,6 +1367,13 @@ public class KiuwanRecorder extends Recorder {
 			return (this.proxyPassword == null) ? null : Secret.toString(Secret.decrypt(this.proxyPassword));
 		}
 
+		/**
+		 * @return the configSaveStamp
+		 */
+		public String getConfigSaveStamp() {
+			return configSaveStamp;
+		}
+		
 		public FormValidation doTestConnection(@QueryParameter String username, @QueryParameter String password,
 				@QueryParameter boolean configureProxy, @QueryParameter String proxyHost, @QueryParameter int proxyPort,
 				@QueryParameter String proxyProtocol, @QueryParameter String proxyAuthentication,
@@ -1350,6 +1408,19 @@ public class KiuwanRecorder extends Recorder {
 					items.add(new ListBoxModel.Option(deliveryTypeComboNames[i], deliveryTypeComboValues[i], true));
 				} else {
 					items.add(deliveryTypeComboNames[i], deliveryTypeComboValues[i]);
+				}
+			}
+
+			return items;
+		}
+		
+		public ListBoxModel doFillChangeRequestStatus_dmItems(@QueryParameter("changeRequestStatus_dm") String changeRequestStatus) {
+			ListBoxModel items = new ListBoxModel();
+			for (int i = 0; i < changeRequestStatusComboValues.length; i++) {
+				if (changeRequestStatusComboValues[i].equalsIgnoreCase(changeRequestStatus)) {
+					items.add(new ListBoxModel.Option(changeRequestStatusComboNames[i], changeRequestStatusComboValues[i], true));
+				} else {
+					items.add(changeRequestStatusComboNames[i], changeRequestStatusComboValues[i]);
 				}
 			}
 

@@ -24,7 +24,7 @@
 			<f:textbox />
 		</f:entry>
 		<f:entry title="Proxy Port" field="proxyPort">
-			<f:number default="3128" />
+			<f:number />
 		</f:entry>
 		<f:entry title="Proxy Protocol" field="proxyProtocol">
 			<f:select />

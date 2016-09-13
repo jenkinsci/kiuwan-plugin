@@ -61,7 +61,7 @@
 				<f:textbox />
 			</f:entry>
 			<f:entry title="Change Request Status" field="changeRequestStatus_dm" help="/plugin/kiuwanJenkinsPlugin/help/help-changeRequestStatus.html">
-				<f:textbox />
+				<f:select />
 			</f:entry>
 			<f:entry title="Encoding" field="encoding_dm" help="/plugin/kiuwanJenkinsPlugin/help/help-encoding.html">
 				<f:textbox default="UTF-8"/>
