@@ -354,8 +354,19 @@ public class KiuwanRecorder extends Recorder {
 	public boolean perform(AbstractBuild<?, ?> build, Launcher launcher, BuildListener listener)
 			throws InterruptedException, IOException {
 		long startTime = System.currentTimeMillis();
-		long endTime = startTime + TimeUnit.MILLISECONDS.convert(this.timeout, TimeUnit.MINUTES);
 
+		Integer timeout = null;
+		if (Mode.DELIVERY_MODE.equals(this.selectedMode)) {
+			timeout = this.timeout_dm;
+		}
+		else if (Mode.EXPERT_MODE.equals(this.selectedMode)) {
+			timeout = this.timeout_em;
+		}
+		else{
+			timeout = this.timeout;
+		}
+		long endTime = startTime + TimeUnit.MILLISECONDS.convert(timeout, TimeUnit.MINUTES);
+		
 		AtomicReference<Throwable> exceptionReference = new AtomicReference<Throwable>();
 		AtomicReference<Result> resultReference = new AtomicReference<Result>();
 		Thread thread = createExecutionThread(build, launcher, listener, resultReference, exceptionReference);
@@ -457,7 +468,6 @@ public class KiuwanRecorder extends Recorder {
 		String name = null;
 		String analysisLabel = null;
 		String analysisEncoding = null;
-		
 		if (Mode.DELIVERY_MODE.equals(this.selectedMode)) {
 			name = this.applicationName_dm;
 			analysisLabel = this.label_dm;
@@ -499,9 +509,12 @@ public class KiuwanRecorder extends Recorder {
 		FilePath agentBinDir = agentHome.child("bin");
 		FilePath script = agentBinDir.child(command);
 
-		EnvVars env = agentBinDir.act(new KiuwanRemoteEnvironment());
-		env.overrideAll(build.getBuildVariables());
+		EnvVars remoteEnv = agentBinDir.act(new KiuwanRemoteEnvironment());
+		remoteEnv.overrideAll(build.getBuildVariables());
 
+		EnvVars envVars = new EnvVars(environment);
+		envVars.overrideAll(remoteEnv);
+		
 		final PrintStream loggerStream = listener.getLogger();
 
 		if (launcher.isUnix()) {
@@ -514,7 +527,7 @@ public class KiuwanRecorder extends Recorder {
 		String analysisCode = null;
 		int result = -1;
 
-		List<String> args = buildAgentCommand(launcher, name, analysisLabel, analysisEncoding, srcFolder, command, agentBinDir, listener, descriptor);
+		List<String> args = buildAgentCommand(launcher, name, analysisLabel, analysisEncoding, srcFolder, command, agentBinDir, listener, descriptor, envVars);
 
 		boolean[] masks = new boolean[args.size()];
 		boolean mask = false;
@@ -531,7 +544,7 @@ public class KiuwanRecorder extends Recorder {
 
 		ProcStarter procStarter = launcher.launch().cmds(args).masks(masks);
 
-		procStarter = procStarter.envs(env).readStdout().pwd(script.getParent());
+		procStarter = procStarter.envs(envVars).readStdout().pwd(script.getParent());
 		Proc process = procStarter.start();
 
 		BufferedReader bufferedReader = null;
@@ -742,10 +755,10 @@ public class KiuwanRecorder extends Recorder {
 		if (QUALITY_INDICATOR.equalsIgnoreCase(getMeasure())) {
 			if (qualityIndicator < getFailureThreshold()) {
 				resultReference.set(Result.FAILURE);
-				listener.getLogger().println("Quality indicator is lower than " + getFailureThreshold());
+				listener.getLogger().println("Global indicator is lower than " + getFailureThreshold());
 			} else if (qualityIndicator < getUnstableThreshold()) {
 				resultReference.set(Result.UNSTABLE);
-				listener.getLogger().println("Quality indicator is lower than " + getUnstableThreshold());
+				listener.getLogger().println("Global indicator is lower than " + getUnstableThreshold());
 			}
 		} else if (EFFORT_TO_TARGET.equalsIgnoreCase(getMeasure())) {
 			if (effortToTarget > getFailureThreshold()) {
@@ -771,7 +784,7 @@ public class KiuwanRecorder extends Recorder {
 		listener.getLogger().println("==========================================================================");
 		listener.getLogger().println("                    Kiuwan Static Analysis Summary                        ");
 		listener.getLogger().println("==========================================================================");
-		listener.getLogger().println(" - Quality indicator: " + qualityIndicator);
+		listener.getLogger().println(" - Global indicator: " + qualityIndicator);
 		listener.getLogger().println(" - Effort to target: " + effortToTarget);
 		listener.getLogger().println(" - Risk index: " + riskIndex);
 		listener.getLogger().println();
@@ -779,7 +792,7 @@ public class KiuwanRecorder extends Recorder {
 
 	private List<String> buildAgentCommand(Launcher launcher, String name, String analysisLabel,
 			String analysisEncoding, FilePath srcFolder, String command, FilePath agentBinDir, TaskListener listener,
-			DescriptorImpl descriptor) throws IOException, InterruptedException {
+			DescriptorImpl descriptor, EnvVars envVars) throws IOException, InterruptedException {
 		
 		Integer timeout = null;
 		String includes = null;
@@ -1221,7 +1234,7 @@ public class KiuwanRecorder extends Recorder {
 
 		private final static String[] comboValues = { QUALITY_INDICATOR, RISK_INDEX, EFFORT_TO_TARGET };
 
-		private final static String[] measureComboNames = { "Quality indicator", "Risk index", "Effort to target" };
+		private final static String[] measureComboNames = { "Global indicator", "Risk index", "Effort to target" };
 
 		private final static String[] proxyProtocolComboValues = { PROXY_TYPE_HTTP, PROXY_TYPE_SOCKS };
 

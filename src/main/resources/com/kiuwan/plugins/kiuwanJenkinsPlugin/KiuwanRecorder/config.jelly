@@ -2,10 +2,10 @@
     
     <f:radioBlock title="Baseline Mode" name="mode" checked="${instance.isInMode('STANDARD_MODE')}" value="STANDARD_MODE" inline="true">
 	    <f:entry title="Kiuwan Application Name" name="applicationName" field="applicationName" help="/plugin/kiuwanJenkinsPlugin/help/help-appName.html">
-	        <f:textbox default="${it.name}"/>
+	        <f:textbox default="$${JOB_NAME}"/>
 	    </f:entry>
 	    <f:entry title="Analysis label" name="label" field="label" help="/plugin/kiuwanJenkinsPlugin/help/help-analysisLabel.html">
-	        <f:textbox/>
+	        <f:textbox default="#$${BUILD_NUMBER}"/>
 	    </f:entry>
 	    
 		<f:advanced>
@@ -44,10 +44,10 @@
 
     <f:radioBlock title="Delivery Mode" name="mode" checked="${instance.isInMode('DELIVERY_MODE')}" value="DELIVERY_MODE" inline="true">
 	    <f:entry title="Kiuwan Application Name" field="applicationName_dm" help="/plugin/kiuwanJenkinsPlugin/help/help-appName.html">
-	        <f:textbox default="${it.name}"/>
+	        <f:textbox default="$${JOB_NAME}"/>
 	    </f:entry>
 	    <f:entry title="Analysis label" field="label_dm" help="/plugin/kiuwanJenkinsPlugin/help/help-analysisLabel.html">
-	        <f:textbox/>
+	        <f:textbox default="#$${BUILD_NUMBER}"/>
 	    </f:entry>
 	    
 		<f:advanced>
@@ -91,7 +91,7 @@
 
     <f:radioBlock title="Expert Mode" name="mode" checked="${instance.isInMode('EXPERT_MODE')}" value="EXPERT_MODE" inline="true">
    		<f:entry title="Command Arguments" field="commandArgs_em" help="/plugin/kiuwanJenkinsPlugin/help/help-commandArgs.html">
-		    <f:textbox default="-c -n &quot;${it.name}&quot;" />
+		    <f:textbox default="-c -n &quot;$${JOB_NAME}&quot; -l &quot;#$${BUILD_NUMBER}&quot;" />
 		</f:entry>
 		
 		<f:entry title="Extra Parameters" field="extraParameters_em" help="/plugin/kiuwanJenkinsPlugin/help/help-extraParameters.html">
