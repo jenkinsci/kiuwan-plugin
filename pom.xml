@@ -8,7 +8,7 @@
 	</parent>
 
 	<artifactId>kiuwanJenkinsPlugin</artifactId>
-	<version>1.4.2</version>
+	<version>1.4.3-SNAPSHOT</version>
 	<packaging>hpi</packaging>
 	<name>Jenkins Kiuwan plugin</name>
 	<description>Run Kiuwan static analysis of your code as part of your continuous integration process with Jenkins.</description>
@@ -24,7 +24,7 @@
 		<connection>scm:git:ssh://github.com/jenkinsci/kiuwan-plugin.git</connection>
 		<developerConnection>scm:git:ssh://git@github.com/jenkinsci/kiuwan-plugin.git</developerConnection>
 		<url>https://github.com/jenkinsci/kiuwan-plugin.git</url>
-		<tag>kiuwanJenkinsPlugin-1.4.2</tag>
+		<tag>HEAD</tag>
 	</scm>
 
 	<developers>
