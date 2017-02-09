@@ -666,13 +666,15 @@ public class KiuwanRecorder extends Recorder {
 			}
 			
 			String auditResultURL = getAuditResultURL(descriptor, analysisCode);
+			
 			if (auditResultURL != null) {
 				addLink(build, auditResultURL);
 			}
 			else{
 				String analysisURL = getAnalysisURL(descriptor, analysisCode);	
+
 				if(analysisURL != null){
-					addLink(build, auditResultURL);
+					addLink(build, analysisURL);
 				}
 				else{
 					addDefaultAnalysisLink(build, name, analysisLabel);
