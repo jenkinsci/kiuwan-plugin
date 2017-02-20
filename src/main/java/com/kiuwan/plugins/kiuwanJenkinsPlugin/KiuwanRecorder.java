@@ -13,6 +13,7 @@ import java.net.Proxy.Type;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Random;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
@@ -40,6 +41,8 @@ import hudson.Proc;
 import hudson.model.AbstractBuild;
 import hudson.model.AbstractProject;
 import hudson.model.BuildListener;
+import hudson.model.Computer;
+import hudson.model.Node;
 import hudson.model.Result;
 import hudson.model.TaskListener;
 import hudson.tasks.BuildStepDescriptor;
@@ -369,7 +372,9 @@ public class KiuwanRecorder extends Recorder {
 		
 		AtomicReference<Throwable> exceptionReference = new AtomicReference<Throwable>();
 		AtomicReference<Result> resultReference = new AtomicReference<Result>();
-		Thread thread = createExecutionThread(build, launcher, listener, resultReference, exceptionReference);
+		Computer currentComputer = Computer.currentComputer();
+		Node node = currentComputer.getNode();
+		Thread thread = createExecutionThread(node, build, launcher, listener, resultReference, exceptionReference);
 		thread.start();
 
 		long currentTime = System.currentTimeMillis();
@@ -414,7 +419,7 @@ public class KiuwanRecorder extends Recorder {
 		return (getMode().equals(mode)) ? true : false;
 	}
 
-	private Thread createExecutionThread(final AbstractBuild<?, ?> build, final Launcher launcher,
+	private Thread createExecutionThread(final Node node, final AbstractBuild<?, ?> build, final Launcher launcher,
 			final BuildListener listener, final AtomicReference<Result> resultReference,
 			final AtomicReference<Throwable> exceptionReference) {
 		Runnable runnable = new Runnable() {
@@ -428,7 +433,7 @@ public class KiuwanRecorder extends Recorder {
 							descriptor.getProxyAuthentication(), descriptor.getProxyUsername(),
 							descriptor.getProxyPassword());
 					if (Kind.OK.equals(connectionTestResult.kind)) {
-						performScan(build, launcher, listener, resultReference);
+						performScan(node, build, launcher, listener, resultReference);
 					} else {
 						listener.getLogger().print("Could not get authorization from Kiuwan. Verify your ");
 						listener.hyperlink("/configure", "Kiuwan account settings");
@@ -463,7 +468,7 @@ public class KiuwanRecorder extends Recorder {
 		return thread;
 	}
 
-	private void performScan(AbstractBuild<?, ?> build, Launcher launcher, final BuildListener listener,
+	private void performScan(Node node, AbstractBuild<?, ?> build, Launcher launcher, final BuildListener listener,
 			AtomicReference<Result> resultReference) throws KiuwanException, IOException, InterruptedException {
 		String name = null;
 		String analysisLabel = null;
@@ -495,27 +500,36 @@ public class KiuwanRecorder extends Recorder {
 
 		EnvVars environment = build.getEnvironment(listener);
 		
-		FilePath jenkinsHome = new FilePath(new File(environment.get("JENKINS_HOME")));
-		
-		FilePath remoteDir = jenkinsHome.child(KiuwanComputerListener.INSTALL_DIR);
-		FilePath agentHome = remoteDir.child(KiuwanComputerListener.AGENT_HOME);
-		if (!agentHome.exists()) {
-			installLocalAnalyzer(jenkinsHome, listener);
-		}
-
 		DescriptorImpl descriptor = getDescriptor();
 
+		FilePath workspace = build.getWorkspace();
+		EnvVars remoteEnv = workspace.act(new KiuwanRemoteEnvironment());
+		Map<String, String> builtVariables = build.getBuildVariables();
+
+		EnvVars envVars = new EnvVars(environment);
+		envVars.putAll(builtVariables);
+		envVars.putAll(remoteEnv);
+		
+		FilePath jenkinsRootDir = null;
+		FilePath rootPath = node.getRootPath();
+		if(workspace.isRemote()){
+			jenkinsRootDir = new FilePath(workspace.getChannel(), rootPath.getRemote());	
+		}
+		else{
+			jenkinsRootDir = new FilePath(new File(rootPath.getRemote()));
+		}
+		
+		FilePath installDir = jenkinsRootDir.child(KiuwanComputerListener.INSTALL_DIR);
+		FilePath agentHome = installDir.child(KiuwanComputerListener.AGENT_HOME);
+		
 		String command = launcher.isUnix() ? "agent.sh" : "agent.cmd";
 		FilePath agentBinDir = agentHome.child("bin");
 		FilePath script = agentBinDir.child(command);
-
-		EnvVars remoteEnv = agentBinDir.act(new KiuwanRemoteEnvironment());
-		remoteEnv.overrideAll(build.getBuildVariables());
-
-		EnvVars envVars = new EnvVars(environment);
-		envVars.overrideAll(remoteEnv);
 		
 		final PrintStream loggerStream = listener.getLogger();
+		if (agentHome.act(new KiuwanRemoteFilePath()) == null) {
+			installLocalAnalyzer(jenkinsRootDir, listener);
+		}
 
 		if (launcher.isUnix()) {
 			loggerStream.println("Changing " + command + " permission");
@@ -884,6 +898,7 @@ public class KiuwanRecorder extends Recorder {
 
 		if (!Mode.EXPERT_MODE.equals(this.selectedMode)) {
 			if (StringUtils.isNotBlank(includes)) {
+				launcher.getListener().getLogger().println("Setting includes pattern -> "+includes);
 				args.add(buildAdditionalParameterExpression(launcher, "include.patterns", includes));
 			}
 			if (StringUtils.isNotBlank(excludes)) {
