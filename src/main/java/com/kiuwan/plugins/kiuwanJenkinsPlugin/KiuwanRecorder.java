@@ -246,11 +246,23 @@ public class KiuwanRecorder extends Recorder {
 	}
 
 	public Double getUnstableThreshold() {
-		return this.unstableThreshold;
+        Double ret = new Double(0);
+        
+        if (null != this.unstableThreshold) {
+            ret = this.unstableThreshold;
+        }
+        
+        return ret;
 	}
 
 	public Double getFailureThreshold() {
-		return this.failureThreshold;
+	    Double ret = new Double(0);
+	    
+	    if (null != this.failureThreshold) {
+	        ret = this.failureThreshold;
+	    }
+	    
+	    return ret;
 	}
 
 	public Mode getSelectedMode() {
@@ -767,32 +779,33 @@ public class KiuwanRecorder extends Recorder {
 	}
 
 	private void checkThresholds(AbstractBuild<?, ?> build, BuildListener listener, double qualityIndicator,
-			double effortToTarget, double riskIndex, AtomicReference<Result> resultReference) {
-		if (QUALITY_INDICATOR.equalsIgnoreCase(getMeasure())) {
-			if (qualityIndicator < getFailureThreshold()) {
-				resultReference.set(Result.FAILURE);
-				listener.getLogger().println("Global indicator is lower than " + getFailureThreshold());
-			} else if (qualityIndicator < getUnstableThreshold()) {
-				resultReference.set(Result.UNSTABLE);
-				listener.getLogger().println("Global indicator is lower than " + getUnstableThreshold());
-			}
-		} else if (EFFORT_TO_TARGET.equalsIgnoreCase(getMeasure())) {
-			if (effortToTarget > getFailureThreshold()) {
-				resultReference.set(Result.FAILURE);
-				listener.getLogger().println("Effort to target is greater than " + getFailureThreshold());
-			} else if (effortToTarget > getUnstableThreshold()) {
-				resultReference.set(Result.UNSTABLE);
-				listener.getLogger().println("Effort to target is greater than " + getUnstableThreshold());
-			}
-		} else if (RISK_INDEX.equalsIgnoreCase(getMeasure())) {
-			if (riskIndex > getFailureThreshold()) {
-				resultReference.set(Result.FAILURE);
-				listener.getLogger().println("Risk index is greater than " + getFailureThreshold());
-			} else if (riskIndex > getUnstableThreshold()) {
-				resultReference.set(Result.UNSTABLE);
-				listener.getLogger().println("Risk index is greater than " + getUnstableThreshold());
-			}
-		}
+	        double effortToTarget, double riskIndex, AtomicReference<Result> resultReference) {
+	    
+	    if (QUALITY_INDICATOR.equalsIgnoreCase(getMeasure())) {
+	        if (qualityIndicator < getFailureThreshold()) {
+	            resultReference.set(Result.FAILURE);
+	            listener.getLogger().println("Global indicator is lower than " + getFailureThreshold());
+	        } else if (qualityIndicator < getUnstableThreshold()) {
+	            resultReference.set(Result.UNSTABLE);
+	            listener.getLogger().println("Global indicator is lower than " + getUnstableThreshold());
+	        }
+	    } else if (EFFORT_TO_TARGET.equalsIgnoreCase(getMeasure())) {
+	        if (effortToTarget > getFailureThreshold()) {
+	            resultReference.set(Result.FAILURE);
+	            listener.getLogger().println("Effort to target is greater than " + getFailureThreshold());
+	        } else if (effortToTarget > getUnstableThreshold()) {
+	            resultReference.set(Result.UNSTABLE);
+	            listener.getLogger().println("Effort to target is greater than " + getUnstableThreshold());
+	        }
+	    } else if (RISK_INDEX.equalsIgnoreCase(getMeasure())) {
+	        if (riskIndex > getFailureThreshold()) {
+	            resultReference.set(Result.FAILURE);
+	            listener.getLogger().println("Risk index is greater than " + getFailureThreshold());
+	        } else if (riskIndex > getUnstableThreshold()) {
+	            resultReference.set(Result.UNSTABLE);
+	            listener.getLogger().println("Risk index is greater than " + getUnstableThreshold());
+	        }
+	    }
 	}
 
 	private void printAnalysisSummary(BuildListener listener, double qualityIndicator, double effortToTarget,
