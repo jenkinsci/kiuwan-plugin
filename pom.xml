@@ -8,7 +8,7 @@
 	</parent>
 
 	<artifactId>kiuwanJenkinsPlugin</artifactId>
-	<version>1.4.7-SNAPSHOT</version>
+	<version>1.4.6-SNAPSHOT</version>
 	<packaging>hpi</packaging>
 	<name>Jenkins Kiuwan plugin</name>
 	<description>Run Kiuwan static analysis of your code as part of your continuous integration process with Jenkins.</description>
@@ -28,10 +28,15 @@
 	</scm>
 
 	<developers>
-		<developer>
-			<id>jptejela</id>
-			<name>Juan Pablo</name>
-		</developer>
+        <developer>
+            <id>jptejela</id>
+            <name>Juan Pablo</name>
+        </developer>
+        <developer>
+            <id>kwjsalado</id>
+            <name>Javier Salado</name>
+            <email>javier.salado@kiuwan.com</email>
+        </developer>
 	</developers>
 
 	<!-- get every artifact through repo.jenkins-ci.org, which proxies all the 
