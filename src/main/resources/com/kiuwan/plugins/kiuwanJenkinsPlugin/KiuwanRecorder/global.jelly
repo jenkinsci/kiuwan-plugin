@@ -1,3 +1,4 @@
+<?jelly escape-by-default='true'?>
 <j:jelly xmlns:j="jelly:core" xmlns:st="jelly:stapler" xmlns:d="jelly:define" xmlns:l="/lib/layout" xmlns:t="/lib/hudson" xmlns:f="/lib/form">
   <!--
     This Jelly script is used to produce the global configuration option.
@@ -18,6 +19,12 @@
     <f:entry title="Kiuwan account password" help="/plugin/kiuwanJenkinsPlugin/help/help-password.html">
 	  <f:password field="password" />
     </f:entry>
+    
+    <f:optionalBlock name="configureKiuwanURL" field="configureKiuwanURL" title="Configure Kiuwan URL" inline="true" help="/plugin/kiuwanJenkinsPlugin/help/help-configureKiuwanURL.html">
+	    <f:entry title="Kiuwan server URL" field="kiuwanURL" help="/plugin/kiuwanJenkinsPlugin/help/help-kiuwanURL.html">
+			<f:textbox />
+		</f:entry>
+	</f:optionalBlock>
     
     <f:optionalBlock name="configureProxy" field="configureProxy" title="Configure Proxy" inline="true">
 	    <f:entry title="Proxy Host" field="proxyHost">
@@ -43,6 +50,6 @@
         title="Validate credentials"
         progress="Validating..."
         method="testConnection" 
-        with="username,password,configureProxy,proxyHost,proxyPort,proxyProtocol,proxyAuthentication,proxyUsername,proxyPassword" />
+        with="username,password,configureKiuwanURL,kiuwanURL,configureProxy,proxyHost,proxyPort,proxyProtocol,proxyAuthentication,proxyUsername,proxyPassword" />
   </f:section>
 </j:jelly>

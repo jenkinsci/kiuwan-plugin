@@ -3,8 +3,7 @@
 	<parent>
 		<groupId>org.jenkins-ci.plugins</groupId>
 		<artifactId>plugin</artifactId>
-		<version>1.532.2</version><!-- which version of Jenkins is this plugin 
-			built against? -->
+		<version>1.579</version><!-- which version of Jenkins is this plugin built against? -->
 	</parent>
 
 	<artifactId>kiuwanJenkinsPlugin</artifactId>
@@ -28,19 +27,23 @@
 	</scm>
 
 	<developers>
-        <developer>
-            <id>jptejela</id>
-            <name>Juan Pablo</name>
-        </developer>
-        <developer>
-            <id>kwjsalado</id>
-            <name>Javier Salado</name>
-            <email>javier.salado@kiuwan.com</email>
-        </developer>
+		<developer>
+			<id>jptejela</id>
+			<name>Juan Pablo</name>
+		</developer>
+		<developer>
+			<id>kwjsalado</id>
+			<name>Javier Salado</name>
+			<email>javier.salado@kiuwan.com</email>
+		</developer>
+		<developer>
+			<id>gsimmross</id>
+			<name>Guillermo Simmross</name>
+			<email>guillermo.simmross@kiuwan.com</email>
+		</developer>
 	</developers>
 
-	<!-- get every artifact through repo.jenkins-ci.org, which proxies all the 
-		artifacts that we need -->
+	<!-- get every artifact through repo.jenkins-ci.org, which proxies all the artifacts that we need -->
 	<repositories>
 		<repository>
 			<id>repo.jenkins-ci.org</id>
@@ -57,32 +60,30 @@
 
 	<dependencies>
 		<dependency>
-			<groupId>com.kiuwan</groupId>
-			<artifactId>java-api-client</artifactId>
-			<version>0.0.9</version>
+			<groupId>com.optimyth.cinc</groupId>
+			<artifactId>optimyth-cinc-rest-client</artifactId>
+			<version>2.8.1804.3</version>
 		</dependency>
-        <dependency>
-            <groupId>org.apache.ant</groupId>
-            <artifactId>ant</artifactId>
-            <version>1.8.1</version>
-        </dependency>
-        <dependency>
-            <groupId>org.kohsuke</groupId>
-            <artifactId>access-modifier-checker</artifactId>
-            <version>1.4</version>
-        </dependency>
+		<dependency>
+			<groupId>org.apache.ant</groupId>
+			<artifactId>ant</artifactId>
+			<version>1.8.1</version>
+		</dependency>
+		<dependency>
+			<groupId>org.kohsuke</groupId>
+			<artifactId>access-modifier-checker</artifactId>
+			<version>1.4</version>
+		</dependency>
 	</dependencies>
 
 	<properties>
-		<!-- explicitly specifying the latest version here because one we get from 
-			the parent POM tends to lag behind a bit -->
+		<!-- explicitly specifying the latest version here because one we get from the parent POM tends to lag behind a bit -->
 		<maven-hpi-plugin.version>2.3</maven-hpi-plugin.version>
 	</properties>
 
 	<build>
 		<extensions>
-			<!-- Extension required to deploy a snapshot or a release to the CloudBees 
-				remote maven repository using Webdav -->
+			<!-- Extension required to deploy a snapshot or a release to the CloudBees remote maven repository using Webdav -->
 			<extension>
 				<groupId>org.apache.maven.wagon</groupId>
 				<artifactId>wagon-webdav</artifactId>

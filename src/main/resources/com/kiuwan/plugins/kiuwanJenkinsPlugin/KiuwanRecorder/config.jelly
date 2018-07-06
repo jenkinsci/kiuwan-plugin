@@ -1,3 +1,4 @@
+<?jelly escape-by-default='true'?>
 <j:jelly xmlns:j="jelly:core" xmlns:st="jelly:stapler" xmlns:d="jelly:define" xmlns:l="/lib/layout" xmlns:t="/lib/hudson" xmlns:f="/lib/form">
     
     <f:radioBlock title="Baseline Mode" name="mode" checked="${instance.isInMode('STANDARD_MODE')}" value="STANDARD_MODE" inline="true">

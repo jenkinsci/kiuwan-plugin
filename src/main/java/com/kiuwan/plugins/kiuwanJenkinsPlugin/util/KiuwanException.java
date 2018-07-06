@@ -1,6 +1,8 @@
-package com.kiuwan.plugins.kiuwanJenkinsPlugin;
+package com.kiuwan.plugins.kiuwanJenkinsPlugin.util;
 
 public class KiuwanException extends Exception {
+
+	private static final long serialVersionUID = -6103772123682683158L;
 
 	public KiuwanException() {
 	}
