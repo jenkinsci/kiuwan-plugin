@@ -1,34 +1,34 @@
 package com.kiuwan.plugins.kiuwanJenkinsPlugin;
 
-import hudson.Extension;
-import hudson.FilePath;
-import hudson.model.TaskListener;
-import hudson.model.Computer;
-import hudson.remoting.Channel;
-import hudson.slaves.ComputerListener;
-
 import java.io.File;
 import java.io.IOException;
 import java.util.Map;
 
 import javax.inject.Inject;
 
+import com.kiuwan.plugins.kiuwanJenkinsPlugin.runnable.KiuwanRunnable;
+import com.kiuwan.plugins.kiuwanJenkinsPlugin.util.KiuwanUtils;
+
+import hudson.Extension;
+import hudson.FilePath;
+import hudson.model.Computer;
+import hudson.model.TaskListener;
+import hudson.remoting.Channel;
+import hudson.slaves.ComputerListener;
 import jenkins.model.Jenkins;
 
 @Extension
 public class KiuwanComputerListener extends ComputerListener {
 
-    public static final String INSTALL_DIR = "tools/kiuwan";
-	
-    public static final String AGENT_HOME = "KiuwanLocalAnalyzer";
-    
     @Inject
     private KiuwanDownloadable kiuwanDownloadable;
 
     @Override
     public void onOnline(Computer c, TaskListener listener) throws IOException, InterruptedException {
-        if (c.getNode()== Jenkins.getInstance())    // work around the bug where master doesn't call preOnline method
+    	// work around the bug where master doesn't call preOnline method
+    	if (c.getNode()== Jenkins.getInstance()) {
             process(c, c.getNode().getRootPath(), listener);
+        }
     }
 
     @Override
@@ -37,12 +37,17 @@ public class KiuwanComputerListener extends ComputerListener {
     }
 
     public void process(Computer c, FilePath root, TaskListener listener) throws IOException, InterruptedException {
-        try {
-            FilePath remoteDir = root.child(INSTALL_DIR);
-            if (!remoteDir.child(AGENT_HOME).exists()) {
+    	KiuwanDescriptor descriptor = (KiuwanDescriptor) Jenkins.getInstance().getDescriptor(KiuwanRecorder.class);
+    	try {
+            String installDir = KiuwanUtils.getPathFromConfiguredKiuwanURL(KiuwanRunnable.AGENT_DIRECTORY, descriptor);
+    		FilePath remoteDir = root.child(installDir);
+            if (!remoteDir.child(KiuwanRunnable.AGENT_HOME).exists()) {
                 listener.getLogger().println("Installing KiuwanAnalyzer to "+remoteDir);
                 Map<Object,Object> props = c.getSystemProperties();
-                File zip = kiuwanDownloadable.resolve((String) props.get("os.name"), (String) props.get("sun.arch.data.model"),listener);
+                File zip = kiuwanDownloadable.resolve(
+                	(String) props.get("os.name"), 
+                	(String) props.get("sun.arch.data.model"),
+                	listener, descriptor);
                 remoteDir.mkdirs();
                 new FilePath(zip).unzip(remoteDir);
             }
@@ -51,5 +56,5 @@ public class KiuwanComputerListener extends ComputerListener {
             // but continuing
         }
     }
-
+    
 }
