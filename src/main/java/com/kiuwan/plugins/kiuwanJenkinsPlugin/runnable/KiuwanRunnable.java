@@ -99,6 +99,7 @@ public class KiuwanRunnable implements Runnable {
 				listener.getLogger().print("Could not get authorization from Kiuwan. Verify your ");
 				listener.hyperlink("/configure", "Kiuwan account settings");
 				listener.getLogger().println(".");
+				listener.getLogger().println(connectionTestResult.getMessage());
 				resultReference.set(Result.NOT_BUILT);
 			}
 		

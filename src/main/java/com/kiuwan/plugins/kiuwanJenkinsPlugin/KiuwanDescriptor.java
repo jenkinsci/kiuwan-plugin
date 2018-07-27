@@ -19,6 +19,7 @@ import com.kiuwan.rest.client.ApiException;
 import com.kiuwan.rest.client.ApplicationApi;
 
 import hudson.Extension;
+import hudson.XmlFile;
 import hudson.model.AbstractProject;
 import hudson.model.Result;
 import hudson.tasks.BuildStepDescriptor;
@@ -27,6 +28,7 @@ import hudson.util.FormValidation;
 import hudson.util.FormValidation.Kind;
 import hudson.util.ListBoxModel;
 import hudson.util.Secret;
+import hudson.util.XStream2;
 import net.sf.json.JSONObject;
 
 @Extension
@@ -102,12 +104,32 @@ public class KiuwanDescriptor extends BuildStepDescriptor<Publisher> {
 	private String proxyPassword;
 	
 	private String configSaveStamp;
+	
+	/**
+	 * This {@link XStream2} instance will be used to support loading of the old plugin descriptor
+	 * @see <a href="https://wiki.jenkins.io/display/JENKINS/Hint+on+retaining+backward+compatibility">
+	 * Retaining backward compatibility</a>
+	 * @see #getConfigFile() method for loading the configuration file
+	 */
+	private static final XStream2 XSTREAM2 = new XStream2();
+	
+	static {
+		XSTREAM2.addCompatibilityAlias(
+			"com.kiuwan.plugins.kiuwanJenkinsPlugin.KiuwanRecorder$DescriptorImpl",
+			com.kiuwan.plugins.kiuwanJenkinsPlugin.KiuwanDescriptor.class);
+	}
 
 	public KiuwanDescriptor() {
 		super(KiuwanRecorder.class);
 		load();
 	}
-
+	
+	@Override
+	protected XmlFile getConfigFile() {
+		XmlFile xmlFile = super.getConfigFile();
+		return new XmlFile(XSTREAM2, xmlFile.getFile());
+	}
+	
 	@Override
 	public boolean configure(StaplerRequest req, JSONObject json) throws FormException {
 		// to persist global configuration information,
@@ -214,10 +236,9 @@ public class KiuwanDescriptor extends BuildStepDescriptor<Publisher> {
 			api.getApplications();
 			return FormValidation.ok("Authentication completed successfully!");
 		} catch (ApiException kiuwanClientException) {
-			return FormValidation.error("Authentication failed.");
+			return FormValidation.error(kiuwanClientException, "Authentication failed.");
 		} catch (Throwable throwable) {
-			return FormValidation
-					.warning("Could not initiate the authentication process. Reason: " + throwable.getMessage());
+			return FormValidation.warning("Could not initiate the authentication process. Reason: " + throwable.getMessage());
 		}
 	}
 	
