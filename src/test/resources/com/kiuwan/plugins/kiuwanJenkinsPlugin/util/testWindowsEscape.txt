@@ -1,0 +1,32 @@
+\path_with spaces\more\child\agent.cmd
+1234567890
+ABCDEFGHIJKLMNNOPQRSTUVWXYZ
+first\\\\\\"second\"third\\\"notfourth\\\\fifth\\\\"
+       
+AA!\"#$%&'()*+,-./:;<=>?@[\\]^_`{|}~
+asdfjkl"(($\\\""^\""^^2""\\^^^^^asdfasdf
+^
+&
+%
+|
+>
+<
+~
+>>>>
+<<<<
+C:\Program Files\My folder\~mixedshort\Why not
+^appname^^
+"
+""
+"""
+""""
+\
+\\
+\\\
+\\\\
+\"
+\\"
+\\""
+\\\"
+\\"""
+^""-$|\\@@#~@34%_$%&()!")?^PSA^PDKJV ZX;N!"! \\\ 2 s klj sjkldf asdf- -  u w0e89 rq98 123

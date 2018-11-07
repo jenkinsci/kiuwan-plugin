@@ -25,7 +25,7 @@
 			
 			<f:optionalBlock field="indicateLanguages" name="indicateLanguages" title="Indicate languages" inline="true" help="/plugin/kiuwanJenkinsPlugin/help/help-indicateLanguages.html">			
 				<f:entry title="Languages" name="languages" field="languages" help="/plugin/kiuwanJenkinsPlugin/help/help-languages.html">
-					<f:textbox default="abap,aspnet,c,cobol,cpp,csharp,html,informix,java,javascript,jcl,jsp,natural,objectivec,oracleforms,php,plsql,powerscript,rpg4,ruby,transactsql,vb6,vbnet"/>
+					<f:textbox default="abap,actionscript,aspnet,c,cobol,cpp,csharp,groovy,html,informix,java,javascript,jcl,jsp,natural,objectivec,oracleforms,perl,php,plsql,powerscript,python,rpg4,ruby,sqlscript,swift,transactsql,vb6,vbnet,xml"/>
 				</f:entry>
 			</f:optionalBlock>
 		</f:advanced>
