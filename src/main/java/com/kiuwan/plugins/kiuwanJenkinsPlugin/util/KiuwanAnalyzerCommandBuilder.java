@@ -1,5 +1,7 @@
 package com.kiuwan.plugins.kiuwanJenkinsPlugin.util;
 
+import static com.kiuwan.plugins.kiuwanJenkinsPlugin.util.KiuwanUtils.buildAdditionalParameterExpression;
+import static com.kiuwan.plugins.kiuwanJenkinsPlugin.util.KiuwanUtils.buildArgument;
 import static com.kiuwan.plugins.kiuwanJenkinsPlugin.util.KiuwanUtils.getRemoteFileAbsolutePath;
 
 import java.io.BufferedReader;
@@ -88,9 +90,10 @@ public class KiuwanAnalyzerCommandBuilder {
 
 		List<String> args = new ArrayList<String>();
 
+		// Always quote command absolute path under windows
 		String commandAbsolutePath = getRemoteFileAbsolutePath(agentBinDir.child(command), listener);
+		args.add(launcher.isUnix() ? commandAbsolutePath : "\"" + commandAbsolutePath + "\"");
 
-		args.add(buildArgument(launcher, commandAbsolutePath));
 		args.add("-s");
 		args.add(buildArgument(launcher, getRemoteFileAbsolutePath(srcFolder, listener)));
 
@@ -194,28 +197,6 @@ public class KiuwanAnalyzerCommandBuilder {
 			proxyUsername, proxyPassword, configSaveStamp);
 		
 		return args;
-	}
-	
-	private String buildArgument(Launcher launcher, String argument) {
-		if (launcher.isUnix()) {
-			return argument;
-		} else {
-			String backslashWithDQuote = null;
-			do {
-				backslashWithDQuote = "-" + Integer.toHexString(new Random().nextInt()) + "-";
-			} while (argument.contains(backslashWithDQuote));
-			argument = argument.replaceAll("\\\\\"", backslashWithDQuote);
-			argument = argument.replaceAll(Pattern.quote("^"), "^^^^^^^^^");
-			argument = argument.replaceAll("\"", "\\\\\"");	
-			argument = argument.replaceAll(Pattern.quote(backslashWithDQuote), "\\\\\\\\\\\\\"");
-			
-			Matcher matcher = Pattern.compile("^.*[^\\\\]+(\\\\+)$").matcher(argument);
-			if(matcher.find()){
-				String group = matcher.group(1);
-				argument += group; 
-			}
-			return "\"" + argument + "\"";
-		}
 	}
 	
 	private void parseOptions(List<String> args, Launcher launcher) {
@@ -325,31 +306,6 @@ public class KiuwanAnalyzerCommandBuilder {
 				args.add(buildAdditionalParameterExpression(launcher, key, value));
 			}
 		}
-	}
-	
-	private String buildAdditionalParameterExpression(Launcher launcher, String parameterName, String parameterValue) {
-		String parameterExpression = "";
-		if (launcher.isUnix()) {
-			parameterExpression = parameterName + "=" + parameterValue;
-		} else {
-			String backslashWithDQuote = null;
-			do {
-				backslashWithDQuote = "-" + Integer.toHexString(new Random().nextInt()) + "-";
-			} while (parameterValue.contains(backslashWithDQuote));
-			parameterValue = parameterValue.replaceAll("\\\\\"", backslashWithDQuote);
-			parameterValue = parameterValue.replaceAll(Pattern.quote("^"), "^^^^^^^^^");
-			parameterValue = parameterValue.replaceAll("\"", "\\\\\"");
-			parameterValue = parameterValue.replaceAll(Pattern.quote(backslashWithDQuote), "\\\\\\\\\\\\\"");
-
-			Matcher matcher = Pattern.compile("^.*[^\\\\]+(\\\\+)$").matcher(parameterValue);
-			if(matcher.find()){
-				String group = matcher.group(1);
-				parameterValue += group;
-			}
-
-			parameterExpression = "\""+parameterName + "=" + parameterValue + "\"";
-		}
-		return parameterExpression;
 	}
 	
 	private void writeConfigToProperties(FilePath agentBinDir, 

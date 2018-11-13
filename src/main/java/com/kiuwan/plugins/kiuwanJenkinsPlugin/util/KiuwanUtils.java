@@ -21,6 +21,7 @@ import com.squareup.okhttp.Request;
 import com.squareup.okhttp.Response;
 
 import hudson.FilePath;
+import hudson.Launcher;
 import hudson.model.TaskListener;
 
 public class KiuwanUtils {
@@ -101,11 +102,51 @@ public class KiuwanUtils {
 		}
 		return errorCodes;
 	}
+
+	public static String buildArgument(Launcher launcher, String argument) {
+		return escapeArg(launcher.isUnix(), argument);
+	}
+	
+	public static String buildAdditionalParameterExpression(Launcher launcher, String parameterName, String parameterValue) {
+		return escapeArg(launcher.isUnix(), parameterName + "=" + parameterValue);
+	}
+	
+	public static String escapeArg(boolean isUnix, String arg) {
+		if (isUnix) return arg;
+		
+		if (arg.contains(" ") || 
+			arg.contains("\"") || 
+			arg.contains("^") || 
+			arg.contains("&") || 
+			arg.contains("|") ||
+			arg.contains("<") ||
+			arg.contains(">")) {
+		
+			// Replace all \ that precede a " with \\
+			StringBuilder sb = new StringBuilder();
+			boolean quoteFound = false;
+			for (int i = arg.length() - 1; i >= 0; i--) {
+				char c = arg.charAt(i);
+				if (c != '\\') quoteFound = false;
+				if (c == '"') quoteFound = true;
+				sb.insert(0, quoteFound && c == '\\' ? "\\\\" : c);
+			}
+			
+			arg = sb.toString();
+			
+			// Replace " with ""
+			arg = arg.replace("\"", "\"\"");
+			
+			// Quote
+			arg = "\"" + arg + "\"";
+		}
+		
+		return arg;
+	}
 	
 	public static ApiClient instantiateClient(KiuwanDescriptor descriptor) {
 		String username = descriptor.getUsername();
 		String password = descriptor.getPassword();
-		
 		
 		boolean configureProxy = descriptor.isConfigureProxy();
 		String proxyHost = descriptor.getProxyHost(); 
