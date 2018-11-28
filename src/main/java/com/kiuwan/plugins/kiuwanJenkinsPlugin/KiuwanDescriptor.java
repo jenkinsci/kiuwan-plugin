@@ -238,7 +238,7 @@ public class KiuwanDescriptor extends BuildStepDescriptor<Publisher> {
 		} catch (ApiException kiuwanClientException) {
 			return FormValidation.error(kiuwanClientException, "Authentication failed.");
 		} catch (Throwable throwable) {
-			return FormValidation.warning("Could not initiate the authentication process. Reason: " + throwable.getMessage());
+			return FormValidation.warning("Could not initiate the authentication process. Reason: " + throwable);
 		}
 	}
 	
