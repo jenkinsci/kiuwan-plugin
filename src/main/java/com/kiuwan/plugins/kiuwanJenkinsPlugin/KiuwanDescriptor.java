@@ -173,6 +173,7 @@ public class KiuwanDescriptor extends BuildStepDescriptor<Publisher> {
 	}
 
 	@Override
+	@SuppressWarnings("rawtypes")
 	public boolean isApplicable(Class<? extends AbstractProject> item) {
 		return true;
 	}
@@ -236,7 +237,7 @@ public class KiuwanDescriptor extends BuildStepDescriptor<Publisher> {
 			api.getApplications();
 			return FormValidation.ok("Authentication completed successfully!");
 		} catch (ApiException kiuwanClientException) {
-			return FormValidation.error(kiuwanClientException, "Authentication failed.");
+			return FormValidation.error("Authentication failed.");
 		} catch (Throwable throwable) {
 			return FormValidation.warning("Could not initiate the authentication process. Reason: " + throwable);
 		}
@@ -295,8 +296,7 @@ public class KiuwanDescriptor extends BuildStepDescriptor<Publisher> {
 		return items;
 	}
 
-	public ListBoxModel doFillMarkBuildWhenNoPass_dmItems(
-			@QueryParameter("markBuildWhenNoPass_dm") String markBuildWhenNoPass) {
+	public ListBoxModel doFillMarkBuildWhenNoPass_dmItems(@QueryParameter("markBuildWhenNoPass_dm") String markBuildWhenNoPass) {
 		ListBoxModel items = new ListBoxModel();
 		for (int i = 0; i < buildResultComboValues.length; i++) {
 			if (buildResultComboValues[i].equalsIgnoreCase(markBuildWhenNoPass)) {
@@ -309,8 +309,7 @@ public class KiuwanDescriptor extends BuildStepDescriptor<Publisher> {
 		return items;
 	}
 	
-	public ListBoxModel doFillMarkAsInOtherCases_emItems(
-			@QueryParameter("markAsInOtherCases_em") String markAsInOtherCases) {
+	public ListBoxModel doFillMarkAsInOtherCases_emItems(@QueryParameter("markAsInOtherCases_em") String markAsInOtherCases) {
 		ListBoxModel items = new ListBoxModel();
 		for (int i = 0; i < buildResultComboValues.length; i++) {
 			if (buildResultComboValues[i].equalsIgnoreCase(markAsInOtherCases)) {
@@ -336,8 +335,7 @@ public class KiuwanDescriptor extends BuildStepDescriptor<Publisher> {
 		return items;
 	}
 
-	public ListBoxModel doFillProxyAuthenticationItems(
-			@QueryParameter("proxyAuthentication") String proxyAuthentication) {
+	public ListBoxModel doFillProxyAuthenticationItems(@QueryParameter("proxyAuthentication") String proxyAuthentication) {
 		ListBoxModel items = new ListBoxModel();
 		for (int i = 0; i < proxyAuthenticationTypeComboValues.length; i++) {
 			if (proxyAuthenticationTypeComboValues[i].equalsIgnoreCase(proxyAuthentication)) {
@@ -379,6 +377,7 @@ public class KiuwanDescriptor extends BuildStepDescriptor<Publisher> {
 
 	public FormValidation doCheckUnstableThreshold(@QueryParameter("unstableThreshold") String unstableThreshold,
 			@QueryParameter("failureThreshold") String failureThreshold, @QueryParameter("measure") String measure) {
+		
 		double unstable = 0;
 		try {
 			unstable = Double.parseDouble(unstableThreshold);
@@ -396,13 +395,13 @@ public class KiuwanDescriptor extends BuildStepDescriptor<Publisher> {
 				try {
 					double failure = Double.parseDouble(failureThreshold);
 					if (failure >= unstable) {
-						return FormValidation
-								.error("Unstable threshold can not be lower or equal than failure threshold.");
+						return FormValidation.error("Unstable threshold can not be lower or equal than failure threshold.");
 					}
 				} catch (Throwable throwable) {
 					// Ignore
 				}
 			}
+			
 		} else if (Measure.RISK_INDEX.name().equals(measure)) {
 			if (unstable <= 0) {
 				return FormValidation.error("Unstable threshold must be greater than 0.");
@@ -410,19 +409,18 @@ public class KiuwanDescriptor extends BuildStepDescriptor<Publisher> {
 				try {
 					double failure = Double.parseDouble(failureThreshold);
 					if (failure <= unstable) {
-						return FormValidation
-								.error("Unstable threshold can not be greater or equal than failure threshold.");
+						return FormValidation.error("Unstable threshold can not be greater or equal than failure threshold.");
 					}
 				} catch (Throwable throwable) {
 					// Ignore
 				}
 			}
+			
 		} else if (Measure.EFFORT_TO_TARGET.name().equals(measure)) {
 			try {
 				double failed = Double.parseDouble(failureThreshold);
 				if (failed <= unstable) {
-					return FormValidation
-							.error("Unstable threshold can not be greater or equal than failure threshold.");
+					return FormValidation.error("Unstable threshold can not be greater or equal than failure threshold.");
 				}
 			} catch (Throwable throwable) {
 				// Ignore
@@ -434,6 +432,7 @@ public class KiuwanDescriptor extends BuildStepDescriptor<Publisher> {
 
 	public FormValidation doCheckFailureThreshold(@QueryParameter("failureThreshold") String failureThreshold,
 			@QueryParameter("unstableThreshold") String unstableThreshold, @QueryParameter("measure") String measure) {
+		
 		double failure = 0;
 		try {
 			failure = Double.parseDouble(failureThreshold);
@@ -454,6 +453,7 @@ public class KiuwanDescriptor extends BuildStepDescriptor<Publisher> {
 			} catch (Throwable throwable) {
 				// Ignore
 			}
+			
 		} else if (Measure.RISK_INDEX.name().equals(measure)) {
 			if (failure > 100) {
 				return FormValidation.error("Failure threshold must be lower or equal than 100.");
@@ -468,6 +468,7 @@ public class KiuwanDescriptor extends BuildStepDescriptor<Publisher> {
 					// Ignore
 				}
 			}
+			
 		} else if (Measure.EFFORT_TO_TARGET.name().equals(measure)) {
 			try {
 				double unstable = Double.parseDouble(unstableThreshold);
@@ -483,45 +484,75 @@ public class KiuwanDescriptor extends BuildStepDescriptor<Publisher> {
 		return FormValidation.ok();
 	}
 
-	public FormValidation doCheckSuccessResultCodes_em(@QueryParameter("successResultCodes_em") String successResultCodes, @QueryParameter("unstableResultCodes_em") String unstableResultCodes, @QueryParameter("failureResultCodes_em") String failureResultCodes, @QueryParameter("notBuiltResultCodes_em") String notBuiltResultCodes, @QueryParameter("abortedResultCodes_em") String abortedResultCodes) {
-		return validateResultCodes(successResultCodes, new String[]{unstableResultCodes, failureResultCodes, notBuiltResultCodes, abortedResultCodes});
+	public FormValidation doCheckSuccessResultCodes_em(@QueryParameter("successResultCodes_em") String successResultCodes, 
+			@QueryParameter("unstableResultCodes_em") String unstableResultCodes, 
+			@QueryParameter("failureResultCodes_em") String failureResultCodes, 
+			@QueryParameter("notBuiltResultCodes_em") String notBuiltResultCodes, 
+			@QueryParameter("abortedResultCodes_em") String abortedResultCodes) {
+		return validateResultCodes(successResultCodes, 
+			new String[] { unstableResultCodes, failureResultCodes, notBuiltResultCodes, abortedResultCodes});
 	}
 
-	public FormValidation doCheckUnstableResultCodes_em(@QueryParameter("successResultCodes_em") String successResultCodes, @QueryParameter("unstableResultCodes_em") String unstableResultCodes, @QueryParameter("failureResultCodes_em") String failureResultCodes, @QueryParameter("notBuiltResultCodes_em") String notBuiltResultCodes, @QueryParameter("abortedResultCodes_em") String abortedResultCodes) {
-		return validateResultCodes(unstableResultCodes, new String[]{successResultCodes, failureResultCodes, notBuiltResultCodes, abortedResultCodes});
+	public FormValidation doCheckUnstableResultCodes_em(
+			@QueryParameter("successResultCodes_em") String successResultCodes,
+			@QueryParameter("unstableResultCodes_em") String unstableResultCodes,
+			@QueryParameter("failureResultCodes_em") String failureResultCodes,
+			@QueryParameter("notBuiltResultCodes_em") String notBuiltResultCodes,
+			@QueryParameter("abortedResultCodes_em") String abortedResultCodes) {
+		return validateResultCodes(unstableResultCodes,
+			new String[] { successResultCodes, failureResultCodes, notBuiltResultCodes, abortedResultCodes });
 	}
 	
-	public FormValidation doCheckFailureResultCodes_em(@QueryParameter("successResultCodes_em") String successResultCodes, @QueryParameter("unstableResultCodes_em") String unstableResultCodes, @QueryParameter("failureResultCodes_em") String failureResultCodes, @QueryParameter("notBuiltResultCodes_em") String notBuiltResultCodes, @QueryParameter("abortedResultCodes_em") String abortedResultCodes) {
-		return validateResultCodes(failureResultCodes, new String[]{successResultCodes, unstableResultCodes, notBuiltResultCodes, abortedResultCodes});
+	public FormValidation doCheckFailureResultCodes_em(
+			@QueryParameter("successResultCodes_em") String successResultCodes,
+			@QueryParameter("unstableResultCodes_em") String unstableResultCodes,
+			@QueryParameter("failureResultCodes_em") String failureResultCodes,
+			@QueryParameter("notBuiltResultCodes_em") String notBuiltResultCodes,
+			@QueryParameter("abortedResultCodes_em") String abortedResultCodes) {
+		return validateResultCodes(failureResultCodes,
+			new String[] { successResultCodes, unstableResultCodes, notBuiltResultCodes, abortedResultCodes });
 	}
 	
-	public FormValidation doCheckNotBuiltResultCodes_em(@QueryParameter("successResultCodes_em") String successResultCodes, @QueryParameter("unstableResultCodes_em") String unstableResultCodes, @QueryParameter("failureResultCodes_em") String failureResultCodes, @QueryParameter("notBuiltResultCodes_em") String notBuiltResultCodes, @QueryParameter("abortedResultCodes_em") String abortedResultCodes) {
-		return validateResultCodes(notBuiltResultCodes, new String[]{successResultCodes, unstableResultCodes, failureResultCodes, abortedResultCodes});
+	public FormValidation doCheckNotBuiltResultCodes_em(
+			@QueryParameter("successResultCodes_em") String successResultCodes,
+			@QueryParameter("unstableResultCodes_em") String unstableResultCodes,
+			@QueryParameter("failureResultCodes_em") String failureResultCodes,
+			@QueryParameter("notBuiltResultCodes_em") String notBuiltResultCodes,
+			@QueryParameter("abortedResultCodes_em") String abortedResultCodes) {
+		return validateResultCodes(notBuiltResultCodes,
+			new String[] { successResultCodes, unstableResultCodes, failureResultCodes, abortedResultCodes });
 	}
-	
-	public FormValidation doCheckAbortedResultCodes_em(@QueryParameter("successResultCodes_em") String successResultCodes, @QueryParameter("unstableResultCodes_em") String unstableResultCodes, @QueryParameter("failureResultCodes_em") String failureResultCodes, @QueryParameter("notBuiltResultCodes_em") String notBuiltResultCodes, @QueryParameter("abortedResultCodes_em") String abortedResultCodes) {
-		return validateResultCodes(abortedResultCodes, new String[]{successResultCodes, unstableResultCodes, failureResultCodes, notBuiltResultCodes});
+
+	public FormValidation doCheckAbortedResultCodes_em(
+			@QueryParameter("successResultCodes_em") String successResultCodes,
+			@QueryParameter("unstableResultCodes_em") String unstableResultCodes,
+			@QueryParameter("failureResultCodes_em") String failureResultCodes,
+			@QueryParameter("notBuiltResultCodes_em") String notBuiltResultCodes,
+			@QueryParameter("abortedResultCodes_em") String abortedResultCodes) {
+		return validateResultCodes(abortedResultCodes,
+			new String[] { successResultCodes, unstableResultCodes, failureResultCodes, notBuiltResultCodes });
 	}
 	
 	private FormValidation validateResultCodes(String resultCodes, String[] otherCodes) {
-		if(resultCodes != null){
+		if (resultCodes != null) {
 			Set<Integer> codes = null;
-			try{
+			try {
 				codes = parseErrorCodes(resultCodes);
-			}catch(Throwable throwable){
+			} catch (Throwable throwable) {
 				return FormValidation.error("Invalid value detected in result codes.");
 			}
-			
-			//check duplicated codes
+
+			// check duplicated codes
 			for (String currentCodes : otherCodes) {
-				try{
+				try {
 					Set<Integer> currentCodesList = parseErrorCodes(currentCodes);
-					if(currentCodesList.retainAll(codes) && !currentCodesList.isEmpty()){
-						return FormValidation.error("One result code can only be assigned to one build status. These codes are binded with multiple build statuses: "+currentCodesList+". Please remove the duplicity.");
+					if (currentCodesList.retainAll(codes) && !currentCodesList.isEmpty()) {
+						return FormValidation.error("One result code can only be assigned to one build status. " +
+							"These codes are binded with multiple build statuses: " + currentCodesList +
+							". Please remove the duplicity.");
 					}
-				}
-				catch(Throwable throwable){
-					//Ignore
+				} catch (Throwable throwable) {
+					// Ignore
 				}
 			}
 		}

@@ -281,7 +281,7 @@ public class KiuwanRunnable implements Runnable {
 							client = instantiateClient(descriptor);
 							retries--;
 						} else {
-							loggerStream.println(e.getMessage());
+							loggerStream.println("Could not get analysis results from Kiuwan: " + e);
 							buildFailedInKiuwan = true;
 							end = true;
 						}
@@ -297,7 +297,7 @@ public class KiuwanRunnable implements Runnable {
 					resultReference.set(Result.NOT_BUILT);
 				} else {
 					printAnalysisSummary(listener, qualityIndicator, effortToTarget, riskIndex);
-					checkThresholds(build, listener, qualityIndicator, effortToTarget, riskIndex, resultReference);
+					checkThresholds(listener, qualityIndicator, effortToTarget, riskIndex, resultReference);
 					KiuwanBuildSummaryAction link = new KiuwanBuildSummaryAction(analysisUrl);
 					build.addAction(link);
 				}
@@ -336,8 +336,8 @@ public class KiuwanRunnable implements Runnable {
 				resultReference.set(Result.NOT_BUILT);
 			} else {
 				String markAsInOtherCases = recorder.getMarkAsInOtherCases_em();
-				loggerStream.println("Not configured result code received: " + result + ". Marking build as "
-						+ markAsInOtherCases + ".");
+				loggerStream.println("Not configured result code received: " + result + 
+					". Marking build as " + markAsInOtherCases + ".");
 				resultReference.set(Result.fromString(markAsInOtherCases));
 			}
 
@@ -421,7 +421,7 @@ public class KiuwanRunnable implements Runnable {
 		}
 	}
 
-	private void checkThresholds(AbstractBuild<?, ?> build, BuildListener listener, double qualityIndicator,
+	private void checkThresholds(BuildListener listener, double qualityIndicator,
 	        double effortToTarget, double riskIndex, AtomicReference<Result> resultReference) {
 	    
 		String measure = recorder.getMeasure();
@@ -471,7 +471,7 @@ public class KiuwanRunnable implements Runnable {
 		String installDir = KiuwanUtils.getPathFromConfiguredKiuwanURL(KiuwanRunnable.AGENT_DIRECTORY, descriptor);
 		FilePath remoteDir = root.child(installDir);
 		listener.getLogger().println("Installing KiuwanLocalAnalyzer in " + remoteDir);
-		File zip = kiuwanDownloadable.resolve(null, null, listener, descriptor);
+		File zip = kiuwanDownloadable.resolve(listener, descriptor);
 		remoteDir.mkdirs();
 		new FilePath(zip).unzip(remoteDir);
 	}
