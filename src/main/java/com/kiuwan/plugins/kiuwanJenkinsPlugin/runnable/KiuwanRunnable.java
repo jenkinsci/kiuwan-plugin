@@ -36,7 +36,7 @@ import com.kiuwan.plugins.kiuwanJenkinsPlugin.util.KiuwanException;
 import com.kiuwan.plugins.kiuwanJenkinsPlugin.util.KiuwanUtils;
 import com.kiuwan.rest.client.ApiClient;
 import com.kiuwan.rest.client.ApiException;
-import com.kiuwan.rest.client.ApplicationApi;
+import com.kiuwan.rest.client.api.ApplicationApi;
 import com.kiuwan.rest.client.model.ApplicationBean;
 
 import hudson.EnvVars;

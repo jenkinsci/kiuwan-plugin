@@ -16,7 +16,7 @@ import com.kiuwan.plugins.kiuwanJenkinsPlugin.model.DeliveryType;
 import com.kiuwan.plugins.kiuwanJenkinsPlugin.model.Measure;
 import com.kiuwan.rest.client.ApiClient;
 import com.kiuwan.rest.client.ApiException;
-import com.kiuwan.rest.client.ApplicationApi;
+import com.kiuwan.rest.client.api.ApplicationApi;
 
 import hudson.Extension;
 import hudson.XmlFile;
