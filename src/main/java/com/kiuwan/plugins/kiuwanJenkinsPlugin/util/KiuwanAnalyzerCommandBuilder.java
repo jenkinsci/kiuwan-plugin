@@ -14,7 +14,6 @@ import java.util.concurrent.TimeUnit;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang.StringUtils;
 
 import com.kiuwan.plugins.kiuwanJenkinsPlugin.KiuwanDescriptor;
@@ -165,11 +164,11 @@ public class KiuwanAnalyzerCommandBuilder {
 			}
 			
 			args.add(buildAdditionalParameterExpression(launcher, "encoding", analysisEncoding));
-			if(
+			if (
 				(Mode.STANDARD_MODE.equals(recorder.getSelectedMode()) && (recorder.getIndicateLanguages() != null && recorder.getIndicateLanguages() == true))
 				|| 
 				(Mode.DELIVERY_MODE.equals(recorder.getSelectedMode()) && (recorder.getIndicateLanguages_dm() != null && recorder.getIndicateLanguages_dm() == true))
-			){
+			) {
 				args.add(buildAdditionalParameterExpression(launcher, "supported.technologies", languages));
 			}
 		}
@@ -202,33 +201,35 @@ public class KiuwanAnalyzerCommandBuilder {
 	private void parseOptions(List<String> args, Launcher launcher) {
 		String commandArgs = recorder.getCommandArgs_em();
 		String escapedBackslash = null;
-		do{
-			escapedBackslash = "--"+new Random().nextInt()+"--";
-		}while(commandArgs.contains(escapedBackslash));
+		do {
+			escapedBackslash = "--" + new Random().nextInt() + "--";
+		} while (commandArgs.contains(escapedBackslash));
 
 		commandArgs = commandArgs.replaceAll("\\\\\\\\", escapedBackslash);
 		
 		String escapedDQuotes = null;
-		do{
-			escapedDQuotes = "--"+new Random().nextInt()+"--";
-		}while(commandArgs.contains(escapedDQuotes));
+		do {
+			escapedDQuotes = "--" + new Random().nextInt() + "--";
+		} while (commandArgs.contains(escapedDQuotes));
 
 		commandArgs = commandArgs.replaceAll("\\\\\"", escapedDQuotes);
 		
 		String escapedSpaces = null;
-		do{
-			escapedSpaces = "--"+new Random().nextInt()+"--";
-		}while(commandArgs.contains(escapedSpaces));
+		do {
+			escapedSpaces = "--" + new Random().nextInt() + "--";
+		} while (commandArgs.contains(escapedSpaces));
 		
 		String dquotes = null;
-		do{
-			dquotes = "--"+new Random().nextInt()+"--";
-		}while(commandArgs.contains(dquotes));
+		do {
+			dquotes = "--" + new Random().nextInt() + "--";
+		} while (commandArgs.contains(dquotes));
 		
 		Pattern compile = Pattern.compile("^([^\"]*)(\"[^\"]*\")(.*)$");
 		Matcher matcher = compile.matcher(commandArgs);
-		while(matcher.find()){
-			commandArgs = matcher.group(1)+matcher.group(2).replaceAll(" ", escapedSpaces).replaceAll("\"", dquotes)+matcher.group(3);
+		while (matcher.find()) {
+			commandArgs = matcher.group(1) + 
+				matcher.group(2).replaceAll(" ", escapedSpaces).replaceAll("\"", dquotes) + 
+				matcher.group(3);
 			matcher = compile.matcher(commandArgs);
 		}
 		
@@ -258,33 +259,35 @@ public class KiuwanAnalyzerCommandBuilder {
 		}
 		
 		String escapedBackslash = null;
-		do{
-			escapedBackslash = "--"+new Random().nextInt()+"--";
-		}while(extraParams.contains(escapedBackslash));
+		do {
+			escapedBackslash = "--" + new Random().nextInt() + "--";
+		} while (extraParams.contains(escapedBackslash));
 
 		extraParams = extraParams.replaceAll("\\\\\\\\", escapedBackslash);
 		
 		String escapedDQuotes = null;
-		do{
-			escapedDQuotes = "--"+new Random().nextInt()+"--";
-		}while(extraParams.contains(escapedDQuotes));
+		do {
+			escapedDQuotes = "--" + new Random().nextInt() + "--";
+		} while (extraParams.contains(escapedDQuotes));
 
 		extraParams = extraParams.replaceAll("\\\\\"", escapedDQuotes);
 		
 		String escapedSpaces = null;
-		do{
-			escapedSpaces = "--"+new Random().nextInt()+"--";
-		}while(extraParams.contains(escapedSpaces));
+		do {
+			escapedSpaces = "--" + new Random().nextInt() + "--";
+		} while (extraParams.contains(escapedSpaces));
 		
 		String dquotes = null;
-		do{
-			dquotes = "--"+new Random().nextInt()+"--";
-		}while(extraParams.contains(dquotes));
+		do {
+			dquotes = "--" + new Random().nextInt() + "--";
+		} while (extraParams.contains(dquotes));
 		
 		Pattern compile = Pattern.compile("^([^\"]*)(\"[^\"]*\")(.*)$");
 		Matcher matcher = compile.matcher(extraParams);
-		while(matcher.find()){
-			extraParams = matcher.group(1)+matcher.group(2).replaceAll(" ", escapedSpaces).replaceAll("\"", dquotes)+matcher.group(3);
+		while (matcher.find()) {
+			extraParams = matcher.group(1) + 
+				matcher.group(2).replaceAll(" ", escapedSpaces).replaceAll("\"", dquotes) + 
+				matcher.group(3);
 			matcher = compile.matcher(extraParams);
 		}
 		
@@ -295,11 +298,11 @@ public class KiuwanAnalyzerCommandBuilder {
 			token = token.replaceAll(escapedBackslash, "\\\\");
 			
 			String[] paramValue = token.split("=", 2);
-			if(paramValue.length == 2){
+			if (paramValue.length == 2) {
 				String key = paramValue[0];
 				String value = paramValue[1];
 				Matcher doubleQuotedTokenMatcher = Pattern.compile("^\"(.*)\"$").matcher(value);
-				if(doubleQuotedTokenMatcher.find()){
+				if (doubleQuotedTokenMatcher.find()) {
 					value =	doubleQuotedTokenMatcher.group(1);
 				}
 				
@@ -313,13 +316,11 @@ public class KiuwanAnalyzerCommandBuilder {
 			String proxyUsername, String proxyPassword, String configSaveStamp) throws IOException, InterruptedException {
 		
 		FilePath agentPropertiesPath = agentBinDir.getParent().child(AGENT_CONF_DIR_NAME).child(AGENT_PROPERTIES_FILE_NAME);
-		
 		StringBuilder newFileContent = new StringBuilder();
-		BufferedReader reader = null;
 		boolean updateConfig = true;
-		try {
+		
+		try (BufferedReader reader = new BufferedReader(new InputStreamReader(agentPropertiesPath.read()))) {
 			boolean firstLineProcessed = false;
-			reader = new BufferedReader(new InputStreamReader(agentPropertiesPath.read()));
 			String line = null;
 			
 			while (updateConfig && (line = reader.readLine()) != null) {
@@ -361,9 +362,6 @@ public class KiuwanAnalyzerCommandBuilder {
 					newFileContent.append(line + "\n");
 				}
 			}
-		
-		} finally {
-			IOUtils.closeQuietly(reader);
 		}
 				
 		if (updateConfig) {

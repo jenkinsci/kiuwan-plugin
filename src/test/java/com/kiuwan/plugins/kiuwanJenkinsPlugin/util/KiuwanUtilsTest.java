@@ -65,10 +65,15 @@ public class KiuwanUtilsTest {
 		try {
 			String s;
 			BufferedReader stdout = new BufferedReader(new InputStreamReader(proc.getInputStream()));
+			boolean found = false;
 			while ((s = stdout.readLine()) != null) {
-				System.out.println("Received string \t= " + s);
-				Assert.assertEquals(originalString, s);
+				System.out.println("Java output\t\t\t= " + s);
+				if (originalString.equals(s)) {
+					found = true;
+					System.out.println("Match found for\t\t= " + originalString);
+				}
 			}
+			Assert.assertTrue(found);
 
 			int exitValue = proc.waitFor();
 			return exitValue;

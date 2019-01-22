@@ -1,5 +1,5 @@
 Jenkins Kiuwan plugin
-===============
+=====================
 
 Run Kiuwan static analysis of your code as part of your continuous integration process with Jenkins.
 http://wiki.jenkins-ci.org/display/JENKINS/Kiuwan+Plugin

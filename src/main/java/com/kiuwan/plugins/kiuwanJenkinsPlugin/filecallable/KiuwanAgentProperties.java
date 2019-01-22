@@ -1,8 +1,5 @@
 package com.kiuwan.plugins.kiuwanJenkinsPlugin.filecallable;
 
-import hudson.FilePath.FileCallable;
-import hudson.remoting.VirtualChannel;
-
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.File;
@@ -10,7 +7,8 @@ import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
 
-import org.apache.commons.io.IOUtils;
+import hudson.FilePath.FileCallable;
+import hudson.remoting.VirtualChannel;
 
 public class KiuwanAgentProperties implements FileCallable<Void> {
 
@@ -26,10 +24,7 @@ public class KiuwanAgentProperties implements FileCallable<Void> {
 		String propertiesFilePath = f.getAbsolutePath();
 
 		StringBuilder stringBuilder = new StringBuilder();
-		BufferedReader bufferedReader = null;
-		try {
-			bufferedReader = new BufferedReader(new FileReader(propertiesFilePath));
-
+		try (BufferedReader bufferedReader = new BufferedReader(new FileReader(propertiesFilePath))) {
 			String line = null;
 			String usernameValue = "";
 			while ((line = bufferedReader.readLine()) != null) {
@@ -43,16 +38,10 @@ public class KiuwanAgentProperties implements FileCallable<Void> {
 
 				stringBuilder.append(line + "\n");
 			}
-		} finally {
-			IOUtils.closeQuietly(bufferedReader);
 		}
 
-		BufferedWriter bufferedWriter = null;
-		try {
-			bufferedWriter = new BufferedWriter(new FileWriter(propertiesFilePath));
+		try (BufferedWriter bufferedWriter = new BufferedWriter(new FileWriter(propertiesFilePath))) {
 			bufferedWriter.write(stringBuilder.toString());
-		} finally {
-			IOUtils.closeQuietly(bufferedWriter);
 		}
 
 		return null;

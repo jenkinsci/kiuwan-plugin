@@ -1,10 +1,7 @@
 package com.kiuwan.plugins.kiuwanJenkinsPlugin.util;
 
 import java.io.IOException;
-import java.net.InetSocketAddress;
 import java.net.MalformedURLException;
-import java.net.Proxy;
-import java.net.Proxy.Type;
 import java.net.URL;
 import java.util.Base64;
 import java.util.HashSet;
@@ -15,10 +12,7 @@ import org.apache.commons.lang.StringUtils;
 import com.kiuwan.plugins.kiuwanJenkinsPlugin.KiuwanDescriptor;
 import com.kiuwan.plugins.kiuwanJenkinsPlugin.filecallable.KiuwanRemoteFilePath;
 import com.kiuwan.rest.client.ApiClient;
-import com.squareup.okhttp.Authenticator;
-import com.squareup.okhttp.Credentials;
-import com.squareup.okhttp.Request;
-import com.squareup.okhttp.Response;
+import com.kiuwan.rest.client.Configuration;
 
 import hudson.FilePath;
 import hudson.Launcher;
@@ -145,79 +139,17 @@ public class KiuwanUtils {
 	}
 	
 	public static ApiClient instantiateClient(KiuwanDescriptor descriptor) {
-		String username = descriptor.getUsername();
-		String password = descriptor.getPassword();
-		
-		boolean configureProxy = descriptor.isConfigureProxy();
-		String proxyHost = descriptor.getProxyHost(); 
-		int proxyPort = descriptor.getProxyPort(); 
-		String proxyAuthentication = descriptor.getProxyAuthentication(); 
-		String proxyUsername = descriptor.getProxyUsername();
-		String proxyPassword = descriptor.getProxyPassword();
-		
-		String restURL = getKiuwanURLRest(descriptor);
-		ApiClient client = new ApiClient();
-		client.setBasePath(restURL);
-		
-		// Set user / password
-		client.setUsername(username);
-		client.setPassword(password);
-		
-		// Proxy configuration (optional)
-		if (configureProxy && StringUtils.isNotBlank(proxyHost)) {
-			Type proxyType = descriptor.getProxyType();
-			if (proxyType == null) {
-				throw new IllegalArgumentException("Unsupported proxy protocol found: " + descriptor.getProxyProtocol());
-			}
-			Proxy proxy = new Proxy(proxyType, new InetSocketAddress(proxyHost, proxyPort));
-			client.getHttpClient().setProxy(proxy);
-			
-			// Set new authenticator if needed for proxy
-			if (KiuwanDescriptor.PROXY_AUTHENTICATION_BASIC.equals(proxyAuthentication)) {
-				Authenticator authenticator = getClientAuthenticator(username, password, proxyUsername, proxyPassword);
-				client.getHttpClient().setAuthenticator(authenticator);
-			}
-		}
-		
-		return client;
-	}
-	
-	private static String getKiuwanURLRest(KiuwanDescriptor descriptor) {
-		String baseURL = null;
-		if (!descriptor.isConfigureKiuwanURL()) {
-			baseURL = KIUWAN_ROOT_URL;
-		} else {
-			baseURL = descriptor.getKiuwanURL();
-			if (baseURL.endsWith("/")) {
-				baseURL = baseURL.substring(0, baseURL.lastIndexOf("/"));
-			}
-		}
-		
-		return baseURL + "/rest";
-	}
-
-	private static Authenticator getClientAuthenticator(String username, String password, String proxyUsername, String proxyPassword) {
-		return new Authenticator() {
-			
-			@Override
-			public Request authenticate(Proxy proxy, Response response) throws IOException {
-				if (response.request().header("Authorization") != null) {
-					return null; // Give up, we've already failed to authenticate.
-				}
-				String credential = Credentials.basic(username, password);
-				return response.request().newBuilder().header("Authorization", credential).build();
-			}
-
-			@Override
-			public Request authenticateProxy(Proxy proxy, Response response) throws IOException {
-				if (response.request().header("Proxy-Authorization") != null) {
-					return null; // Give up, we've already failed to authenticate.
-				}
-				String credential = Credentials.basic(proxyUsername, proxyPassword);
-				return response.request().newBuilder().header("Proxy-Authorization", credential).build();
-			}
-			
-		};
+		return Configuration.newClient(
+			descriptor.isConfigureKiuwanURL(), 
+			descriptor.getKiuwanURL(), 
+			descriptor.getUsername(),
+			descriptor.getPassword(),
+			descriptor.isConfigureProxy(),
+			descriptor.getProxyProtocol(), 
+			descriptor.getProxyHost(), 
+			descriptor.getProxyPort(), 
+			descriptor.getProxyUsername(), 
+			descriptor.getProxyPassword());
 	}
 	
 }

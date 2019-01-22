@@ -1,12 +1,13 @@
 package com.kiuwan.plugins.kiuwanJenkinsPlugin;
 
+import static java.nio.file.StandardCopyOption.REPLACE_EXISTING;
+
 import java.io.File;
-import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.net.MalformedURLException;
 import java.net.URL;
-
-import org.apache.commons.io.IOUtils;
+import java.nio.file.Files;
 
 import com.kiuwan.plugins.kiuwanJenkinsPlugin.util.KiuwanUtils;
 
@@ -24,7 +25,7 @@ public class KiuwanDownloadable extends Downloadable {
 	}
 
 	/** If the package isn't downloaded yet, download it and return its local cache. */
-	public File resolve(String osName, String sunArchDataModel, TaskListener listener, KiuwanDescriptor descriptor) throws IOException {
+	public File resolve(TaskListener listener, KiuwanDescriptor descriptor) throws IOException {
 		URL url = KiuwanUtils.getKiuwanLocalAnalyzerDownloadURL(descriptor);
 		File f = getLocalCacheFile(url, descriptor);
 		if (f.exists()) return f;
@@ -34,16 +35,9 @@ public class KiuwanDownloadable extends Downloadable {
 		listener.getLogger().println("Downloading analyzer... ");
 		File tmp = new File(f.getPath() + ".tmp");
 		tmp.getParentFile().mkdirs();
-		try {
-			FileOutputStream out = new FileOutputStream(tmp);
-			try {
-				IOUtils.copy(ProxyConfiguration.open(url).getInputStream(), out);
-			} finally {
-				IOUtils.closeQuietly(out);
-			}
-
+		try (InputStream in = ProxyConfiguration.open(url).getInputStream()) {
+			Files.copy(in, tmp.toPath(), REPLACE_EXISTING);
 			tmp.renameTo(f);
-
 		} finally {
 			tmp.delete();
 		}

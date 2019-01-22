@@ -2,7 +2,6 @@ package com.kiuwan.plugins.kiuwanJenkinsPlugin;
 
 import java.io.File;
 import java.io.IOException;
-import java.util.Map;
 
 import javax.inject.Inject;
 
@@ -43,16 +42,12 @@ public class KiuwanComputerListener extends ComputerListener {
     		FilePath remoteDir = root.child(installDir);
             if (!remoteDir.child(KiuwanRunnable.AGENT_HOME).exists()) {
                 listener.getLogger().println("Installing KiuwanAnalyzer to "+remoteDir);
-                Map<Object,Object> props = c.getSystemProperties();
-                File zip = kiuwanDownloadable.resolve(
-                	(String) props.get("os.name"), 
-                	(String) props.get("sun.arch.data.model"),
-                	listener, descriptor);
+                File zip = kiuwanDownloadable.resolve(listener, descriptor);
                 remoteDir.mkdirs();
                 new FilePath(zip).unzip(remoteDir);
             }
         } catch (IOException e) {
-            e.printStackTrace(listener.error("Failed to install KiuwanAnalyzer"));
+            listener.error("Failed to install KiuwanAnalyzer: " + e);
             // but continuing
         }
     }
