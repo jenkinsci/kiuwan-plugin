@@ -33,13 +33,14 @@ public class KiuwanUtils {
 	 * @param prefix install directory prefix
 	 * @param descriptor Kiuwan plugin global configuration
 	 * @return This table summarizes different combinations and what will be returned:
-	 * <p><table border="1">
+	 * <br><br>
+	 * <table border="1" summary="Example">
 	 * <tr><th>prefix</th><th>kiuwanURL in descriptor</th><th>returned string</th></tr>
 	 * <tr><td>tools/kiuwan</td><td></td><td>tools/kiuwan</td></tr>
 	 * <tr><td>tools/kiuwan</td><td>http://mykiuwan.domain.com:9090/saas</td><td>tools/kiuwan_mykiuwan.domain.com_9090_L3NhYXM=</td></tr>
 	 * <tr><td>cache/Kiuwan</td><td>http://kw.mydomain.com:7777/saas</td><td>cache/Kiuwan_kw.mydomain.com_7777_L3NhYXM=</td></tr>
 	 * </table>
-	 * @throws MalformedURLException
+	 * @throws MalformedURLException if the configured kiuwanUrl in <code>descriptor</code> is not a valid {@link URL}
 	 */
 	public static String getPathFromConfiguredKiuwanURL(String prefix, KiuwanDescriptor descriptor) throws MalformedURLException {
 		if (!descriptor.isConfigureKiuwanURL()) {

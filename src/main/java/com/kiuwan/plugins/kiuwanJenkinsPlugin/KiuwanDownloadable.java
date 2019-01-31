@@ -24,7 +24,13 @@ public class KiuwanDownloadable extends Downloadable {
 		super("com.kiuwan.KiuwanAnalyzer");
 	}
 
-	/** If the package isn't downloaded yet, download it and return its local cache. */
+	/**
+	 * If the package isn't downloaded yet, download it and return its local cache.
+	 * @param listener the task listener
+	 * @param descriptor current kiuwan descriptor
+	 * @return The cached file or the newly downloaded file
+	 * @throws IOException if a problem occurs trying to resolve the package to download
+	 */
 	public File resolve(TaskListener listener, KiuwanDescriptor descriptor) throws IOException {
 		URL url = KiuwanUtils.getKiuwanLocalAnalyzerDownloadURL(descriptor);
 		File f = getLocalCacheFile(url, descriptor);
