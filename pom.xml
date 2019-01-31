@@ -7,7 +7,7 @@
 	</parent>
 
 	<artifactId>kiuwanJenkinsPlugin</artifactId>
-	<version>1.5.1-SNAPSHOT</version>
+	<version>1.4.7-SNAPSHOT</version>
 	<packaging>hpi</packaging>
 	<name>Jenkins Kiuwan plugin</name>
 	<description>Run Kiuwan static analysis of your code as part of your continuous integration process with Jenkins.</description>
