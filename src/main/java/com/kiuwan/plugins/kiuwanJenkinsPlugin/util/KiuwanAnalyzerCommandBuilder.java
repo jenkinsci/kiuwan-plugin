@@ -29,6 +29,9 @@ import hudson.model.TaskListener;
 
 public class KiuwanAnalyzerCommandBuilder {
 
+	public final static String KIUWAN_CI_BRANCH_ENV = "KIUWAN_CI_BRANCH";
+	public final static String KIUWAN_CI_REPORT_ENV = "KIUWAN_CI_REPORT";
+
 	private static final String AGENT_CONF_DIR_NAME = "conf";
 	private static final String AGENT_PROPERTIES_FILE_NAME = "agent.properties";
 	
@@ -120,30 +123,27 @@ public class KiuwanAnalyzerCommandBuilder {
 			args.add("-l");
 			args.add(buildArgument(launcher, analysisLabel));
 
-			// No change request param as we are going to parse issues from SCMs messages
-			//args.add("-cr");
-			//args.add(buildArgument(launcher, recorder.getChangeRequest_dm()));
-
+			// Use branch injected into CI report
+			String branch = envVars.get(KIUWAN_CI_BRANCH_ENV);
+			args.add("-bn");
+			args.add(buildArgument(launcher, branch));
 			// Analysis scope for CI is always 'completeDelivery' (at least for now)
 			args.add("-as");
 			args.add(buildArgument(launcher, "completeDelivery"));
+			// CR status for CI is always 'inprogress' because PRO/not-PRO branch matching will be performed by Kiuwan
+			args.add("-crs");
+			args.add(buildArgument(launcher, "inprogress"));
+			// TODO descomentar esto cuando el KLA acepte ya la opcion '-ci', que si no, de momento, se queja y termina NOT_BUILT
+//			String ciReportPath = envVars.get(KIUWAN_CI_REPORT_ENV);
+//			args.add("-ci");
+//			args.add(buildArgument(launcher, ciReportPath));
+
+			// No change request param as we are going to parse issues from SCMs messages
+			//args.add("-cr");
+			//args.add(buildArgument(launcher, recorder.getChangeRequest_ci()));
 			if (recorder.getWaitForAuditResults_ci()) {
 				args.add("-wr");
 			}
-			// FIXME extraer el param branch del SCM
-			String branch = null;
-			if (StringUtils.isNotBlank(branch)) {
-				args.add("-bn");
-				args.add(buildArgument(launcher, branch));
-			}
-			// CR status for CI is always 'inprogress' because PRO/not-PRO branch matching will be performed by Kiuwan
-			String changeRequestStatus = "inprogress";
-			args.add("-crs");
-			args.add(buildArgument(launcher, changeRequestStatus));
-			// FIXME decidir la ruta de donde debe coger el KLA el 'ci_report.json' para meterlo en su ZIP de resultados a subir
-			String ciReportPath = "foo";
-			args.add("-ci");
-			args.add(buildArgument(launcher, ciReportPath));
 			
 		} else if (Mode.DELIVERY_MODE.equals(recorder.getSelectedMode())) {
 			args.add("-n");

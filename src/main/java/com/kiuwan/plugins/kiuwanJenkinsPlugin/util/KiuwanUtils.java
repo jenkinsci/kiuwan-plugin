@@ -1,5 +1,6 @@
 package com.kiuwan.plugins.kiuwanJenkinsPlugin.util;
 
+import java.io.File;
 import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URL;
@@ -9,8 +10,11 @@ import java.util.Set;
 
 import org.apache.commons.lang.StringUtils;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.SerializationFeature;
 import com.kiuwan.plugins.kiuwanJenkinsPlugin.KiuwanDescriptor;
 import com.kiuwan.plugins.kiuwanJenkinsPlugin.filecallable.KiuwanRemoteFilePath;
+import com.kiuwan.plugins.kiuwanJenkinsPlugin.model.ci.CiReport;
 import com.kiuwan.rest.client.ApiClient;
 import com.kiuwan.rest.client.Configuration;
 
@@ -152,5 +156,19 @@ public class KiuwanUtils {
 			descriptor.getProxyUsername(), 
 			descriptor.getProxyPassword());
 	}
-	
+
+	/**
+	 * Dump CI report to JSON format in given file location, creating parent folders if necessary.
+	 */
+	public static void dumpCiReport(CiReport ciReport, File reportFile) throws IOException {
+		File parentDir = reportFile.getParentFile();
+		if (!parentDir.isDirectory()) {
+			parentDir.mkdirs();
+		}
+		ObjectMapper mapper = new ObjectMapper();
+		// TODO quitar esta opcion 'SerializationFeature.INDENT_OUTPUT' (pretty-print) para que pese menos en produccion 
+		mapper.enable(SerializationFeature.INDENT_OUTPUT);
+		mapper.writeValue(reportFile, ciReport);
+	}
+
 }

@@ -48,7 +48,7 @@ public class KiuwanAgentProperties implements FileCallable<Void> {
 
 	@Override
 	public void checkRoles(RoleChecker checker) throws SecurityException {
-		// FIXME esta todo comentado para ver si falla algo, por confirmar que es lo que parece: codigo muerto
+		// TODO esta todo comentado para ver si falla algo, por confirmar que es lo que parece: codigo muerto
 	}
 
 }

@@ -296,6 +296,19 @@ public class KiuwanDescriptor extends BuildStepDescriptor<Publisher> {
 		return items;
 	}
 
+	public ListBoxModel doFillMarkBuildWhenNoPass_ciItems(@QueryParameter("markBuildWhenNoPass_ci") String markBuildWhenNoPass) {
+		ListBoxModel items = new ListBoxModel();
+		for (int i = 0; i < buildResultComboValues.length; i++) {
+			if (buildResultComboValues[i].equalsIgnoreCase(markBuildWhenNoPass)) {
+				items.add(new ListBoxModel.Option(buildResultComboValues[i], buildResultComboValues[i], true));
+			} else {
+				items.add(buildResultComboValues[i], buildResultComboValues[i]);
+			}
+		}
+
+		return items;
+	}
+
 	public ListBoxModel doFillMarkBuildWhenNoPass_dmItems(@QueryParameter("markBuildWhenNoPass_dm") String markBuildWhenNoPass) {
 		ListBoxModel items = new ListBoxModel();
 		for (int i = 0; i < buildResultComboValues.length; i++) {

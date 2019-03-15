@@ -29,8 +29,10 @@ import com.kiuwan.plugins.kiuwanJenkinsPlugin.KiuwanDownloadable;
 import com.kiuwan.plugins.kiuwanJenkinsPlugin.KiuwanRecorder;
 import com.kiuwan.plugins.kiuwanJenkinsPlugin.filecallable.KiuwanRemoteEnvironment;
 import com.kiuwan.plugins.kiuwanJenkinsPlugin.filecallable.KiuwanRemoteFilePath;
+import com.kiuwan.plugins.kiuwanJenkinsPlugin.filecallable.KiuwanReportCI;
 import com.kiuwan.plugins.kiuwanJenkinsPlugin.model.Measure;
 import com.kiuwan.plugins.kiuwanJenkinsPlugin.model.Mode;
+import com.kiuwan.plugins.kiuwanJenkinsPlugin.model.ci.CiReport;
 import com.kiuwan.plugins.kiuwanJenkinsPlugin.util.KiuwanAnalyzerCommandBuilder;
 import com.kiuwan.plugins.kiuwanJenkinsPlugin.util.KiuwanException;
 import com.kiuwan.plugins.kiuwanJenkinsPlugin.util.KiuwanUtils;
@@ -172,14 +174,10 @@ public class KiuwanRunnable implements Runnable {
 		EnvVars remoteEnv = workspace.act(new KiuwanRemoteEnvironment());
 		Map<String, String> builtVariables = build.getBuildVariables();
 
-		if (Mode.CI_MODE.equals(recorder.getSelectedMode())) {
-			dumpCiReport(build, listener);
-		}
-
 		EnvVars envVars = new EnvVars(environment);
 		envVars.putAll(builtVariables);
 		envVars.putAll(remoteEnv);
-		
+
 		FilePath jenkinsRootDir = null;
 		FilePath rootPath = node.getRootPath();
 		if (workspace.isRemote()) {
@@ -199,6 +197,20 @@ public class KiuwanRunnable implements Runnable {
 		final PrintStream loggerStream = listener.getLogger();
 		if (agentHome.act(new KiuwanRemoteFilePath()) == null) {
 			installLocalAnalyzer(jenkinsRootDir, listener);
+		}
+
+		if (Mode.CI_MODE.equals(recorder.getSelectedMode())) {
+			// master's CI Report file located at $JENKINS_HOME/work/jobs/$JOBNAME/builds/#BUILD/kiuwan/ci_report.json
+			File ciReportFile = new File(build.getRootDir(), "kiuwan/ci_report.json");
+			CiReport ciReport = createCiReport(build, listener, envVars);
+			KiuwanUtils.dumpCiReport(ciReport, ciReportFile);
+			envVars.addLine(KiuwanAnalyzerCommandBuilder.KIUWAN_CI_BRANCH_ENV + "=" + ciReport.getBranch());
+			KiuwanReportCI kiuwanReportCI = new KiuwanReportCI(ciReport);
+			// slave's CI Report file located at $AGENT_HOME/temp/ci/$JOBNAME.#BUILD/ci_report.json
+			String buildUniqueFolderName = build.getProject().getName() + '.' + build.getNumber();
+			FilePath ciReportSlave = agentHome.child("temp/ci").child(buildUniqueFolderName).child("ci_report.json");
+			ciReportSlave.act(kiuwanReportCI);
+			envVars.addLine(KiuwanAnalyzerCommandBuilder.KIUWAN_CI_REPORT_ENV + "=" + ciReportSlave.getRemote());
 		}
 
 		if (launcher.isUnix()) {
@@ -382,9 +394,26 @@ public class KiuwanRunnable implements Runnable {
 		}
 	}
 
-	private void dumpCiReport(AbstractBuild<?, ?> build, BuildListener listener) {
-		// FIXME volcar 'ci_report.json' con info de los cambios que nos diga el build y/o el SCM
-		
+	/**
+	 * Extract CI Tool and SCM info from input parameters (only GIT supported for now), create model bean and return it.
+	 */
+	private CiReport createCiReport(AbstractBuild<?, ?> build, BuildListener listener, EnvVars envVars) {
+		// FIXME rellenar CiReport, eliminar lineas debug de pobres al terminar
+		listener.getLogger().println("--- KIUWAN --- Build change set is: " + build.getChangeSet());
+		envVars.forEach((k, v) -> {
+			listener.getLogger().println("--- KIUWAN --- EnvVar key '" + k + ", value '" + v + "'");
+		});
+
+		// Create and populate CI report
+		CiReport report = new CiReport();
+		String branchWithOrigin = envVars.get("GIT_BRANCH");
+		if (StringUtils.isBlank(branchWithOrigin)) {
+			throw new IllegalStateException("CI mode selected but env variable 'GIT_BRANCH' not found");
+		}
+		int indexOfSlash = branchWithOrigin.indexOf('/');
+		report.setBranch(branchWithOrigin.substring(indexOfSlash + 1, branchWithOrigin.length()));
+
+		return report;
 	}
 
 	private void addLink(AbstractBuild<?, ?> build, String url) {

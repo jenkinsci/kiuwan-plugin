@@ -11,6 +11,8 @@ import java.util.List;
  */
 public class CiReport {
 
+	// FIXME extender el bean con informacion util propia de la CI Tool (i.e. Jenkins)
+
 	private String branch;
 	private String commitId;
 	private List<String> parentCommitIds;
