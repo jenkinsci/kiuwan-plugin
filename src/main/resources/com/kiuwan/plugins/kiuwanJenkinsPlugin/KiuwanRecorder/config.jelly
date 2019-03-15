@@ -42,6 +42,41 @@
 	    		</f:entry>
 	    </f:entry>
     </f:radioBlock>
+    
+    <f:radioBlock title="CI Mode" name="mode" checked="${instance.isInMode('CI_MODE')}" value="CI_MODE" inline="true">
+	    <f:entry title="Kiuwan Application Name" field="applicationName_ci" help="/plugin/kiuwanJenkinsPlugin/help/help-appName.html">
+	        <f:textbox default="$${JOB_NAME}"/>
+	    </f:entry>
+	    <f:entry title="Analysis label" field="label_ci" help="/plugin/kiuwanJenkinsPlugin/help/help-analysisLabel.html">
+	        <f:textbox default="#$${BUILD_NUMBER}"/>
+	    </f:entry>
+
+		<f:advanced>
+			<f:entry title="Encoding" field="encoding_ci" help="/plugin/kiuwanJenkinsPlugin/help/help-encoding.html">
+				<f:textbox default="UTF-8"/>
+			</f:entry>
+			<f:entry title="Include pattern" field="includes_ci" help="/plugin/kiuwanJenkinsPlugin/help/help-includes.html">
+				<f:textbox default=""/>
+			</f:entry>
+			<f:entry title="Exclude pattern" field="excludes_ci">
+				<f:textbox default="**/src/test/**,**/__MACOSX/**,**/*.min.js,**/*.Designer.vb,**/*Reference.vb,**/*Service.vb,**/*Silverlight.vb,**/*.Designer.cs,**/*Reference.cs,**/*Service.cs,**/*Silverlight.cs,**/.*,**/Pods/BuildHeaders/**/*.h,**/Pods/Headers/**/*.h"/>
+			</f:entry>
+			<f:entry title="Timeout (minutes)" field="timeout_ci" help="/plugin/kiuwanJenkinsPlugin/help/help-timeout.html">
+				<f:number default="60"/>
+			</f:entry>
+			<f:optionalBlock title="Indicate languages" field="indicateLanguages_ci" name="indicateLanguages_ci" inline="true" help="/plugin/kiuwanJenkinsPlugin/help/help-indicateLanguages.html">
+				<f:entry title="Languages" field="languages_ci" help="/plugin/kiuwanJenkinsPlugin/help/help-languages.html">
+					<f:textbox default="abap,aspnet,c,cobol,cpp,csharp,html,informix,java,javascript,jcl,jsp,natural,objectivec,oracleforms,php,plsql,powerscript,rpg4,ruby,transactsql,vb6,vbnet"/>
+				</f:entry>
+			</f:optionalBlock>
+		</f:advanced>
+
+	    <f:optionalBlock title="Wait For Audit Results" field="waitForAuditResults_ci" name="waitForAuditResults_ci" inline="true" help="/plugin/kiuwanJenkinsPlugin/help/help-waitForAuditResults.html">
+		    <f:entry title="On failure, mark build as:" name="markBuildWhenNoPass_ci" field="markBuildWhenNoPass_ci">
+		    	  <f:select default="UNSTABLE" />
+		    </f:entry>
+	    </f:optionalBlock>
+    </f:radioBlock>
 
     <f:radioBlock title="Delivery Mode" name="mode" checked="${instance.isInMode('DELIVERY_MODE')}" value="DELIVERY_MODE" inline="true">
 	    <f:entry title="Kiuwan Application Name" field="applicationName_dm" help="/plugin/kiuwanJenkinsPlugin/help/help-appName.html">

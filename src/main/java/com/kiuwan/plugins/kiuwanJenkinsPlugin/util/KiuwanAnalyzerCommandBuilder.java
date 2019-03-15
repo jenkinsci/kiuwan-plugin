@@ -75,6 +75,12 @@ public class KiuwanAnalyzerCommandBuilder {
 			excludes = recorder.getExcludes_dm();
 			languages = recorder.getLanguages_dm();
 			
+		} else if (Mode.CI_MODE.equals(selectedMode)) {
+			timeout = recorder.getTimeout_ci();
+			includes = recorder.getIncludes_ci();
+			excludes = recorder.getExcludes_ci();
+			languages = recorder.getLanguages_ci();
+			
 		} else if (Mode.EXPERT_MODE.equals(selectedMode)) {
 			timeout = recorder.getTimeout_em();
 			
@@ -107,6 +113,37 @@ public class KiuwanAnalyzerCommandBuilder {
 			args.add("-l");
 			args.add(buildArgument(launcher, analysisLabel));
 			args.add("-c");
+			
+		} else if (Mode.CI_MODE.equals(recorder.getSelectedMode())) {
+			args.add("-n");
+			args.add(buildArgument(launcher, name));
+			args.add("-l");
+			args.add(buildArgument(launcher, analysisLabel));
+
+			// No change request param as we are going to parse issues from SCMs messages
+			//args.add("-cr");
+			//args.add(buildArgument(launcher, recorder.getChangeRequest_dm()));
+
+			// Analysis scope for CI is always 'completeDelivery' (at least for now)
+			args.add("-as");
+			args.add(buildArgument(launcher, "completeDelivery"));
+			if (recorder.getWaitForAuditResults_ci()) {
+				args.add("-wr");
+			}
+			// FIXME extraer el param branch del SCM
+			String branch = null;
+			if (StringUtils.isNotBlank(branch)) {
+				args.add("-bn");
+				args.add(buildArgument(launcher, branch));
+			}
+			// CR status for CI is always 'inprogress' because PRO/not-PRO branch matching will be performed by Kiuwan
+			String changeRequestStatus = "inprogress";
+			args.add("-crs");
+			args.add(buildArgument(launcher, changeRequestStatus));
+			// FIXME decidir la ruta de donde debe coger el KLA el 'ci_report.json' para meterlo en su ZIP de resultados a subir
+			String ciReportPath = "foo";
+			args.add("-ci");
+			args.add(buildArgument(launcher, ciReportPath));
 			
 		} else if (Mode.DELIVERY_MODE.equals(recorder.getSelectedMode())) {
 			args.add("-n");
@@ -156,10 +193,11 @@ public class KiuwanAnalyzerCommandBuilder {
 
 		if (!Mode.EXPERT_MODE.equals(recorder.getSelectedMode())) {
 			if (StringUtils.isNotBlank(includes)) {
-				launcher.getListener().getLogger().println("Setting includes pattern -> "+includes);
+				launcher.getListener().getLogger().println("Setting includes pattern -> " + includes);
 				args.add(buildAdditionalParameterExpression(launcher, "include.patterns", includes));
 			}
 			if (StringUtils.isNotBlank(excludes)) {
+				launcher.getListener().getLogger().println("Setting excludes pattern -> " + excludes);
 				args.add(buildAdditionalParameterExpression(launcher, "exclude.patterns", excludes));
 			}
 			
@@ -168,6 +206,8 @@ public class KiuwanAnalyzerCommandBuilder {
 				(Mode.STANDARD_MODE.equals(recorder.getSelectedMode()) && (recorder.getIndicateLanguages() != null && recorder.getIndicateLanguages() == true))
 				|| 
 				(Mode.DELIVERY_MODE.equals(recorder.getSelectedMode()) && (recorder.getIndicateLanguages_dm() != null && recorder.getIndicateLanguages_dm() == true))
+				|| 
+				(Mode.CI_MODE.equals(recorder.getSelectedMode()) && (recorder.getIndicateLanguages_ci() != null && recorder.getIndicateLanguages_ci() == true))
 			) {
 				args.add(buildAdditionalParameterExpression(launcher, "supported.technologies", languages));
 			}

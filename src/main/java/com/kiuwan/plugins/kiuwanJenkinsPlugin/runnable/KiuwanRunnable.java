@@ -140,7 +140,12 @@ public class KiuwanRunnable implements Runnable {
 			name = recorder.getApplicationName_dm();
 			analysisLabel = recorder.getLabel_dm();
 			analysisEncoding = recorder.getEncoding_dm();
-		
+
+		} else if (Mode.CI_MODE.equals(recorder.getSelectedMode())) {
+			name = recorder.getApplicationName_ci();
+			analysisLabel = recorder.getLabel_ci();
+			analysisEncoding = recorder.getEncoding_ci();
+
 		} else {
 			name = recorder.getApplicationName();
 			analysisLabel = recorder.getLabel();
@@ -166,6 +171,10 @@ public class KiuwanRunnable implements Runnable {
 		FilePath workspace = build.getWorkspace();
 		EnvVars remoteEnv = workspace.act(new KiuwanRemoteEnvironment());
 		Map<String, String> builtVariables = build.getBuildVariables();
+
+		if (Mode.CI_MODE.equals(recorder.getSelectedMode())) {
+			dumpCiReport(build, listener);
+		}
 
 		EnvVars envVars = new EnvVars(environment);
 		envVars.putAll(builtVariables);
@@ -317,6 +326,20 @@ public class KiuwanRunnable implements Runnable {
 				addLink(build, auditResultURL);
 			}
 			
+		} else if (Mode.CI_MODE.equals(recorder.getSelectedMode())) {
+			if (recorder.getWaitForAuditResults_ci()) {
+				if (result == 10) {// Audit not passed
+					String markBuildWhenNoPass = recorder.getMarkBuildWhenNoPass_ci();
+					listener.getLogger().println("Audit not passed. Marking build as " + markBuildWhenNoPass);
+					resultReference.set(Result.fromString(markBuildWhenNoPass));
+				}
+			}
+
+			String auditResultURL = getAuditResultURL(descriptor, analysisCode);
+			if (auditResultURL != null) {
+				addLink(build, auditResultURL);
+			}
+			
 		} else if (Mode.EXPERT_MODE.equals(recorder.getSelectedMode())) {
 			Set<Integer> successCodes = parseErrorCodes(recorder.getSuccessResultCodes_em());
 			Set<Integer> failureCodes = parseErrorCodes(recorder.getFailureResultCodes_em());
@@ -358,7 +381,12 @@ public class KiuwanRunnable implements Runnable {
 			addDefaultAnalysisLink(build, name, analysisLabel);
 		}
 	}
-	
+
+	private void dumpCiReport(AbstractBuild<?, ?> build, BuildListener listener) {
+		// FIXME volcar 'ci_report.json' con info de los cambios que nos diga el build y/o el SCM
+		
+	}
+
 	private void addLink(AbstractBuild<?, ?> build, String url) {
 		KiuwanBuildSummaryAction link = new KiuwanBuildSummaryAction(url);
 		build.addAction(link);
@@ -475,5 +503,5 @@ public class KiuwanRunnable implements Runnable {
 		remoteDir.mkdirs();
 		new FilePath(zip).unzip(remoteDir);
 	}
-	
+
 }
