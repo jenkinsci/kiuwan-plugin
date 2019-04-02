@@ -133,10 +133,9 @@ public class KiuwanAnalyzerCommandBuilder {
 			// CR status for CI is always 'inprogress' because PRO/not-PRO branch matching will be performed by Kiuwan
 			args.add("-crs");
 			args.add(buildArgument(launcher, "inprogress"));
-			// TODO descomentar esto cuando el KLA acepte ya la opcion '-ci', que si no, de momento, se queja y termina NOT_BUILT
-//			String ciReportPath = envVars.get(KIUWAN_CI_REPORT_ENV);
-//			args.add("-ci");
-//			args.add(buildArgument(launcher, ciReportPath));
+			String ciReportPath = envVars.get(KIUWAN_CI_REPORT_ENV);
+			args.add("-ci");
+			args.add(buildArgument(launcher, ciReportPath));
 
 			// No change request param as we are going to parse issues from SCMs messages
 			//args.add("-cr");

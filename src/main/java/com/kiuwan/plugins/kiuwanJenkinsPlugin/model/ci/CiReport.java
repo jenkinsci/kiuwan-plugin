@@ -11,8 +11,10 @@ import java.util.List;
  */
 public class CiReport {
 
-	// FIXME extender el bean con informacion util propia de la CI Tool (i.e. Jenkins)
+	// Build system data (i.e. Jenkins' build name, number, etc) 
+	private CiReportBuildInfo buildInfo;
 
+	// 'Main' commit data (AKA last commit, AKA most recent commit)
 	private String branch;
 	private String commitId;
 	private List<String> parentCommitIds;
@@ -20,7 +22,12 @@ public class CiReport {
 	private String author;
 	private String commitDate;
 	private List<CiReportFile> files = new ArrayList<>();
+
+	// All other commits' data (newer first) 
 	private List<CiReportCommit> commits = new ArrayList<>();
+
+	public CiReportBuildInfo getBuildInfo() { return buildInfo; }
+	public void setBuildInfo(CiReportBuildInfo buildInfo) { this.buildInfo = buildInfo; }
 
 	public String getBranch() { return branch; }
 	public void setBranch(String branch) { this.branch = branch; }

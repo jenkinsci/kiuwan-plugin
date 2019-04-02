@@ -4,9 +4,13 @@ import java.io.File;
 import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.text.DateFormat;
+import java.text.SimpleDateFormat;
 import java.util.Base64;
 import java.util.HashSet;
+import java.util.Locale;
 import java.util.Set;
+import java.util.TimeZone;
 
 import org.apache.commons.lang.StringUtils;
 
@@ -166,9 +170,20 @@ public class KiuwanUtils {
 			parentDir.mkdirs();
 		}
 		ObjectMapper mapper = new ObjectMapper();
-		// TODO quitar esta opcion 'SerializationFeature.INDENT_OUTPUT' (pretty-print) para que pese menos en produccion 
 		mapper.enable(SerializationFeature.INDENT_OUTPUT);
 		mapper.writeValue(reportFile, ciReport);
+	}
+
+	/**
+	 * Convenience method to return an instance of SimpleDateFormat (note that SimpleDateFormat is not thread safe and should be instanced for each thread).
+	 * <p>
+	 * The needed ISO-8601 date format for some API methods specifies a tailing 'Z'. This means that an UTC time zone should be set before formatting dates. A
+	 * neutral locale is specified to avoid getting locale dependent strings.
+	 */
+	public static final DateFormat getDateFormat() {
+		SimpleDateFormat instance = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss'Z'", Locale.ROOT);
+		instance.setTimeZone(TimeZone.getTimeZone("UTC"));
+		return instance;
 	}
 
 }

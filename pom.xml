@@ -70,21 +70,33 @@
 			<artifactId>ant</artifactId>
 			<version>1.8.1</version>
 		</dependency>
-		<dependency>
+		<!-- Este modulo me esta dando problemas por depender de un DefaultPlexusContainer distinto que Git -->
+		<!--dependency>
 			<groupId>org.kohsuke</groupId>
 			<artifactId>access-modifier-checker</artifactId>
 			<version>1.4</version>
-		</dependency>
+		</dependency-->
 		<dependency>
 			<groupId>com.fasterxml.jackson.core</groupId>
 			<artifactId>jackson-databind</artifactId>
 			<version>2.9.8</version>
+		</dependency>
+		<!-->dependency>
+			<groupId>org.eclipse.sisu</groupId>
+			<artifactId>org.eclipse.sisu.plexus</artifactId>
+			<version>0.3.3</version>
+		</dependency-->
+		<dependency>
+			<groupId>org.jenkins-ci.plugins</groupId>
+			<artifactId>git</artifactId>
+			<version>3.9.3</version>
 		</dependency>
 	</dependencies>
 
 	<properties>
 		<!-- explicitly specifying the latest version here because one we get from the parent POM tends to lag behind a bit -->
 		<maven-hpi-plugin.version>2.3</maven-hpi-plugin.version>
+		<!-->disabledTestInjection>true</disabledTestInjection-->
 	</properties>
 
 	<build>

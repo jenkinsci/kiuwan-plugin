@@ -13,12 +13,16 @@ import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.Date;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 
 import org.apache.commons.lang.StringUtils;
 import org.apache.commons.lang.exception.ExceptionUtils;
@@ -33,6 +37,9 @@ import com.kiuwan.plugins.kiuwanJenkinsPlugin.filecallable.KiuwanReportCI;
 import com.kiuwan.plugins.kiuwanJenkinsPlugin.model.Measure;
 import com.kiuwan.plugins.kiuwanJenkinsPlugin.model.Mode;
 import com.kiuwan.plugins.kiuwanJenkinsPlugin.model.ci.CiReport;
+import com.kiuwan.plugins.kiuwanJenkinsPlugin.model.ci.CiReportBuildInfo;
+import com.kiuwan.plugins.kiuwanJenkinsPlugin.model.ci.CiReportCommit;
+import com.kiuwan.plugins.kiuwanJenkinsPlugin.model.ci.CiReportFile;
 import com.kiuwan.plugins.kiuwanJenkinsPlugin.util.KiuwanAnalyzerCommandBuilder;
 import com.kiuwan.plugins.kiuwanJenkinsPlugin.util.KiuwanException;
 import com.kiuwan.plugins.kiuwanJenkinsPlugin.util.KiuwanUtils;
@@ -50,6 +57,11 @@ import hudson.model.AbstractBuild;
 import hudson.model.BuildListener;
 import hudson.model.Node;
 import hudson.model.Result;
+import hudson.plugins.git.GitChangeSet;
+import hudson.plugins.git.GitChangeSetList;
+import hudson.scm.ChangeLogSet;
+import hudson.scm.EditType;
+import hudson.scm.ChangeLogSet.AffectedFile;
 import hudson.util.FormValidation;
 import hudson.util.FormValidation.Kind;
 
@@ -396,24 +408,118 @@ public class KiuwanRunnable implements Runnable {
 
 	/**
 	 * Extract CI Tool and SCM info from input parameters (only GIT supported for now), create model bean and return it.
+	 * <p>
+	 * Git plugin hardcoded dependencies are:
+	 * <ul>
+	 * <li>Most importantly, retrieval of branch through environment variable 'GIT_BRANCH'</li>
+	 * <li>Use of other environment variables like 'GIT_COMMIT' or 'GIT_PREVIOUS_COMMIT'</li>
+	 * <li>Use of 'GitChangeSetList' instead of generic 'ChangeLogSet' for performance reasons (use of 'GitChangeSetList::getLogs()')</li>
+	 * <li>Availability of parent commit ID through 'GitChangeSet::getParentCommit()'</li>
+	 * </ul>
+	 * </p>
 	 */
 	private CiReport createCiReport(AbstractBuild<?, ?> build, BuildListener listener, EnvVars envVars) {
-		// FIXME rellenar CiReport, eliminar lineas debug de pobres al terminar
-		listener.getLogger().println("--- KIUWAN --- Build change set is: " + build.getChangeSet());
-		envVars.forEach((k, v) -> {
-			listener.getLogger().println("--- KIUWAN --- EnvVar key '" + k + ", value '" + v + "'");
-		});
-
-		// Create and populate CI report
 		CiReport report = new CiReport();
+
+		CiReportBuildInfo buildInfo = new CiReportBuildInfo();
+		List<String> buildCauses = build.getCauses().stream().map(cause -> cause.getShortDescription()).collect(Collectors.toList());
+		buildInfo.setCauses(buildCauses);
+		buildInfo.setDisplayName(build.getFullDisplayName());
+		buildInfo.setNumber(build.getNumber());
+		String buildNode = StringUtils.isBlank(build.getBuiltOnStr()) ? "master" : build.getBuiltOnStr();
+		buildInfo.setNode(buildNode);
+		buildInfo.setCiSystemName("Jenkins");
+		buildInfo.setCiSystemVersion(build.getHudsonVersion());
+		report.setBuildInfo(buildInfo);
+
+		// Note: changeSet.getBranch() always returns null
 		String branchWithOrigin = envVars.get("GIT_BRANCH");
 		if (StringUtils.isBlank(branchWithOrigin)) {
 			throw new IllegalStateException("CI mode selected but env variable 'GIT_BRANCH' not found");
 		}
 		int indexOfSlash = branchWithOrigin.indexOf('/');
-		report.setBranch(branchWithOrigin.substring(indexOfSlash + 1, branchWithOrigin.length()));
+		String branch = branchWithOrigin.substring(indexOfSlash + 1, branchWithOrigin.length());
+		String envCommitId = envVars.get("GIT_COMMIT");
+
+		ChangeLogSet<?> changeLogSet = build.getChangeSet();
+		if (!(changeLogSet instanceof GitChangeSetList)) {
+			throw new IllegalStateException("Build change set is not of type 'GitChangeSetList' as expected");
+		}
+		List<GitChangeSet> changeSets = ((GitChangeSetList) changeLogSet).getLogs();
+
+		for (int i = changeSets.size() - 1; i >= 0; i--) {
+			GitChangeSet changeSet = changeSets.get(i);
+
+			if (i == changeSets.size() - 1) {
+				// inspect if this is a merge (i.e. in merges, env var GIT_COMMIT differs from last change set's ID)
+				String lastChangeSetId = changeSet.getCommitId();
+				if (envCommitId != null && !envCommitId.equals(lastChangeSetId)) {
+					// neither null and they're different, create a virtual merge commit node as main commit...
+					report.setBranch(branch);
+					report.setCommitId(envCommitId);
+					String envPreviousCommitId = envVars.get("GIT_PREVIOUS_COMMIT");
+					report.setParentCommitIds(Arrays.asList(envPreviousCommitId, lastChangeSetId));
+					report.setCommitMessage("Merge branch");
+					report.setAuthor(changeSet.getAuthorName());
+					String mergeDate = KiuwanUtils.getDateFormat().format(new Date(build.getStartTimeInMillis()));
+					report.setCommitDate(mergeDate);
+
+					// ... and change set as sub-commit
+					CiReportCommit commit = new CiReportCommit();
+					commit.setBranch(branch);
+					commit.setCommitId(lastChangeSetId);
+					commit.setParentCommitIds(Arrays.asList(changeSet.getParentCommit()));
+					commit.setCommitMessage(changeSet.getMsg());
+					commit.setAuthor(changeSet.getAuthorName());
+					String commitDate = KiuwanUtils.getDateFormat().format(new Date(changeSet.getTimestamp()));
+					commit.setCommitDate(commitDate);
+					appendAffectedFiles(changeSet.getAffectedFiles(), commit.getFiles());
+					report.getCommits().add(commit);
+					
+				} else {
+					// last change, last commit, its info goes as main commit's
+					report.setBranch(branch);
+					report.setCommitId(changeSet.getCommitId());
+					report.setParentCommitIds(Arrays.asList(changeSet.getParentCommit()));
+					report.setCommitMessage(changeSet.getMsg());
+					report.setAuthor(changeSet.getAuthorName());
+					String commitDate = KiuwanUtils.getDateFormat().format(new Date(changeSet.getTimestamp()));
+					report.setCommitDate(commitDate);
+					appendAffectedFiles(changeSet.getAffectedFiles(), report.getFiles());
+				}
+
+			} else {
+				// all other changes if any, in reverse order, as sub-commits
+				CiReportCommit commit = new CiReportCommit();
+				commit.setBranch(branch);
+				commit.setCommitId(changeSet.getCommitId());
+				commit.setParentCommitIds(Arrays.asList(changeSet.getParentCommit()));
+				commit.setCommitMessage(changeSet.getMsg());
+				commit.setAuthor(changeSet.getAuthorName());
+				String commitDate = KiuwanUtils.getDateFormat().format(new Date(changeSet.getTimestamp()));
+				commit.setCommitDate(commitDate);
+				appendAffectedFiles(changeSet.getAffectedFiles(), commit.getFiles());
+				report.getCommits().add(commit);
+			}
+		}
 
 		return report;
+	}
+
+	private void appendAffectedFiles(Collection<? extends AffectedFile> affectedFiles, List<CiReportFile> reportFiles) {
+		for (AffectedFile affectedFile : affectedFiles) {
+			CiReportFile reportFile = new CiReportFile();
+			reportFile.setFile(affectedFile.getPath());
+			EditType editType = affectedFile.getEditType();
+			if (EditType.ADD.equals(editType)) {
+				reportFile.setModificationType("NEW");
+			} else if (EditType.EDIT.equals(editType)) {
+				reportFile.setModificationType("MODIFY");
+			} else if (EditType.DELETE.equals(editType)) {
+				reportFile.setModificationType("DELETE");
+			}
+			reportFiles.add(reportFile);
+		}
 	}
 
 	private void addLink(AbstractBuild<?, ?> build, String url) {
