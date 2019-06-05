@@ -85,7 +85,7 @@ public class KiuwanRunnable implements Runnable {
 	public void run() {
 		try {
 			FormValidation connectionTestResult = descriptor.doTestConnection(
-				descriptor.getUsername(), descriptor.getPassword(), 
+				descriptor.getUsername(), descriptor.getPassword(), descriptor.getDomain(), 
 				descriptor.isConfigureKiuwanURL(), descriptor.getKiuwanURL(),
 				descriptor.isConfigureProxy(), descriptor.getProxyHost(),
 				descriptor.getProxyPort(), descriptor.getProxyProtocol(),
