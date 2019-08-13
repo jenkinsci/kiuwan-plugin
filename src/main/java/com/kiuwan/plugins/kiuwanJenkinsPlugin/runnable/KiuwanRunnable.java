@@ -446,8 +446,18 @@ public class KiuwanRunnable implements Runnable {
 			throw new IllegalStateException("Build change set is not of type 'GitChangeSetList' as expected");
 		}
 		List<GitChangeSet> changeSets = ((GitChangeSetList) changeLogSet).getLogs();
-
-		for (int i = changeSets.size() - 1; i >= 0; i--) {
+		
+		// No changes between this run and previous
+		String envPreviousCommitId = envVars.get("GIT_PREVIOUS_COMMIT");
+		if (changeSets == null || changeSets.isEmpty()) {
+			report.setBranch(branch);
+			report.setCommitId(envCommitId);
+			
+			if (envPreviousCommitId != null && envCommitId != null && !envCommitId.equals(envPreviousCommitId)) {
+				report.setParentCommitIds(Arrays.asList(envPreviousCommitId));
+			}
+			
+		} else for (int i = changeSets.size() - 1; i >= 0; i--) {
 			GitChangeSet changeSet = changeSets.get(i);
 
 			if (i == changeSets.size() - 1) {
@@ -457,7 +467,6 @@ public class KiuwanRunnable implements Runnable {
 					// neither null and they're different, create a virtual merge commit node as main commit...
 					report.setBranch(branch);
 					report.setCommitId(envCommitId);
-					String envPreviousCommitId = envVars.get("GIT_PREVIOUS_COMMIT");
 					report.setParentCommitIds(Arrays.asList(envPreviousCommitId, lastChangeSetId));
 					report.setCommitMessage("Merge branch");
 					report.setAuthor(changeSet.getAuthorName());
@@ -480,7 +489,9 @@ public class KiuwanRunnable implements Runnable {
 					// last change, last commit, its info goes as main commit's
 					report.setBranch(branch);
 					report.setCommitId(changeSet.getCommitId());
-					report.setParentCommitIds(Arrays.asList(changeSet.getParentCommit()));
+					if (changeSet.getParentCommit() != null) {
+						report.setParentCommitIds(Arrays.asList(changeSet.getParentCommit()));
+					}
 					report.setCommitMessage(changeSet.getMsg());
 					report.setAuthor(changeSet.getAuthorName());
 					String commitDate = KiuwanUtils.getDateFormat().format(new Date(changeSet.getTimestamp()));
