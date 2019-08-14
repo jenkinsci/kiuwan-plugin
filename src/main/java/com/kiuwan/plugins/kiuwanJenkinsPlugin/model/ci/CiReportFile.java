@@ -1,13 +1,17 @@
 package com.kiuwan.plugins.kiuwanJenkinsPlugin.model.ci;
 
+import java.io.Serializable;
+
 /**
  * Bean for CI report file
  *
  * @author <a href="mailto:felix.carnicero@kiuwan.com">fcarnicero</a>
  *
  */
-public class CiReportFile {
+public class CiReportFile implements Serializable {
 
+	private static final long serialVersionUID = -7886188925118596514L;
+	
 	private String file;
 	private String modificationType;
 

@@ -1,5 +1,6 @@
 package com.kiuwan.plugins.kiuwanJenkinsPlugin.model.ci;
 
+import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -9,8 +10,10 @@ import java.util.List;
  * @author <a href="mailto:felix.carnicero@kiuwan.com">fcarnicero</a>
  *
  */
-public class CiReportCommit {
+public class CiReportCommit implements Serializable {
 
+	private static final long serialVersionUID = -2096754050011277052L;
+	
 	private String branch;
 	private String commitId;
 	private List<String> parentCommitIds;

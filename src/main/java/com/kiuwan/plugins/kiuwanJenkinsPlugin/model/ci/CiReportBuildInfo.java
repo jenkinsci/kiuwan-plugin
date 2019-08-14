@@ -1,9 +1,12 @@
 package com.kiuwan.plugins.kiuwanJenkinsPlugin.model.ci;
 
+import java.io.Serializable;
 import java.util.List;
 
-public class CiReportBuildInfo {
+public class CiReportBuildInfo implements Serializable {
 
+	private static final long serialVersionUID = 175362857632007221L;
+	
 	private List<String> causes;
 	private String displayName;
 	private Integer number;
