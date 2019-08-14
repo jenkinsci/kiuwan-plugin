@@ -19,6 +19,7 @@ public class KiuwanReportCI extends MasterToSlaveFileCallable<Void> {
 	private CiReport ciReport;
 
 	public KiuwanReportCI(CiReport ciReport) {
+		super();
 		this.ciReport = ciReport;
 	}
 

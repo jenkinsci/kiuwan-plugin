@@ -1,5 +1,6 @@
 package com.kiuwan.plugins.kiuwanJenkinsPlugin.model.ci;
 
+import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -9,7 +10,9 @@ import java.util.List;
  * @author <a href="mailto:felix.carnicero@kiuwan.com">fcarnicero</a>
  *
  */
-public class CiReport {
+public class CiReport implements Serializable {
+
+	private static final long serialVersionUID = 7623537960508584770L;
 
 	// Build system data (i.e. Jenkins' build name, number, etc) 
 	private CiReportBuildInfo buildInfo;
