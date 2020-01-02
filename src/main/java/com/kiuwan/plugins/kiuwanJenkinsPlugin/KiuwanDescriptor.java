@@ -91,6 +91,7 @@ public class KiuwanDescriptor extends BuildStepDescriptor<Publisher> {
 
 	private String username;
 	private String password;
+	private String domain;
 	
 	private boolean configureKiuwanURL;
 	private String kiuwanURL;
@@ -136,6 +137,7 @@ public class KiuwanDescriptor extends BuildStepDescriptor<Publisher> {
 		// set that to properties and call save().
 		String username = (String) json.get("username");
 		String password = (String) json.get("password");
+		String domain = (String) json.get("domain");
 		
 		Boolean configureKiuwanURL = (Boolean) json.get("configureKiuwanURL");
 		String kiuwanURL = (String) json.get("kiuwanURL");
@@ -151,6 +153,7 @@ public class KiuwanDescriptor extends BuildStepDescriptor<Publisher> {
 		this.username = username;
 		Secret secret = Secret.fromString(password);
 		this.password = secret.getEncryptedValue();
+		this.domain = domain;
 		this.configureKiuwanURL = configureKiuwanURL;
 		this.kiuwanURL = kiuwanURL;
 		this.configureProxy = configureProxy;
@@ -195,6 +198,7 @@ public class KiuwanDescriptor extends BuildStepDescriptor<Publisher> {
 
 	public String getUsername() { return this.username; }
 	public String getPassword() { return Secret.toString(Secret.decrypt(this.password)); }
+	public String getDomain() { return this.domain; }
 	
 	public boolean isConfigureKiuwanURL() { return configureKiuwanURL; }
 	public String getKiuwanURL() { return kiuwanURL; }
@@ -209,7 +213,7 @@ public class KiuwanDescriptor extends BuildStepDescriptor<Publisher> {
 
 	public String getConfigSaveStamp() { return configSaveStamp; }
 	
-	public FormValidation doTestConnection(@QueryParameter String username, @QueryParameter String password,
+	public FormValidation doTestConnection(@QueryParameter String username, @QueryParameter String password, @QueryParameter String domain,
 			@QueryParameter boolean configureKiuwanURL, @QueryParameter String kiuwanURL,  
 			@QueryParameter boolean configureProxy, @QueryParameter String proxyHost, @QueryParameter int proxyPort,
 			@QueryParameter String proxyProtocol, @QueryParameter String proxyAuthentication,
@@ -219,6 +223,7 @@ public class KiuwanDescriptor extends BuildStepDescriptor<Publisher> {
 		
 		descriptor.username = username;
 		descriptor.password = Secret.fromString(password).getEncryptedValue();
+		descriptor.domain = domain;
 		
 		descriptor.configureKiuwanURL = configureKiuwanURL;
 		descriptor.kiuwanURL = kiuwanURL;

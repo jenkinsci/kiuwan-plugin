@@ -109,6 +109,12 @@ public class KiuwanAnalyzerCommandBuilder {
 		args.add(buildArgument(launcher, descriptor.getUsername()));
 		args.add("--pass");
 		args.add(buildArgument(launcher, descriptor.getPassword()));
+		
+		String domain = descriptor.getDomain();
+		if(StringUtils.isNotBlank(domain)) {
+			args.add("--domain-id");
+			args.add(buildArgument(launcher, domain));
+		}
 
 		if (Mode.STANDARD_MODE.equals(recorder.getSelectedMode())) {
 			args.add("-n");

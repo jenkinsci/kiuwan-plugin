@@ -31,6 +31,8 @@ public class KiuwanUtils {
 	private static final String KIUWAN_ROOT_URL = "https://www.kiuwan.com/saas";
 	private static final String KIUWAN_LOCAL_ANALYZER_DOWNLOAD_PATH = "/pub/analyzer/KiuwanLocalAnalyzer.zip";
 	
+	private static final String KIUWAN_DOMAIN_HEADER = "X-KW-CORPORATE-DOMAIN-ID";
+	
 	private static final String SEPARATOR = "_";
 	private static final Base64.Encoder BASE64_ENCODER = Base64.getUrlEncoder();
 	
@@ -148,6 +150,21 @@ public class KiuwanUtils {
 	}
 	
 	public static ApiClient instantiateClient(KiuwanDescriptor descriptor) {
+		com.kiuwan.rest.client.ApiClient apiClient = ApiClient(descriptor);
+		
+		String domain = descriptor.getDomain();
+		if(StringUtils.isNotBlank(domain)) {
+			apiClient.addDefaultHeader(KIUWAN_DOMAIN_HEADER, domain);
+		}
+		
+		return apiClient;
+	}
+
+	/**
+	 * @param descriptor
+	 * @return
+	 */
+	private static ApiClient ApiClient(KiuwanDescriptor descriptor) {
 		return Configuration.newClient(
 			descriptor.isConfigureKiuwanURL(), 
 			descriptor.getKiuwanURL(), 

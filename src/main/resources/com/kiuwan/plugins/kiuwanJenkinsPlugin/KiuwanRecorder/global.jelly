@@ -19,6 +19,9 @@
     <f:entry title="Kiuwan account password" help="/plugin/kiuwanJenkinsPlugin/help/help-password.html">
 	  <f:password field="password" />
     </f:entry>
+    <f:entry title="Kiuwan SSO domain" help="/plugin/kiuwanJenkinsPlugin/help/help-domain.html">
+	  <f:textbox field="domain" />
+    </f:entry>    
     
     <f:optionalBlock name="configureKiuwanURL" field="configureKiuwanURL" title="Configure Kiuwan URL" inline="true" help="/plugin/kiuwanJenkinsPlugin/help/help-configureKiuwanURL.html">
 	    <f:entry title="Kiuwan server URL" field="kiuwanURL" help="/plugin/kiuwanJenkinsPlugin/help/help-kiuwanURL.html">
@@ -50,6 +53,6 @@
         title="Validate credentials"
         progress="Validating..."
         method="testConnection" 
-        with="username,password,configureKiuwanURL,kiuwanURL,configureProxy,proxyHost,proxyPort,proxyProtocol,proxyAuthentication,proxyUsername,proxyPassword" />
+        with="username,password,domain,configureKiuwanURL,kiuwanURL,configureProxy,proxyHost,proxyPort,proxyProtocol,proxyAuthentication,proxyUsername,proxyPassword" />
   </f:section>
 </j:jelly>
