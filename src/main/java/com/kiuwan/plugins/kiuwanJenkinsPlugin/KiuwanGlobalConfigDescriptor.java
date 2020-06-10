@@ -69,6 +69,12 @@ public class KiuwanGlobalConfigDescriptor extends GlobalConfiguration implements
 			profileNames.add(connectionProfile.getName());
 		}
 		
+		for (KiuwanConnectionProfile connectionProfile : list) {
+			if (connectionProfile.getUuid() == null || connectionProfile.getUuid().isEmpty()) {
+				connectionProfile.generateUuid();
+			}
+		}
+		
 		this.connectionProfiles = new ArrayList<>();
 		this.connectionProfiles.addAll(list);
 		this.configSaveTimestamp = Long.toHexString(System.currentTimeMillis());;
