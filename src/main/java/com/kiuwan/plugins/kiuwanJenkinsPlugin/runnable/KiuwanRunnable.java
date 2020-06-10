@@ -24,8 +24,8 @@ import org.apache.commons.lang.StringUtils;
 import org.apache.commons.lang.exception.ExceptionUtils;
 
 import com.kiuwan.plugins.kiuwanJenkinsPlugin.KiuwanBuildSummaryAction;
-import com.kiuwan.plugins.kiuwanJenkinsPlugin.KiuwanDescriptor;
-import com.kiuwan.plugins.kiuwanJenkinsPlugin.KiuwanDownloadable;
+import com.kiuwan.plugins.kiuwanJenkinsPlugin.KiuwanConnectionProfile;
+import com.kiuwan.plugins.kiuwanJenkinsPlugin.KiuwanGlobalConfigDescriptor;
 import com.kiuwan.plugins.kiuwanJenkinsPlugin.KiuwanRecorder;
 import com.kiuwan.plugins.kiuwanJenkinsPlugin.filecallable.KiuwanRemoteEnvironment;
 import com.kiuwan.plugins.kiuwanJenkinsPlugin.filecallable.KiuwanRemoteFilePath;
@@ -56,8 +56,9 @@ public class KiuwanRunnable implements Runnable {
 	public static final String AGENT_DIRECTORY = "tools/kiuwan";
     public static final String AGENT_HOME = "KiuwanLocalAnalyzer";
 	
-	private KiuwanDescriptor descriptor;
 	private KiuwanRecorder recorder;
+	private KiuwanConnectionProfile connectionProfile;
+	
 	private Node node;
 	private AbstractBuild<?, ?> build;
 	private Launcher launcher;
@@ -66,12 +67,11 @@ public class KiuwanRunnable implements Runnable {
 	private AtomicReference<Throwable> exceptionReference;
 	private KiuwanAnalyzerCommandBuilder commandBuilder;
 	
-	public KiuwanRunnable(KiuwanDescriptor descriptor, KiuwanRecorder recorder, 
+	public KiuwanRunnable(KiuwanGlobalConfigDescriptor descriptor, KiuwanRecorder recorder, 
 			Node node, AbstractBuild<?, ?> build, Launcher launcher, BuildListener listener,
 			AtomicReference<Result> resultReference, AtomicReference<Throwable> exceptionReference) {
 		super();
 		
-		this.descriptor = descriptor;
 		this.recorder = recorder;
 		this.node = node;
 		this.build = build;
@@ -80,17 +80,14 @@ public class KiuwanRunnable implements Runnable {
 		this.resultReference = resultReference;
 		this.exceptionReference = exceptionReference;
 		this.commandBuilder = new KiuwanAnalyzerCommandBuilder(descriptor, recorder);
+		
+		String connectionProfileUuid = recorder.getConnectionProfileUuid();
+		this.connectionProfile = descriptor.getConnectionProfile(connectionProfileUuid);
 	}
 
 	public void run() {
 		try {
-			FormValidation connectionTestResult = descriptor.doTestConnection(
-				descriptor.getUsername(), descriptor.getPassword(), descriptor.getDomain(), 
-				descriptor.isConfigureKiuwanURL(), descriptor.getKiuwanURL(),
-				descriptor.isConfigureProxy(), descriptor.getProxyHost(),
-				descriptor.getProxyPort(), descriptor.getProxyProtocol(),
-				descriptor.getProxyAuthentication(), descriptor.getProxyUsername(),
-				descriptor.getProxyPassword());
+			FormValidation connectionTestResult = KiuwanUtils.testConnection(connectionProfile);
 
 			if (Kind.OK.equals(connectionTestResult.kind)) {
 				performScan(node, build, launcher, listener, resultReference);
@@ -179,7 +176,7 @@ public class KiuwanRunnable implements Runnable {
 			jenkinsRootDir = new FilePath(new File(rootPath.getRemote()));
 		}
 		
-		String agentDirectory = KiuwanUtils.getPathFromConfiguredKiuwanURL(AGENT_DIRECTORY, descriptor);
+		String agentDirectory = KiuwanUtils.getPathFromConfiguredKiuwanURL(AGENT_DIRECTORY, connectionProfile);
 		FilePath installDir = jenkinsRootDir.child(agentDirectory);
 		FilePath agentHome = installDir.child(AGENT_HOME);
 		
@@ -253,7 +250,7 @@ public class KiuwanRunnable implements Runnable {
 				boolean buildFailedInKiuwan = false;
 
 				boolean end = false;
-				ApiClient client = instantiateClient(descriptor);
+				ApiClient client = instantiateClient(connectionProfile);
 				ApplicationApi api = new ApplicationApi(client);
 				int retries = 3;
 				String analysisUrl = null;
@@ -278,7 +275,7 @@ public class KiuwanRunnable implements Runnable {
 					} catch (ApiException e) {
 						if (retries > 0) {
 							// Re-initializes the client.
-							client = instantiateClient(descriptor);
+							client = instantiateClient(connectionProfile);
 							retries--;
 						} else {
 							loggerStream.println("Could not get analysis results from Kiuwan: " + e);
@@ -312,7 +309,7 @@ public class KiuwanRunnable implements Runnable {
 				}
 			}
 
-			String auditResultURL = getAuditResultURL(descriptor, analysisCode);
+			String auditResultURL = getAuditResultURL(analysisCode);
 			if (auditResultURL != null) {
 				addLink(build, auditResultURL);
 			}
@@ -341,12 +338,12 @@ public class KiuwanRunnable implements Runnable {
 				resultReference.set(Result.fromString(markAsInOtherCases));
 			}
 
-			String auditResultURL = getAuditResultURL(descriptor, analysisCode);
+			String auditResultURL = getAuditResultURL(analysisCode);
 
 			if (auditResultURL != null) {
 				addLink(build, auditResultURL);
 			} else {
-				String analysisURL = getAnalysisURL(descriptor, analysisCode);
+				String analysisURL = getAnalysisURL(analysisCode);
 				if (analysisURL != null) {
 					addLink(build, analysisURL);
 				} else {
@@ -369,8 +366,8 @@ public class KiuwanRunnable implements Runnable {
 		build.addAction(link);
 	}
 
-	private String getAuditResultURL(KiuwanDescriptor descriptor, String analysisCode) {
-		ApiClient client = instantiateClient(descriptor);
+	private String getAuditResultURL(String analysisCode) {
+		ApiClient client = instantiateClient(connectionProfile);
 		ApplicationApi api = new ApplicationApi(client);
 
 		int retries = 3;
@@ -389,8 +386,8 @@ public class KiuwanRunnable implements Runnable {
 		return auditResultURL;
 	}
 
-	private String getAnalysisURL(KiuwanDescriptor descriptor, String analysisCode) {
-		ApiClient client = instantiateClient(descriptor);
+	private String getAnalysisURL(String analysisCode) {
+		ApiClient client = instantiateClient(connectionProfile);
 		ApplicationApi api = new ApplicationApi(client);
 
 		int retries = 3;
@@ -403,7 +400,7 @@ public class KiuwanRunnable implements Runnable {
 			
 			} catch (ApiException e) {
 				if (retries > 0) {
-					client = instantiateClient(descriptor);
+					client = instantiateClient(connectionProfile);
 				}
 				retries--;
 			}
@@ -463,15 +460,14 @@ public class KiuwanRunnable implements Runnable {
 	}
 
 	private String buildKiuwanResultUrl(String applicationName, String analysisLabel) {
-		return descriptor.getKiuwanURL() + "/application?app=" + applicationName + "&label=" + analysisLabel;
+		return connectionProfile.getKiuwanURL() + "/application?app=" + applicationName + "&label=" + analysisLabel;
 	}
 
 	private void installLocalAnalyzer(FilePath root, BuildListener listener) throws IOException, InterruptedException {
-		KiuwanDownloadable kiuwanDownloadable = new KiuwanDownloadable();
-		String installDir = KiuwanUtils.getPathFromConfiguredKiuwanURL(KiuwanRunnable.AGENT_DIRECTORY, descriptor);
+		String installDir = KiuwanUtils.getPathFromConfiguredKiuwanURL(KiuwanRunnable.AGENT_DIRECTORY, connectionProfile);
 		FilePath remoteDir = root.child(installDir);
 		listener.getLogger().println("Installing KiuwanLocalAnalyzer in " + remoteDir);
-		File zip = kiuwanDownloadable.resolve(listener, descriptor);
+		File zip = KiuwanUtils.resolve(listener, connectionProfile);
 		remoteDir.mkdirs();
 		new FilePath(zip).unzip(remoteDir);
 	}

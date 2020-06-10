@@ -1,81 +1,98 @@
 package com.kiuwan.plugins.kiuwanJenkinsPlugin.util;
 
+import static java.nio.file.StandardCopyOption.REPLACE_EXISTING;
+
+import java.io.File;
 import java.io.IOException;
+import java.io.InputStream;
 import java.net.MalformedURLException;
 import java.net.URL;
-import java.util.Base64;
+import java.nio.file.Files;
 import java.util.HashSet;
 import java.util.Set;
 
-import org.apache.commons.lang.StringUtils;
-
-import com.kiuwan.plugins.kiuwanJenkinsPlugin.KiuwanDescriptor;
+import com.kiuwan.plugins.kiuwanJenkinsPlugin.KiuwanConnectionProfile;
 import com.kiuwan.plugins.kiuwanJenkinsPlugin.filecallable.KiuwanRemoteFilePath;
 import com.kiuwan.rest.client.ApiClient;
+import com.kiuwan.rest.client.ApiException;
 import com.kiuwan.rest.client.Configuration;
+import com.kiuwan.rest.client.api.InformationApi;
 
 import hudson.FilePath;
 import hudson.Launcher;
+import hudson.ProxyConfiguration;
 import hudson.model.TaskListener;
+import hudson.util.FormValidation;
+import jenkins.model.Jenkins;
 
 public class KiuwanUtils {
 
-	private static final String KIUWAN_ROOT_URL = "https://www.kiuwan.com/saas";
-	private static final String KIUWAN_LOCAL_ANALYZER_DOWNLOAD_PATH = "/pub/analyzer/KiuwanLocalAnalyzer.zip";
+	private static final String KIUWAN_CLOUD_DOWNLOAD_URL = "https://static.kiuwan.com/download";
+	private static final String KIUWAN_LOCAL_ANALYZER_DOWNLOAD_PATH = "/analyzer/KiuwanLocalAnalyzer.zip";
 	
 	private static final String KIUWAN_DOMAIN_HEADER = "X-KW-CORPORATE-DOMAIN-ID";
 	
-	private static final String SEPARATOR = "_";
-	private static final Base64.Encoder BASE64_ENCODER = Base64.getUrlEncoder();
+	/**
+	 * If the package isn't downloaded yet, download it and return its local cache.
+	 * @param listener the task listener
+	 * @param descriptor current kiuwan descriptor
+	 * @return The cached file or the newly downloaded file
+	 * @throws IOException if a problem occurs trying to resolve the package to download
+	 */
+	public static File resolve(TaskListener listener, KiuwanConnectionProfile connectionProfile) throws IOException {
+		URL url = KiuwanUtils.getKiuwanLocalAnalyzerDownloadURL(connectionProfile);
+		File f = getLocalCacheFile(url, connectionProfile);
+		if (f.exists()) return f;
+
+		// download to a temporary file and rename it in to handle concurrency
+		// and failure correctly,
+		listener.getLogger().println("Downloading analyzer... ");
+		File tmp = new File(f.getPath() + ".tmp");
+		tmp.getParentFile().mkdirs();
+		try (InputStream in = ProxyConfiguration.open(url).getInputStream()) {
+			Files.copy(in, tmp.toPath(), REPLACE_EXISTING);
+			tmp.renameTo(f);
+		} finally {
+			tmp.delete();
+		}
+		
+		return f;
+	}
+
+	private static File getLocalCacheFile(URL src, KiuwanConnectionProfile connectionProfile) throws MalformedURLException {
+		String s = src.toExternalForm();
+		String fileName = s.substring(s.lastIndexOf('/') + 1);
+		File rootDir = Jenkins.getInstance().getRootDir();
+		String path = KiuwanUtils.getPathFromConfiguredKiuwanURL("cache/kiuwan", connectionProfile);
+		File parentDir = new File(rootDir, path);
+		return new File(parentDir, fileName);
+	}
 	
 	/**
-	 * Returns a path by concatenating the specified <code>prefix</code> to a safe and 
-	 * unique folder name for the kiuwan url in <code>descriptor</code>. When pointing to Kiuwan cloud, 
-	 * <code>prefix</code> is returned. 
+	 * Returns a path by concatenating the specified <code>prefix</code> to a safe and unique folder name. 
 	 * @param prefix install directory prefix
-	 * @param descriptor Kiuwan plugin global configuration
-	 * @return This table summarizes different combinations and what will be returned:
-	 * <br><br>
-	 * <table border="1" summary="Example">
-	 * <tr><th>prefix</th><th>kiuwanURL in descriptor</th><th>returned string</th></tr>
-	 * <tr><td>tools/kiuwan</td><td></td><td>tools/kiuwan</td></tr>
-	 * <tr><td>tools/kiuwan</td><td>http://mykiuwan.domain.com:9090/saas</td><td>tools/kiuwan_mykiuwan.domain.com_9090_L3NhYXM=</td></tr>
-	 * <tr><td>cache/Kiuwan</td><td>http://kw.mydomain.com:7777/saas</td><td>cache/Kiuwan_kw.mydomain.com_7777_L3NhYXM=</td></tr>
-	 * </table>
-	 * @throws MalformedURLException if the configured kiuwanUrl in <code>descriptor</code> is not a valid {@link URL}
+	 * @param connectionProfile the current connection profile
+	 * @return the specified prefix followed by the character '_' and the connection profile uuid 
 	 */
-	public static String getPathFromConfiguredKiuwanURL(String prefix, KiuwanDescriptor descriptor) throws MalformedURLException {
-		if (!descriptor.isConfigureKiuwanURL()) {
-			return prefix;
-		}
-		
-		URL url = new URL(descriptor.getKiuwanURL());
-		
-		String host = url.getHost();
-		int port = url.getPort();
-		String path = url.getPath();
-		
-		StringBuilder sb = new StringBuilder(host);
-		
-		if (port > 0) {
-			sb.append(SEPARATOR + port);
-		}
-		
-		if (StringUtils.isNotBlank(path) && !"/".equals(path)) {
-			sb.append(SEPARATOR + BASE64_ENCODER.encodeToString(path.getBytes()));
-		}
-		
-		String installDir = prefix + SEPARATOR + sb;
-		
-		return installDir;
+	public static String getPathFromConfiguredKiuwanURL(String prefix, KiuwanConnectionProfile connectionProfile) {
+		return prefix + "_" + connectionProfile.getUuid();
     }
 	
-	public static URL getKiuwanLocalAnalyzerDownloadURL(KiuwanDescriptor descriptor) throws MalformedURLException {
-		URL url = new URL(descriptor.isConfigureKiuwanURL() ? descriptor.getKiuwanURL() : KIUWAN_ROOT_URL);
-		String urlPort = url.getPort() != -1 ? ":" + url.getPort() : "";
-		String urlNoPath = url.getProtocol() + "://" + url.getHost() + urlPort;
+	public static URL getKiuwanLocalAnalyzerDownloadURL(KiuwanConnectionProfile connectionProfile) throws MalformedURLException {
+		URL downloadURL = null;
 		
-		URL downloadURL = new URL(urlNoPath + KIUWAN_LOCAL_ANALYZER_DOWNLOAD_PATH);
+		// Custom Kiuwan URL
+		if (connectionProfile.isConfigureKiuwanURL()) {
+			URL url = new URL(connectionProfile.getKiuwanURL());
+			String urlPort = url.getPort() != -1 ? ":" + url.getPort() : "";
+			String baseURL = url.getProtocol() + "://" + url.getHost() + urlPort;
+			downloadURL = new URL(baseURL + "/pub" + KIUWAN_LOCAL_ANALYZER_DOWNLOAD_PATH);
+		
+		// Default URL (Kiuwan cloud)
+		} else {
+			downloadURL = new URL(KIUWAN_CLOUD_DOWNLOAD_URL + KIUWAN_LOCAL_ANALYZER_DOWNLOAD_PATH);
+		}
+				
 		return downloadURL;
 	}
 	
@@ -92,7 +109,7 @@ public class KiuwanUtils {
 		if(resultCodes != null){
 			String[] errorCodesAsString = resultCodes.split(",");
 			for (String errorCodeAsString : errorCodesAsString) {
-				if (StringUtils.isNotBlank(errorCodeAsString)) {
+				if (errorCodeAsString != null && !errorCodeAsString.isEmpty()) {
 					errorCodes.add(Integer.parseInt(errorCodeAsString.trim()));
 				}
 			}
@@ -141,33 +158,41 @@ public class KiuwanUtils {
 		return arg;
 	}
 	
-	public static ApiClient instantiateClient(KiuwanDescriptor descriptor) {
-		com.kiuwan.rest.client.ApiClient apiClient = ApiClient(descriptor);
-		
-		String domain = descriptor.getDomain();
-		if(StringUtils.isNotBlank(domain)) {
+	public static ApiClient instantiateClient(KiuwanConnectionProfile connectionProfile) {
+		ApiClient apiClient = newApiClient(connectionProfile);
+		String domain = connectionProfile.getDomain();
+		if (domain != null && !domain.isEmpty()) {
 			apiClient.addDefaultHeader(KIUWAN_DOMAIN_HEADER, domain);
 		}
 		
 		return apiClient;
 	}
+	
+	public static FormValidation testConnection(KiuwanConnectionProfile connectionProfile) {
+		ApiClient client = instantiateClient(connectionProfile);
+		InformationApi api = new InformationApi(client);
+		try {
+			api.getInformation();
+			return FormValidation.ok("Authentication completed successfully!");
+		} catch (ApiException kiuwanClientException) {
+			return FormValidation.error("Authentication failed.");
+		} catch (Throwable throwable) {
+			return FormValidation.warning("Could not initiate the authentication process. Reason: " + throwable);
+		}
+	}
 
-	/**
-	 * @param descriptor
-	 * @return
-	 */
-	private static ApiClient ApiClient(KiuwanDescriptor descriptor) {
+	private static ApiClient newApiClient(KiuwanConnectionProfile connectionProfile) {
 		return Configuration.newClient(
-			descriptor.isConfigureKiuwanURL(), 
-			descriptor.getKiuwanURL(), 
-			descriptor.getUsername(),
-			descriptor.getPassword(),
-			descriptor.isConfigureProxy(),
-			descriptor.getProxyProtocol(), 
-			descriptor.getProxyHost(), 
-			descriptor.getProxyPort(), 
-			descriptor.getProxyUsername(), 
-			descriptor.getProxyPassword());
+			connectionProfile.isConfigureKiuwanURL(),
+			connectionProfile.getKiuwanURL(),
+			connectionProfile.getUsername(),
+			connectionProfile.getPassword(),
+			connectionProfile.isConfigureProxy(),
+			connectionProfile.getProxyProtocol(),
+			connectionProfile.getProxyHost(),
+			connectionProfile.getProxyPort(),
+			connectionProfile.getProxyUsername(),
+			connectionProfile.getProxyPassword());
 	}
 	
 }

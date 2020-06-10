@@ -23,6 +23,8 @@ public class KiuwanRecorder extends Recorder {
 	public final static Long TIMEOUT_MARGIN = 5000L;
 	public final static Mode DEFAULT_MODE = Mode.STANDARD_MODE;
 	
+	private String connectionProfileUuid;
+	
 	private Mode selectedMode;
 
 	private String applicationName;
@@ -61,7 +63,7 @@ public class KiuwanRecorder extends Recorder {
 	private String markAsInOtherCases_em;
 	
 	@DataBoundConstructor
-	public KiuwanRecorder(String mode, String applicationName, String label, String encoding, String includes,
+	public KiuwanRecorder(String connectionProfileUuid, String mode, String applicationName, String label, String encoding, String includes,
 			String excludes, Integer timeout, Boolean indicateLanguages, String languages, String measure,
 			Double unstableThreshold, Double failureThreshold, String applicationName_dm, String label_dm,
 			String encoding_dm, String includes_dm, String excludes_dm, Integer timeout_dm,
@@ -73,8 +75,9 @@ public class KiuwanRecorder extends Recorder {
 		
 		super();
 		
-		if (mode == null) mode = DEFAULT_MODE.name();
+		this.connectionProfileUuid = connectionProfileUuid;
 		
+		if (mode == null) mode = DEFAULT_MODE.name();
 		this.selectedMode = Mode.valueOf(mode);
 		
 		this.applicationName = applicationName;
@@ -121,8 +124,8 @@ public class KiuwanRecorder extends Recorder {
 	}
 	
 	@Override
-	public KiuwanDescriptor getDescriptor() {
-		return (KiuwanDescriptor) super.getDescriptor();
+	public KiuwanRecorderDescriptor getDescriptor() {
+		return (KiuwanRecorderDescriptor) super.getDescriptor();
 	}
 
 	public BuildStepMonitor getRequiredMonitorService() {
@@ -201,7 +204,9 @@ public class KiuwanRecorder extends Recorder {
 	private Thread createExecutionThread(final Node node, final AbstractBuild<?, ?> build, final Launcher launcher,
 			final BuildListener listener, final AtomicReference<Result> resultReference,
 			final AtomicReference<Throwable> exceptionReference) {
-		Runnable runnable = new KiuwanRunnable(getDescriptor(), this, node, build, 
+		
+		KiuwanGlobalConfigDescriptor descriptor = KiuwanGlobalConfigDescriptor.get();
+		Runnable runnable = new KiuwanRunnable(descriptor, this, node, build, 
 			launcher, listener, resultReference, exceptionReference);
 		return new Thread(runnable);
 	}
@@ -236,6 +241,7 @@ public class KiuwanRecorder extends Recorder {
 	    return ret;
 	}
 
+	public String getConnectionProfileUuid() { return connectionProfileUuid; }
 	public Mode getSelectedMode() { return selectedMode; }
 	public String getApplicationName() { return this.applicationName; }
 	public String getLabel() { return this.label; }

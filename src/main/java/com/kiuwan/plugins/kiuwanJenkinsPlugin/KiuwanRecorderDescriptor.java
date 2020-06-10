@@ -1,25 +1,16 @@
 package com.kiuwan.plugins.kiuwanJenkinsPlugin;
 
-import static com.kiuwan.plugins.kiuwanJenkinsPlugin.util.KiuwanUtils.instantiateClient;
 import static com.kiuwan.plugins.kiuwanJenkinsPlugin.util.KiuwanUtils.parseErrorCodes;
 
-import java.net.MalformedURLException;
-import java.net.Proxy.Type;
-import java.net.URL;
 import java.util.Set;
 
 import org.kohsuke.stapler.QueryParameter;
-import org.kohsuke.stapler.StaplerRequest;
 
 import com.kiuwan.plugins.kiuwanJenkinsPlugin.model.ChangeRequestStatusType;
 import com.kiuwan.plugins.kiuwanJenkinsPlugin.model.DeliveryType;
 import com.kiuwan.plugins.kiuwanJenkinsPlugin.model.Measure;
-import com.kiuwan.rest.client.ApiClient;
-import com.kiuwan.rest.client.ApiException;
-import com.kiuwan.rest.client.api.ApplicationApi;
 
 import hudson.Extension;
-import hudson.XmlFile;
 import hudson.model.AbstractProject;
 import hudson.model.Result;
 import hudson.tasks.BuildStepDescriptor;
@@ -27,49 +18,30 @@ import hudson.tasks.Publisher;
 import hudson.util.FormValidation;
 import hudson.util.FormValidation.Kind;
 import hudson.util.ListBoxModel;
-import hudson.util.Secret;
-import hudson.util.XStream2;
-import net.sf.json.JSONObject;
 
 @Extension
-public class KiuwanDescriptor extends BuildStepDescriptor<Publisher> {
-
-	public static final String PROXY_AUTHENTICATION_BASIC = "Basic";
-	public static final String PROXY_AUTHENTICATION_NONE = "None";
-	
-	private static final String PROXY_TYPE_HTTP = "http";
-	private static final String PROXY_TYPE_SOCKS = "socks";
+public class KiuwanRecorderDescriptor extends BuildStepDescriptor<Publisher> {
 
 	private final static String[] measureComboNames = {
-		"Global indicator", 
-		"Risk index", 
+		"Global indicator",
+		"Risk index",
 		"Effort to target"
 	};
 	
-	private final static String[] measureComboValues = { 
-		Measure.QUALITY_INDICATOR.name(), 
-		Measure.RISK_INDEX.name(), 
+	private final static String[] measureComboValues = {
+		Measure.QUALITY_INDICATOR.name(),
+		Measure.RISK_INDEX.name(),
 		Measure.EFFORT_TO_TARGET.name() 
 	};
 
-	private final static String[] proxyProtocolComboValues = { 
-		PROXY_TYPE_HTTP, 
-		PROXY_TYPE_SOCKS
-	};
-
-	private final static String[] proxyAuthenticationTypeComboValues = { 
-		PROXY_AUTHENTICATION_NONE, 
-		PROXY_AUTHENTICATION_BASIC
-	};
-
-	private final static String[] buildResultComboValues = { 
-		Result.FAILURE.toString(), 
+	private final static String[] buildResultComboValues = {
+		Result.FAILURE.toString(),
 		Result.UNSTABLE.toString(),
 		Result.ABORTED.toString(), 
 		Result.NOT_BUILT.toString() 
 	};
 
-	private final static String[] deliveryTypeComboNames = { 
+	private final static String[] deliveryTypeComboNames = {
 		"Complete delivery", 
 		"Partial delivery"
 	};
@@ -88,178 +60,49 @@ public class KiuwanDescriptor extends BuildStepDescriptor<Publisher> {
 		ChangeRequestStatusType.RESOLVED.name(), 
 		ChangeRequestStatusType.INPROGRESS.name()
 	};
-
-	private String username;
-	private String password;
-	private String domain;
 	
-	private boolean configureKiuwanURL;
-	private String kiuwanURL;
-	
-	private boolean configureProxy;
-	private String proxyHost;
-	private int proxyPort = 3128;
-	private String proxyProtocol;
-	private String proxyAuthentication;
-	private String proxyUsername;
-	private String proxyPassword;
-	
-	private String configSaveStamp;
-	
-	/**
-	 * This {@link XStream2} instance will be used to support loading of the old plugin descriptor
-	 * @see <a href="https://wiki.jenkins.io/display/JENKINS/Hint+on+retaining+backward+compatibility">
-	 * Retaining backward compatibility</a>
-	 * @see #getConfigFile() method for loading the configuration file
-	 */
-	private static final XStream2 XSTREAM2 = new XStream2();
-	
-	static {
-		XSTREAM2.addCompatibilityAlias(
-			"com.kiuwan.plugins.kiuwanJenkinsPlugin.KiuwanRecorder$DescriptorImpl",
-			com.kiuwan.plugins.kiuwanJenkinsPlugin.KiuwanDescriptor.class);
-	}
-
-	public KiuwanDescriptor() {
+	public KiuwanRecorderDescriptor() {
 		super(KiuwanRecorder.class);
-		load();
 	}
 	
-	@Override
-	protected XmlFile getConfigFile() {
-		XmlFile xmlFile = super.getConfigFile();
-		return new XmlFile(XSTREAM2, xmlFile.getFile());
-	}
-	
-	@Override
-	public boolean configure(StaplerRequest req, JSONObject json) throws FormException {
-		// to persist global configuration information,
-		// set that to properties and call save().
-		String username = (String) json.get("username");
-		String password = (String) json.get("password");
-		String domain = (String) json.get("domain");
-		
-		Boolean configureKiuwanURL = (Boolean) json.get("configureKiuwanURL");
-		String kiuwanURL = (String) json.get("kiuwanURL");
-		
-		Boolean configureProxy = (Boolean) json.get("configureProxy");
-		String proxyHost = (String) json.get("proxyHost");
-		int proxyPort = Integer.parseInt((String) json.get("proxyPort"));
-		String proxyProtocol = (String) json.get("proxyProtocol");
-		String proxyAuthentication = (String) json.get("proxyAuthentication");
-		String proxyUsername = (String) json.get("proxyUsername");
-		String proxyPassword = (String) json.get("proxyPassword");
-
-		this.username = username;
-		Secret secret = Secret.fromString(password);
-		this.password = secret.getEncryptedValue();
-		this.domain = domain;
-		this.configureKiuwanURL = configureKiuwanURL;
-		this.kiuwanURL = kiuwanURL;
-		this.configureProxy = configureProxy;
-		this.proxyHost = proxyHost;
-		this.proxyPort = proxyPort;
-		this.proxyProtocol = proxyProtocol;
-		this.proxyAuthentication = proxyAuthentication;
-		this.proxyUsername = proxyUsername;
-		this.proxyPassword = (proxyPassword == null) ? null : Secret.fromString(proxyPassword).getEncryptedValue();
-
-		this.configSaveStamp = Long.toHexString(System.currentTimeMillis());
-		
-		save();
-		return true;
-	}
-
-	@Override
-	public String getDisplayName() {
-		return "Analyze your source code with Kiuwan!";
-	}
-
 	@Override
 	@SuppressWarnings("rawtypes")
 	public boolean isApplicable(Class<? extends AbstractProject> item) {
 		return true;
 	}
 	
-	public Type getProxyType() {
-		Type proxyType = null;
-		
-		// Type: HTTP
-		if (PROXY_TYPE_HTTP.equalsIgnoreCase(proxyProtocol)) {
-			proxyType = Type.HTTP;
-		
-		// Type: socks
-		} else if (PROXY_TYPE_SOCKS.equalsIgnoreCase(proxyProtocol)) {
-			proxyType = Type.SOCKS;
-		}
-		
-		return proxyType;
-	}
-
-	public String getUsername() { return this.username; }
-	public String getPassword() { return Secret.toString(Secret.decrypt(this.password)); }
-	public String getDomain() { return this.domain; }
-	
-	public boolean isConfigureKiuwanURL() { return configureKiuwanURL; }
-	public String getKiuwanURL() { return kiuwanURL; }
-
-	public boolean isConfigureProxy() { return this.configureProxy; }
-	public String getProxyHost() { return this.proxyHost; }
-	public int getProxyPort() { return this.proxyPort; }
-	public String getProxyProtocol() { return this.proxyProtocol; }
-	public String getProxyAuthentication() { return this.proxyAuthentication; }
-	public String getProxyUsername() { return this.proxyUsername; }
-	public String getProxyPassword() { return (this.proxyPassword == null) ? null : Secret.toString(Secret.decrypt(this.proxyPassword)); }
-
-	public String getConfigSaveStamp() { return configSaveStamp; }
-	
-	public FormValidation doTestConnection(@QueryParameter String username, @QueryParameter String password, @QueryParameter String domain,
-			@QueryParameter boolean configureKiuwanURL, @QueryParameter String kiuwanURL,  
-			@QueryParameter boolean configureProxy, @QueryParameter String proxyHost, @QueryParameter int proxyPort,
-			@QueryParameter String proxyProtocol, @QueryParameter String proxyAuthentication,
-			@QueryParameter String proxyUsername, @QueryParameter String proxyPassword) {
-		
-		KiuwanDescriptor descriptor = new KiuwanDescriptor();
-		
-		descriptor.username = username;
-		descriptor.password = Secret.fromString(password).getEncryptedValue();
-		descriptor.domain = domain;
-		
-		descriptor.configureKiuwanURL = configureKiuwanURL;
-		descriptor.kiuwanURL = kiuwanURL;
-		
-		descriptor.configureProxy = configureProxy;
-		descriptor.proxyHost = proxyHost;
-		descriptor.proxyPort = proxyPort;
-		descriptor.proxyProtocol = proxyProtocol;
-		descriptor.proxyAuthentication = proxyAuthentication;
-		descriptor.proxyUsername = proxyUsername;
-		descriptor.proxyPassword = (proxyPassword != null)? Secret.fromString(proxyPassword).getEncryptedValue() : null;
-		
-		ApiClient client = instantiateClient(descriptor);
-		ApplicationApi api = new ApplicationApi(client);
-		try {
-			api.getApplications();
-			return FormValidation.ok("Authentication completed successfully!");
-		} catch (ApiException kiuwanClientException) {
-			return FormValidation.error("Authentication failed.");
-		} catch (Throwable throwable) {
-			return FormValidation.warning("Could not initiate the authentication process. Reason: " + throwable);
-		}
+	@Override
+	public String getDisplayName() {
+		// return "Analyze your source code with Kiuwan!";
+		return "DISPLAY NAME - KiuwanRecorderDescriptor";
 	}
 	
-	public FormValidation doCheckKiuwanURL(
-			@QueryParameter("configureKiuwanURL") boolean configureKiuwanURL, 
-			@QueryParameter("kiuwanURL") String kiuwanURL) {
-		
-		if (configureKiuwanURL) {
-			try {
-				new URL(kiuwanURL + "/rest");
-			} catch (MalformedURLException e) {
-				return FormValidation.error("URL is not a valid.");
+	public ListBoxModel doFillConnectionProfileItems(@QueryParameter("connectionProfileUuid") String connectionProfileUuid) {
+		KiuwanGlobalConfigDescriptor descriptor = KiuwanGlobalConfigDescriptor.get();
+		Iterable<KiuwanConnectionProfile> connectionProfiles = descriptor.getConnectionProfiles();
+		ListBoxModel items = new ListBoxModel();
+		for (KiuwanConnectionProfile connectionProfile : connectionProfiles) {
+			if (connectionProfile.getUuid().equals(connectionProfileUuid)) {
+				items.add(new ListBoxModel.Option(connectionProfile.getName(), connectionProfile.getUuid(), true));
+			} else {
+				items.add(connectionProfile.getName(), connectionProfile.getUuid());
 			}
 		}
-		return FormValidation.ok();
+	
+		return items;
+	}
+
+	public ListBoxModel doFillMeasureItems(@QueryParameter("measure") String measure) {
+		ListBoxModel items = new ListBoxModel();
+		for (int i = 0; i < measureComboNames.length; i++) {
+			if (measureComboValues[i].equalsIgnoreCase(measure)) {
+				items.add(new ListBoxModel.Option(measureComboNames[i], measureComboValues[i], true));
+			} else {
+				items.add(measureComboNames[i], measureComboValues[i]);
+			}
+		}
+	
+		return items;
 	}
 
 	public ListBoxModel doFillAnalysisScope_dmItems(@QueryParameter("analysisScope_dm") String deliveryType) {
@@ -288,19 +131,6 @@ public class KiuwanDescriptor extends BuildStepDescriptor<Publisher> {
 		return items;
 	}
 
-	public ListBoxModel doFillMeasureItems(@QueryParameter("measure") String measure) {
-		ListBoxModel items = new ListBoxModel();
-		for (int i = 0; i < measureComboNames.length; i++) {
-			if (measureComboValues[i].equalsIgnoreCase(measure)) {
-				items.add(new ListBoxModel.Option(measureComboNames[i], measureComboValues[i], true));
-			} else {
-				items.add(measureComboNames[i], measureComboValues[i]);
-			}
-		}
-
-		return items;
-	}
-
 	public ListBoxModel doFillMarkBuildWhenNoPass_dmItems(@QueryParameter("markBuildWhenNoPass_dm") String markBuildWhenNoPass) {
 		ListBoxModel items = new ListBoxModel();
 		for (int i = 0; i < buildResultComboValues.length; i++) {
@@ -321,33 +151,6 @@ public class KiuwanDescriptor extends BuildStepDescriptor<Publisher> {
 				items.add(new ListBoxModel.Option(buildResultComboValues[i], buildResultComboValues[i], true));
 			} else {
 				items.add(buildResultComboValues[i], buildResultComboValues[i]);
-			}
-		}
-
-		return items;
-	}
-
-	public ListBoxModel doFillProxyProtocolItems(@QueryParameter("proxyProtocol") String proxyProtocol) {
-		ListBoxModel items = new ListBoxModel();
-		for (int i = 0; i < proxyProtocolComboValues.length; i++) {
-			if (proxyProtocolComboValues[i].equalsIgnoreCase(proxyProtocol)) {
-				items.add(new ListBoxModel.Option(proxyProtocolComboValues[i], proxyProtocolComboValues[i], true));
-			} else {
-				items.add(proxyProtocolComboValues[i], proxyProtocolComboValues[i]);
-			}
-		}
-
-		return items;
-	}
-
-	public ListBoxModel doFillProxyAuthenticationItems(@QueryParameter("proxyAuthentication") String proxyAuthentication) {
-		ListBoxModel items = new ListBoxModel();
-		for (int i = 0; i < proxyAuthenticationTypeComboValues.length; i++) {
-			if (proxyAuthenticationTypeComboValues[i].equalsIgnoreCase(proxyAuthentication)) {
-				items.add(new ListBoxModel.Option(proxyAuthenticationTypeComboValues[i],
-						proxyAuthenticationTypeComboValues[i], true));
-			} else {
-				items.add(proxyAuthenticationTypeComboValues[i], proxyAuthenticationTypeComboValues[i]);
 			}
 		}
 
@@ -564,5 +367,5 @@ public class KiuwanDescriptor extends BuildStepDescriptor<Publisher> {
 		
 		return FormValidation.ok();
 	}
-
+	
 }
