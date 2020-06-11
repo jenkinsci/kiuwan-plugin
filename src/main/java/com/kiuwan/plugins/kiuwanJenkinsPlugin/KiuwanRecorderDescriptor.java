@@ -2,6 +2,9 @@ package com.kiuwan.plugins.kiuwanJenkinsPlugin;
 
 import static com.kiuwan.plugins.kiuwanJenkinsPlugin.util.KiuwanUtils.parseErrorCodes;
 
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
 
 import org.kohsuke.stapler.QueryParameter;
@@ -18,6 +21,7 @@ import hudson.tasks.Publisher;
 import hudson.util.FormValidation;
 import hudson.util.FormValidation.Kind;
 import hudson.util.ListBoxModel;
+import jenkins.model.Jenkins;
 
 @Extension
 public class KiuwanRecorderDescriptor extends BuildStepDescriptor<Publisher> {
@@ -73,22 +77,40 @@ public class KiuwanRecorderDescriptor extends BuildStepDescriptor<Publisher> {
 	
 	@Override
 	public String getDisplayName() {
-		// return "Analyze your source code with Kiuwan!";
-		return "DISPLAY NAME - KiuwanRecorderDescriptor";
+		return "Analyze your source code with Kiuwan!";
 	}
 	
-	public ListBoxModel doFillConnectionProfileItems(@QueryParameter("connectionProfileUuid") String connectionProfileUuid) {
+	public boolean isConnectionProfilesConfigured() {
 		KiuwanGlobalConfigDescriptor descriptor = KiuwanGlobalConfigDescriptor.get();
-		Iterable<KiuwanConnectionProfile> connectionProfiles = descriptor.getConnectionProfiles();
+		List<KiuwanConnectionProfile> connectionProfiles = descriptor.getConnectionProfiles();
+		return connectionProfiles != null && !connectionProfiles.isEmpty();
+	}
+	
+	public ListBoxModel doFillConnectionProfileUuidItems(@QueryParameter("connectionProfileUuid") String connectionProfileUuid) {
+		KiuwanGlobalConfigDescriptor descriptor = KiuwanGlobalConfigDescriptor.get();
+		
 		ListBoxModel items = new ListBoxModel();
-		for (KiuwanConnectionProfile connectionProfile : connectionProfiles) {
-			if (connectionProfile.getUuid().equals(connectionProfileUuid)) {
-				items.add(new ListBoxModel.Option(connectionProfile.getName(), connectionProfile.getUuid(), true));
-			} else {
-				items.add(connectionProfile.getName(), connectionProfile.getUuid());
+		items.add("", "");
+		
+		if (descriptor.getConnectionProfiles() != null) {
+			
+			boolean found = false;
+			for (KiuwanConnectionProfile connectionProfile : descriptor.getConnectionProfiles()) {
+				String displayName = connectionProfile.getName() + " (" + connectionProfile.getUuid() + ") " +
+					connectionProfile.getUsername() + "@" + connectionProfile.getKiuwanURL();
+				if (connectionProfile.getUuid().equals(connectionProfileUuid)) {
+					items.add(new ListBoxModel.Option(displayName, connectionProfile.getUuid(), true));
+				} else {
+					items.add(displayName, connectionProfile.getUuid());
+				}
+			}
+			
+			if (!found && connectionProfileUuid != null && !connectionProfileUuid.isEmpty()) {
+				String displayName = "[UNKNOWN PROFILE] (" + connectionProfileUuid + ")";
+				items.add(new ListBoxModel.Option(displayName, connectionProfileUuid, true));
 			}
 		}
-	
+		
 		return items;
 	}
 
@@ -157,12 +179,27 @@ public class KiuwanRecorderDescriptor extends BuildStepDescriptor<Publisher> {
 		return items;
 	}
 
+	public FormValidation doCheckConnectionProfileUuid(@QueryParameter("connectionProfileUuid") String connectionProfileUuid) {
+		if (connectionProfileUuid == null || connectionProfileUuid.isEmpty()) {
+			return FormValidation.error("This field is required.");
+		} else {
+			KiuwanConnectionProfile connectionProfile = KiuwanGlobalConfigDescriptor.get().getConnectionProfile(connectionProfileUuid);
+			if (connectionProfile == null) {
+				return FormValidation.errorWithMarkup("Selected connection profile does not exist anymore or is not correctly set up. " + 
+					"Please, check your connection profiles in <a href=\"" + Jenkins.getInstance().getRootUrl() + 
+					"configure\" target=\"_blank\">Kiuwan Global Settings</a>.");
+			}
+		}
+		
+		return FormValidation.ok();
+	}
+	
 	public FormValidation doCheckTimeout(@QueryParameter("timeout") int timeout) {
 		if (timeout < 1) {
-			return FormValidation.error("Timeout must be greater than 0.");
-		} else {
-			return FormValidation.ok();
+			return FormValidation.error("Timeout must be a number greater than 0.");
 		}
+		
+		return FormValidation.ok();
 	}
 	
 	public FormValidation doCheckTimeout_dm(@QueryParameter("timeout_dm") int timeout) {
@@ -175,12 +212,13 @@ public class KiuwanRecorderDescriptor extends BuildStepDescriptor<Publisher> {
 
 	public FormValidation doCheckThresholds(@QueryParameter("unstableThreshold") String unstableThreshold,
 			@QueryParameter("failureThreshold") String failureThreshold, @QueryParameter("measure") String measure) {
+		
 		FormValidation unstableThresholdValidationResult = doCheckUnstableThreshold(unstableThreshold, failureThreshold, measure);
 		if (Kind.OK.equals(unstableThresholdValidationResult.kind)) {
 			return doCheckFailureThreshold(failureThreshold, unstableThreshold, measure);
-		} else {
-			return unstableThresholdValidationResult;
 		}
+		
+		return unstableThresholdValidationResult;
 	}
 
 	public FormValidation doCheckUnstableThreshold(@QueryParameter("unstableThreshold") String unstableThreshold,
@@ -255,8 +293,7 @@ public class KiuwanRecorderDescriptor extends BuildStepDescriptor<Publisher> {
 			try {
 				double unstable = Double.parseDouble(unstableThreshold);
 				if (failure >= unstable) {
-					return FormValidation
-							.error("Failure threshold can not be greater or equal than unstable threshold.");
+					return FormValidation.error("Failure threshold can not be greater or equal than unstable threshold.");
 				}
 			} catch (Throwable throwable) {
 				// Ignore
@@ -269,8 +306,7 @@ public class KiuwanRecorderDescriptor extends BuildStepDescriptor<Publisher> {
 				try {
 					double unstable = Double.parseDouble(unstableThreshold);
 					if (failure <= unstable) {
-						return FormValidation
-								.error("Failure threshold can not be lower or equal than unstable threshold.");
+						return FormValidation.error("Failure threshold can not be lower or equal than unstable threshold.");
 					}
 				} catch (Throwable throwable) {
 					// Ignore
@@ -281,8 +317,7 @@ public class KiuwanRecorderDescriptor extends BuildStepDescriptor<Publisher> {
 			try {
 				double unstable = Double.parseDouble(unstableThreshold);
 				if (failure <= unstable) {
-					return FormValidation
-							.error("Failure threshold can not be lower or equal than unstable threshold.");
+					return FormValidation.error("Failure threshold can not be lower or equal than unstable threshold.");
 				}
 			} catch (Throwable throwable) {
 				// Ignore
@@ -341,28 +376,41 @@ public class KiuwanRecorderDescriptor extends BuildStepDescriptor<Publisher> {
 			new String[] { successResultCodes, unstableResultCodes, failureResultCodes, notBuiltResultCodes });
 	}
 	
-	private FormValidation validateResultCodes(String resultCodes, String[] otherCodes) {
-		if (resultCodes != null) {
+	private FormValidation validateResultCodes(String codesStr, String[] otherCodesStrArray) {
+		if (codesStr != null) {
 			Set<Integer> codes = null;
 			try {
-				codes = parseErrorCodes(resultCodes);
+				codes = parseErrorCodes(codesStr);
 			} catch (Throwable throwable) {
-				return FormValidation.error("Invalid value detected in result codes.");
+				return FormValidation.error("Invalid value. Result codes must be specified as a comma-separated list of numbers.");
 			}
 
-			// check duplicated codes
-			for (String currentCodes : otherCodes) {
+			// Check duplicated codes, accumulate repeated values to show correct error message
+			Set<Integer> repeatedValues = new HashSet<>();
+			for (String otherCodesStr : otherCodesStrArray) {
 				try {
-					Set<Integer> currentCodesList = parseErrorCodes(currentCodes);
-					if (currentCodesList.retainAll(codes) && !currentCodesList.isEmpty()) {
-						return FormValidation.error("One result code can only be assigned to one build status. " +
-							"These codes are binded with multiple build statuses: " + currentCodesList +
-							". Please remove the duplicity.");
+					Set<Integer> otherCodes = parseErrorCodes(otherCodesStr);
+					if (!Collections.disjoint(codes, otherCodes) && !otherCodes.isEmpty()) {
+						otherCodes.retainAll(codes);
+						repeatedValues.addAll(otherCodes);
 					}
 				} catch (Throwable throwable) {
 					// Ignore
 				}
 			}
+			
+			if (!repeatedValues.isEmpty()) {
+				String codeMessage = null;
+				if (repeatedValues.size() == 1) {
+					codeMessage = "This code is bound to multiple build statuses: ";
+				} else {
+					codeMessage = "These codes are bound to multiple build statuses: ";
+				}
+				
+				return FormValidation.error("One result code can only be assigned to one build status. " +
+					codeMessage + repeatedValues + ". Please remove the duplicity.");
+			}
+			
 		}
 		
 		return FormValidation.ok();

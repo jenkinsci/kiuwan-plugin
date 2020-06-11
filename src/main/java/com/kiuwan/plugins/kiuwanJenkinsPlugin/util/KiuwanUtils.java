@@ -27,74 +27,50 @@ import jenkins.model.Jenkins;
 
 public class KiuwanUtils {
 
+	private static final String KIUWAN_DOMAIN_HEADER = "X-KW-CORPORATE-DOMAIN-ID";
+	
 	private static final String KIUWAN_CLOUD_DOWNLOAD_URL = "https://static.kiuwan.com/download";
 	private static final String KIUWAN_LOCAL_ANALYZER_DOWNLOAD_PATH = "/analyzer/KiuwanLocalAnalyzer.zip";
 	
-	private static final String KIUWAN_DOMAIN_HEADER = "X-KW-CORPORATE-DOMAIN-ID";
-	
 	/**
-	 * If the package isn't downloaded yet, download it and return its local cache.
+	 * Downloads a Kiuwan Local Analyzer distribution for the specified connection profile. If the file
+	 * was already downloaded, the cached file is returned. If not, the distribution is downloaded and cached,
+	 * and the cached file is returned.
 	 * @param listener the task listener
-	 * @param descriptor current kiuwan descriptor
+	 * @param connectionProfile the kiuwan connection profile that contains the data needed to build the download URL
 	 * @return The cached file or the newly downloaded file
 	 * @throws IOException if a problem occurs trying to resolve the package to download
 	 */
-	public static File resolve(TaskListener listener, KiuwanConnectionProfile connectionProfile) throws IOException {
-		URL url = KiuwanUtils.getKiuwanLocalAnalyzerDownloadURL(connectionProfile);
-		File f = getLocalCacheFile(url, connectionProfile);
-		if (f.exists()) return f;
+	public static File downloadKiuwanLocalAnalyzer(TaskListener listener, KiuwanConnectionProfile connectionProfile) throws IOException {
+		URL url = getKiuwanLocalAnalyzerDownloadURL(connectionProfile);
+		File cacheFile = getLocalCacheFile(url, connectionProfile);
+		if (cacheFile.exists()) return cacheFile;
 
-		// download to a temporary file and rename it in to handle concurrency
-		// and failure correctly,
+		// download to a temporary file and rename it in to handle concurrency and failure correctly
 		listener.getLogger().println("Downloading analyzer... ");
-		File tmp = new File(f.getPath() + ".tmp");
+		File tmp = new File(cacheFile.getPath() + ".tmp");
 		tmp.getParentFile().mkdirs();
+		
 		try (InputStream in = ProxyConfiguration.open(url).getInputStream()) {
 			Files.copy(in, tmp.toPath(), REPLACE_EXISTING);
-			tmp.renameTo(f);
+			tmp.renameTo(cacheFile);
+			
 		} finally {
 			tmp.delete();
 		}
 		
-		return f;
+		return cacheFile;
 	}
 
-	private static File getLocalCacheFile(URL src, KiuwanConnectionProfile connectionProfile) throws MalformedURLException {
-		String s = src.toExternalForm();
-		String fileName = s.substring(s.lastIndexOf('/') + 1);
-		File rootDir = Jenkins.getInstance().getRootDir();
-		String path = KiuwanUtils.getPathFromConfiguredKiuwanURL("cache/kiuwan", connectionProfile);
-		File parentDir = new File(rootDir, path);
-		return new File(parentDir, fileName);
-	}
-	
 	/**
-	 * Returns a path by concatenating the specified <code>prefix</code> to a safe and unique folder name. 
-	 * @param prefix install directory prefix
+	 * Returns a relative path by concatenating the specified <code>prefix</code> to a safe and unique folder name. 
+	 * @param prefix directory prefix
 	 * @param connectionProfile the current connection profile
 	 * @return the specified prefix followed by the character '_' and the connection profile uuid 
 	 */
 	public static String getPathFromConfiguredKiuwanURL(String prefix, KiuwanConnectionProfile connectionProfile) {
 		return prefix + "_" + connectionProfile.getUuid();
     }
-	
-	public static URL getKiuwanLocalAnalyzerDownloadURL(KiuwanConnectionProfile connectionProfile) throws MalformedURLException {
-		URL downloadURL = null;
-		
-		// Custom Kiuwan URL
-		if (connectionProfile.isConfigureKiuwanURL()) {
-			URL url = new URL(connectionProfile.getKiuwanURL());
-			String urlPort = url.getPort() != -1 ? ":" + url.getPort() : "";
-			String baseURL = url.getProtocol() + "://" + url.getHost() + urlPort;
-			downloadURL = new URL(baseURL + "/pub" + KIUWAN_LOCAL_ANALYZER_DOWNLOAD_PATH);
-		
-		// Default URL (Kiuwan cloud)
-		} else {
-			downloadURL = new URL(KIUWAN_CLOUD_DOWNLOAD_URL + KIUWAN_LOCAL_ANALYZER_DOWNLOAD_PATH);
-		}
-				
-		return downloadURL;
-	}
 	
 	public static String getRemoteFileAbsolutePath(FilePath filePath, TaskListener listener) throws IOException, InterruptedException {
 		String path = filePath.act(new KiuwanRemoteFilePath());
@@ -106,7 +82,7 @@ public class KiuwanUtils {
 	
 	public static Set<Integer> parseErrorCodes(String resultCodes) {
 		Set<Integer> errorCodes = new HashSet<Integer>();
-		if(resultCodes != null){
+		if (resultCodes != null) {
 			String[] errorCodesAsString = resultCodes.split(",");
 			for (String errorCodeAsString : errorCodesAsString) {
 				if (errorCodeAsString != null && !errorCodeAsString.isEmpty()) {
@@ -175,7 +151,7 @@ public class KiuwanUtils {
 			api.getInformation();
 			return FormValidation.ok("Authentication completed successfully!");
 		} catch (ApiException kiuwanClientException) {
-			return FormValidation.error("Authentication failed.");
+			return FormValidation.error("Authentication failed: " + kiuwanClientException.getMessage());
 		} catch (Throwable throwable) {
 			return FormValidation.warning("Could not initiate the authentication process. Reason: " + throwable);
 		}
@@ -193,6 +169,33 @@ public class KiuwanUtils {
 			connectionProfile.getProxyPort(),
 			connectionProfile.getProxyUsername(),
 			connectionProfile.getProxyPassword());
+	}
+
+	private static URL getKiuwanLocalAnalyzerDownloadURL(KiuwanConnectionProfile connectionProfile) throws MalformedURLException {
+		URL downloadURL = null;
+		
+		// Custom Kiuwan URL
+		if (connectionProfile.isConfigureKiuwanURL()) {
+			URL url = new URL(connectionProfile.getKiuwanURL());
+			String urlPort = url.getPort() != -1 ? ":" + url.getPort() : "";
+			String baseURL = url.getProtocol() + "://" + url.getHost() + urlPort;
+			downloadURL = new URL(baseURL + "/pub" + KIUWAN_LOCAL_ANALYZER_DOWNLOAD_PATH);
+		
+		// Default URL (Kiuwan cloud)
+		} else {
+			downloadURL = new URL(KIUWAN_CLOUD_DOWNLOAD_URL + KIUWAN_LOCAL_ANALYZER_DOWNLOAD_PATH);
+		}
+				
+		return downloadURL;
+	}
+
+	private static File getLocalCacheFile(URL src, KiuwanConnectionProfile connectionProfile) throws MalformedURLException {
+		String s = src.toExternalForm();
+		String fileName = s.substring(s.lastIndexOf('/') + 1);
+		File rootDir = Jenkins.getInstance().getRootDir();
+		String path = getPathFromConfiguredKiuwanURL("cache/kiuwan", connectionProfile);
+		File parentDir = new File(rootDir, path);
+		return new File(parentDir, fileName);
 	}
 	
 }

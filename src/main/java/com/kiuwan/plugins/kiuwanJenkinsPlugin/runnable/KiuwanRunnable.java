@@ -467,7 +467,7 @@ public class KiuwanRunnable implements Runnable {
 		String installDir = KiuwanUtils.getPathFromConfiguredKiuwanURL(KiuwanRunnable.AGENT_DIRECTORY, connectionProfile);
 		FilePath remoteDir = root.child(installDir);
 		listener.getLogger().println("Installing KiuwanLocalAnalyzer in " + remoteDir);
-		File zip = KiuwanUtils.resolve(listener, connectionProfile);
+		File zip = KiuwanUtils.downloadKiuwanLocalAnalyzer(listener, connectionProfile);
 		remoteDir.mkdirs();
 		new FilePath(zip).unzip(remoteDir);
 	}

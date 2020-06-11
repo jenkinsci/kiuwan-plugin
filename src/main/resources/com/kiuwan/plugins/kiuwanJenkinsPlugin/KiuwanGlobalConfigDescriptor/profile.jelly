@@ -13,20 +13,23 @@
 -->
 
 	<f:section>
-		<f:entry title="Profile identifier" help="/plugin/kiuwanJenkinsPlugin/help/help-uuid.html">
-			<f:readOnlyTextbox field="uuid" />
+		<f:invisibleEntry>
+			<f:textbox field="uuid" />
+		</f:invisibleEntry>
+		<f:entry title="Profile name" field="name" help="/plugin/kiuwanJenkinsPlugin/help/help-name.html">
+			<f:textbox clazz="required" />
+			<j:if test="${not empty instance.getUuid()}">
+				 <div class="info" style="margin-top: 6px">Connection profile identifier: ${instance.getUuid()}</div>
+			</j:if>
 		</f:entry>
-		<f:entry title="Profile name" help="/plugin/kiuwanJenkinsPlugin/help/help-name.html">
-			<f:textbox field="name" clazz="required" />
+		<f:entry title="Kiuwan account username" field="username" help="/plugin/kiuwanJenkinsPlugin/help/help-username.html">
+			<f:textbox clazz="required" />
 		</f:entry>
-		<f:entry title="Kiuwan account username" help="/plugin/kiuwanJenkinsPlugin/help/help-username.html">
-			<f:textbox field="username" clazz="required" />
+		<f:entry title="Kiuwan account password" field="password" help="/plugin/kiuwanJenkinsPlugin/help/help-password.html">
+			<f:password clazz="required" />
 		</f:entry>
-		<f:entry title="Kiuwan account password" help="/plugin/kiuwanJenkinsPlugin/help/help-password.html">
-			<f:password field="password" clazz="required" />
-		</f:entry>
-		<f:entry title="Kiuwan SSO domain" help="/plugin/kiuwanJenkinsPlugin/help/help-domain.html">
-			<f:textbox field="domain" />
+		<f:entry title="Kiuwan SSO domain" field="domain" help="/plugin/kiuwanJenkinsPlugin/help/help-domain.html">
+			<f:textbox />
 		</f:entry>
 
 		<f:optionalBlock name="configureKiuwanURL" field="configureKiuwanURL" title="Configure Kiuwan URL" 

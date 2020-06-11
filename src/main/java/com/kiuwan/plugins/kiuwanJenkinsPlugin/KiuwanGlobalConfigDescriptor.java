@@ -53,12 +53,20 @@ public class KiuwanGlobalConfigDescriptor extends GlobalConfiguration implements
 	
 	@Override
 	public String getDisplayName() {
-		return "DISPLAY NAME - KiuwanGlobalDescriptor";
+		return "Kiuwan Global Configuration";
 	}
 	
 	@Override
 	public boolean configure(StaplerRequest req, JSONObject json) throws FormException {
 		List<KiuwanConnectionProfile> list = req.bindJSONToList(KiuwanConnectionProfile.class, json.get("connectionProfiles"));
+		
+		/*
+		// Empty names
+		for (KiuwanConnectionProfile connectionProfile : list) {
+			if (connectionProfile.getName() == null || connectionProfile.getName().isEmpty()) {
+				throw new FormException("Name is required", "name");
+			}
+		}
 		
 		// Duplicated profile names
 		Set<String> profileNames = new HashSet<>();
@@ -68,7 +76,9 @@ public class KiuwanGlobalConfigDescriptor extends GlobalConfiguration implements
 			}
 			profileNames.add(connectionProfile.getName());
 		}
+		*/
 		
+		// Generate UUIDs for new connection profiles
 		for (KiuwanConnectionProfile connectionProfile : list) {
 			if (connectionProfile.getUuid() == null || connectionProfile.getUuid().isEmpty()) {
 				connectionProfile.generateUuid();

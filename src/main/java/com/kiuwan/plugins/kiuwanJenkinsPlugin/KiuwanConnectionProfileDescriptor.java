@@ -30,16 +30,16 @@ public class KiuwanConnectionProfileDescriptor extends Descriptor<KiuwanConnecti
 	
 	@Override
 	public String getDisplayName() {
-		return "DISPLAY NAME - KiuwanConnectionProfileDescriptor";
+		return "Kiuwan Connection Profile";
 	}
 	
 	public int getDefaultPort() {
 		return DEFAULT_PROXY_PORT;
 	}
 	
-	public FormValidation doCheckProxyPort(@QueryParameter("proxyPort") int proxyPort) {
-		if (proxyPort <= 0) {
-			FormValidation.error("Proxy port must be greater than 0");
+	public FormValidation doCheckName(@QueryParameter("name") String name) {
+		if (name == null || name.isEmpty()) {
+			return FormValidation.error("Field is required");
 		}
 		return FormValidation.ok();
 	}
@@ -54,6 +54,23 @@ public class KiuwanConnectionProfileDescriptor extends Descriptor<KiuwanConnecti
 			} catch (MalformedURLException e) {
 				return FormValidation.error("URL is not a valid.");
 			}
+		}
+		return FormValidation.ok();
+	}
+
+	public FormValidation doCheckProxyHost(
+			@QueryParameter("configureProxy") boolean configureProxy, 
+			@QueryParameter("proxyHost") String proxyHost) {
+		
+		if (configureProxy) {
+			return FormValidation.validateRequired(proxyHost);
+		}
+		return FormValidation.ok();
+	}
+	
+	public FormValidation doCheckProxyPort(@QueryParameter("proxyPort") int proxyPort) {
+		if (proxyPort <= 0) {
+			return FormValidation.error("Proxy port must be greater than 0");
 		}
 		return FormValidation.ok();
 	}
