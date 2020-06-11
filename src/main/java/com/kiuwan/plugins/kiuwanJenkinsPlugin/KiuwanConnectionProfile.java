@@ -2,8 +2,8 @@ package com.kiuwan.plugins.kiuwanJenkinsPlugin;
 
 import java.io.Serializable;
 import java.net.Proxy.Type;
-import java.util.UUID;
 
+import org.apache.commons.lang.RandomStringUtils;
 import org.kohsuke.stapler.DataBoundConstructor;
 
 import hudson.model.Describable;
@@ -88,7 +88,11 @@ public class KiuwanConnectionProfile implements Describable<KiuwanConnectionProf
 	}
 	
 	public String generateUuid() {
-		this.uuid = UUID.randomUUID().toString().substring(9, 18);
+		String randomAlphanumeric = RandomStringUtils.randomAlphanumeric(8);
+		int length = randomAlphanumeric.length();
+		String head = randomAlphanumeric.substring(length - 8, length - 4);
+		String tail = randomAlphanumeric.substring(length - 4, length);
+		this.uuid = head + "-" + tail;
 		return this.uuid;
 	}
 

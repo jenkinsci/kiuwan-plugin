@@ -99,6 +99,7 @@ public class KiuwanRecorderDescriptor extends BuildStepDescriptor<Publisher> {
 				String displayName = connectionProfile.getName() + " (" + connectionProfile.getUuid() + ") " +
 					connectionProfile.getUsername() + "@" + connectionProfile.getKiuwanURL();
 				if (connectionProfile.getUuid().equals(connectionProfileUuid)) {
+					found = true;
 					items.add(new ListBoxModel.Option(displayName, connectionProfile.getUuid(), true));
 				} else {
 					items.add(displayName, connectionProfile.getUuid());
@@ -187,7 +188,7 @@ public class KiuwanRecorderDescriptor extends BuildStepDescriptor<Publisher> {
 			if (connectionProfile == null) {
 				return FormValidation.errorWithMarkup("Selected connection profile does not exist anymore or is not correctly set up. " + 
 					"Please, check your connection profiles in <a href=\"" + Jenkins.getInstance().getRootUrl() + 
-					"configure\" target=\"_blank\">Kiuwan Global Settings</a>.");
+					"configure\" target=\"_blank\">Kiuwan Global Settings</a> or select a substitute from the list.");
 			}
 		}
 		

@@ -44,12 +44,11 @@ public class KiuwanComputerListener extends ComputerListener {
 			TaskListener listener) throws IOException, InterruptedException {
 
 		try {
-			String installDir = KiuwanUtils.getPathFromConfiguredKiuwanURL(KiuwanRunnable.AGENT_DIRECTORY,
-					connectionProfile);
+			String installDir = KiuwanUtils.getPathFromConfiguredKiuwanURL(KiuwanRunnable.AGENT_DIRECTORY, connectionProfile);
 			FilePath remoteDir = root.child(installDir);
 			if (!remoteDir.child(KiuwanRunnable.AGENT_HOME).exists()) {
-				listener.getLogger().println("Installing KiuwanLocalAnalyzer (connection profile = \""
-						+ connectionProfile.getName() + "\") to " + remoteDir);
+				listener.getLogger().println("Installing KiuwanLocalAnalyzer (connection profile = \"" + 
+					connectionProfile.getName() + "\") to " + remoteDir);
 				File zip = KiuwanUtils.downloadKiuwanLocalAnalyzer(listener, connectionProfile);
 				remoteDir.mkdirs();
 				new FilePath(zip).unzip(remoteDir);
