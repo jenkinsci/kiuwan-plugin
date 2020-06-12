@@ -87,17 +87,26 @@ public class KiuwanRunnable implements Runnable {
 
 	public void run() {
 		try {
-			FormValidation connectionTestResult = KiuwanUtils.testConnection(connectionProfile);
-
-			if (Kind.OK.equals(connectionTestResult.kind)) {
-				performScan(node, build, launcher, listener, resultReference);
+			if (connectionProfile == null) {
+				listener.getLogger().print("Could not find the specified connection profile (" + 
+					recorder.getConnectionProfileUuid() + "). Verify your ");
+				listener.hyperlink("/configure", "Kiuwan Global Settings");
+				listener.getLogger().println(".");
+				resultReference.set(Result.NOT_BUILT);
 				
 			} else {
-				listener.getLogger().print("Could not get authorization from Kiuwan. Verify your ");
-				listener.hyperlink("/configure", "Kiuwan account settings");
-				listener.getLogger().println(".");
-				listener.getLogger().println(connectionTestResult.getMessage());
-				resultReference.set(Result.NOT_BUILT);
+				FormValidation connectionTestResult = KiuwanUtils.testConnection(connectionProfile);
+	
+				if (Kind.OK.equals(connectionTestResult.kind)) {
+					performScan(node, build, launcher, listener, resultReference);
+					
+				} else {
+					listener.getLogger().print("Could not get authorization from configured Kiuwan URL. Verify your ");
+					listener.hyperlink("/configure", "Kiuwan Global Settings");
+					listener.getLogger().println(".");
+					listener.getLogger().println(connectionTestResult.getMessage());
+					resultReference.set(Result.NOT_BUILT);
+				}
 			}
 		
 		} catch (KiuwanException e) {

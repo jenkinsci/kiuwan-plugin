@@ -12,6 +12,10 @@ import org.kohsuke.stapler.StaplerRequest;
 import hudson.CopyOnWrite;
 import hudson.Extension;
 import hudson.XmlFile;
+import hudson.model.AbstractProject;
+import hudson.model.Descriptor;
+import hudson.tasks.Publisher;
+import hudson.util.DescribableList;
 import hudson.util.XStream2;
 import jenkins.model.GlobalConfiguration;
 import jenkins.model.Jenkins;
@@ -60,24 +64,6 @@ public class KiuwanGlobalConfigDescriptor extends GlobalConfiguration implements
 	public boolean configure(StaplerRequest req, JSONObject json) throws FormException {
 		List<KiuwanConnectionProfile> list = req.bindJSONToList(KiuwanConnectionProfile.class, json.get("connectionProfiles"));
 		
-		/*
-		// Empty names
-		for (KiuwanConnectionProfile connectionProfile : list) {
-			if (connectionProfile.getName() == null || connectionProfile.getName().isEmpty()) {
-				throw new FormException("Name is required", "name");
-			}
-		}
-		
-		// Duplicated profile names
-		Set<String> profileNames = new HashSet<>();
-		for (KiuwanConnectionProfile connectionProfile : list) {
-			if (profileNames.contains(connectionProfile.getName())) {
-				throw new FormException("Duplicate profile name!", "name");
-			}
-			profileNames.add(connectionProfile.getName());
-		}
-		*/
-		
 		// Generate UUIDs for new connection profiles
 		for (KiuwanConnectionProfile connectionProfile : list) {
 			if (connectionProfile.getUuid() == null || connectionProfile.getUuid().isEmpty()) {
@@ -91,37 +77,82 @@ public class KiuwanGlobalConfigDescriptor extends GlobalConfiguration implements
 	
 		save();
 	    return true;
-		
-		
-		/*
-		this.connectionProfiles.clear();
-		
-		// Multiple profiles
-		if (json.isArray()) {
-			JSONArray connectionProfilesJSON = json.getJSONArray("connectionProfiles");
-			for (int i = 0; i < connectionProfilesJSON.size(); i++) {
-				JSONObject connectionProfileJSON = connectionProfilesJSON.getJSONObject(i);
-				KiuwanConnectionProfile connectionProfile = new KiuwanConnectionProfile(connectionProfileJSON);
-				this.connectionProfiles.add(connectionProfile);
+	}
+	
+	public boolean existDuplicateNames() {
+		Set<String> profileNames = new HashSet<>();
+		for (KiuwanConnectionProfile connectionProfile : connectionProfiles) {
+			if (profileNames.contains(connectionProfile.getName())) {
+				return true;
 			}
-		
-		// Single profile
-		} else {
-			JSONObject connectionProfileJSON = json.getJSONObject("connectionProfiles");
-			if (connectionProfileJSON != null && !connectionProfileJSON.isNullObject()) {
-				KiuwanConnectionProfile connectionProfile = new KiuwanConnectionProfile(connectionProfileJSON);
-				this.connectionProfiles.add(connectionProfile);
+			
+			if (connectionProfile.getName() != null && !connectionProfile.getName().isEmpty()) {
+				profileNames.add(connectionProfile.getName());
 			}
 		}
-		*/
 		
-	    /*
-		this.configSaveTimestamp = Long.toHexString(System.currentTimeMillis());
-		super.configure(req, json);
+		return false;
+	}
+	
+	public List<String> getDuplicateNames() {
+		Set<String> profileNames = new HashSet<>();
+		List<String> duplicates = new ArrayList<>();
+		for (KiuwanConnectionProfile connectionProfile : connectionProfiles) {
+			if (!profileNames.add(connectionProfile.getName())) {
+				if (connectionProfile.getName() != null && !connectionProfile.getName().isEmpty()) {
+					duplicates.add(connectionProfile.getName());
+				}
+			}
+		}
 		
-		save();
-		return true;
-		*/
+		return duplicates;
+	}
+		
+	public boolean existMisconfiguredJobs() {
+		List<AbstractProject> jobs = Jenkins.getInstance().getAllItems(AbstractProject.class);
+		for (AbstractProject<?, ?> job : jobs) {
+			DescribableList<Publisher, Descriptor<Publisher>> publishers = job.getPublishersList();
+			for (Publisher publisher : publishers) {
+				if (publisher instanceof KiuwanRecorder) {
+					KiuwanRecorder kiuwanRecorder = (KiuwanRecorder) publisher;
+					String connectionProfileUuid = kiuwanRecorder.getConnectionProfileUuid();
+					if (connectionProfileUuid == null || connectionProfileUuid.isEmpty()) {
+						return true;
+					} else {
+						KiuwanConnectionProfile connectionProfile = getConnectionProfile(connectionProfileUuid);
+						if (connectionProfile == null) {
+							return true;
+						}
+					}
+				}
+			}
+		}
+		
+		return false;
+	}
+	
+	public List<String> getMisconfiguredJobs() {
+		List<String> misconfiguredJobs = new ArrayList<>();
+		List<AbstractProject> jobs = Jenkins.getInstance().getAllItems(AbstractProject.class);
+		for (AbstractProject<?, ?> job : jobs) {
+			DescribableList<Publisher, Descriptor<Publisher>> publishers = job.getPublishersList();
+			for (Publisher publisher : publishers) {
+				if (publisher instanceof KiuwanRecorder) {
+					KiuwanRecorder kiuwanRecorder = (KiuwanRecorder) publisher;
+					String connectionProfileUuid = kiuwanRecorder.getConnectionProfileUuid();
+					if (connectionProfileUuid == null || connectionProfileUuid.isEmpty()) {
+						misconfiguredJobs.add(job.getFullDisplayName() + " (profile not set)");
+					} else {
+						KiuwanConnectionProfile connectionProfile = getConnectionProfile(connectionProfileUuid);
+						if (connectionProfile == null) {
+							misconfiguredJobs.add(job.getFullDisplayName() + " (configured profile not found)");
+						}
+					}
+				}
+			}
+		}
+		
+		return misconfiguredJobs;
 	}
 	
 	/* 
@@ -134,7 +165,7 @@ public class KiuwanGlobalConfigDescriptor extends GlobalConfiguration implements
 	 * This {@link XStream2} instance will be used to support loading of the old plugin descriptor
 	 * @see <a href="https://wiki.jenkins.io/display/JENKINS/Hint+on+retaining+backward+compatibility">
 	 * Retaining backward compatibility</a>
-	 * @see #getConfigFile() method for loading the configuration file
+	 * @see {@link #getConfigFile} method for loading the configuration file
 	 */
 	private static final XStream2 XSTREAM2 = new XStream2();
 

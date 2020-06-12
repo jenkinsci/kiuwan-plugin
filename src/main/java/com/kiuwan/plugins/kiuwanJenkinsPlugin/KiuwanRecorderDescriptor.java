@@ -96,13 +96,11 @@ public class KiuwanRecorderDescriptor extends BuildStepDescriptor<Publisher> {
 			
 			boolean found = false;
 			for (KiuwanConnectionProfile connectionProfile : descriptor.getConnectionProfiles()) {
-				String displayName = connectionProfile.getName() + " (" + connectionProfile.getUuid() + ") " +
-					connectionProfile.getUsername() + "@" + connectionProfile.getKiuwanURL();
 				if (connectionProfile.getUuid().equals(connectionProfileUuid)) {
 					found = true;
-					items.add(new ListBoxModel.Option(displayName, connectionProfile.getUuid(), true));
+					items.add(new ListBoxModel.Option(connectionProfile.getDisplayName(), connectionProfile.getUuid(), true));
 				} else {
-					items.add(displayName, connectionProfile.getUuid());
+					items.add(connectionProfile.getDisplayName(), connectionProfile.getUuid());
 				}
 			}
 			

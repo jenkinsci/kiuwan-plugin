@@ -1,7 +1,9 @@
 package com.kiuwan.plugins.kiuwanJenkinsPlugin;
 
 import java.io.Serializable;
+import java.net.MalformedURLException;
 import java.net.Proxy.Type;
+import java.net.URL;
 
 import org.apache.commons.lang.RandomStringUtils;
 import org.kohsuke.stapler.DataBoundConstructor;
@@ -87,11 +89,31 @@ public class KiuwanConnectionProfile implements Describable<KiuwanConnectionProf
 		return proxyType;
 	}
 	
+	public String getDisplayName() {
+		String profileName = name != null && !name.isEmpty() ? name : "?";
+		String profileUsername = username != null && !username.isEmpty() ? username : "?";
+		String profileHost = null;
+		
+		if (configureKiuwanURL) {
+			try {
+				URL url = new URL(kiuwanURL);
+				profileHost = url.getHost() + (url.getPort() >= 0 ? ":" + url.getPort() : "");
+			} catch (MalformedURLException e) {
+				profileHost = "?";
+			}
+		} else {
+			profileHost = "www.kiuwan.com";
+		}
+		
+		
+		return profileName + " - " + profileUsername + "@" + profileHost + " (" + this.uuid + ")";
+	}
+	
 	public String generateUuid() {
-		String randomAlphanumeric = RandomStringUtils.randomAlphanumeric(8);
-		int length = randomAlphanumeric.length();
-		String head = randomAlphanumeric.substring(length - 8, length - 4);
-		String tail = randomAlphanumeric.substring(length - 4, length);
+		int length = 8;
+		String randomAlphanumeric = RandomStringUtils.randomAlphanumeric(length);
+		String head = randomAlphanumeric.substring(0, length / 2);
+		String tail = randomAlphanumeric.substring(length / 2);
 		this.uuid = head + "-" + tail;
 		return this.uuid;
 	}

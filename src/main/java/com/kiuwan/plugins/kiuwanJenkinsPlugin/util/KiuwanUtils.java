@@ -47,7 +47,7 @@ public class KiuwanUtils {
 		if (cacheFile.exists()) return cacheFile;
 
 		// download to a temporary file and rename it in to handle concurrency and failure correctly
-		listener.getLogger().println("Downloading analyzer... ");
+		listener.getLogger().println("Downloading Kiuwan Local Analyzer from " + url);
 		File tmp = new File(cacheFile.getPath() + ".tmp");
 		tmp.getParentFile().mkdirs();
 		
@@ -153,7 +153,7 @@ public class KiuwanUtils {
 		} catch (ApiException kiuwanClientException) {
 			return FormValidation.error("Authentication failed: " + kiuwanClientException.getMessage());
 		} catch (Throwable throwable) {
-			return FormValidation.warning("Could not initiate the authentication process. Reason: " + throwable);
+			return FormValidation.warning("Could not initiate the authentication process. Reason: " + throwable.getMessage());
 		}
 	}
 
@@ -164,7 +164,7 @@ public class KiuwanUtils {
 			connectionProfile.getUsername(),
 			connectionProfile.getPassword(),
 			connectionProfile.isConfigureProxy(),
-			connectionProfile.getProxyProtocol(),
+			connectionProfile.getProxyType().name(),
 			connectionProfile.getProxyHost(),
 			connectionProfile.getProxyPort(),
 			connectionProfile.getProxyUsername(),

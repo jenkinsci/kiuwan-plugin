@@ -62,15 +62,15 @@ public class KiuwanConnectionProfileDescriptor extends Descriptor<KiuwanConnecti
 			@QueryParameter("configureProxy") boolean configureProxy, 
 			@QueryParameter("proxyHost") String proxyHost) {
 		
-		if (configureProxy) {
-			return FormValidation.validateRequired(proxyHost);
+		if (configureProxy && (proxyHost == null || proxyHost.isEmpty())) {
+			return FormValidation.error("Field is required");
 		}
 		return FormValidation.ok();
 	}
 	
 	public FormValidation doCheckProxyPort(@QueryParameter("proxyPort") int proxyPort) {
 		if (proxyPort <= 0) {
-			return FormValidation.error("Proxy port must be greater than 0");
+			return FormValidation.error("Proxy port must be a number greater than 0");
 		}
 		return FormValidation.ok();
 	}
