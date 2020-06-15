@@ -12,8 +12,11 @@ import org.kohsuke.stapler.StaplerRequest;
 import hudson.CopyOnWrite;
 import hudson.Extension;
 import hudson.XmlFile;
+import hudson.init.InitMilestone;
+import hudson.init.Initializer;
 import hudson.model.AbstractProject;
 import hudson.model.Descriptor;
+import hudson.model.Items;
 import hudson.tasks.Publisher;
 import hudson.util.DescribableList;
 import hudson.util.XStream2;
@@ -167,14 +170,35 @@ public class KiuwanGlobalConfigDescriptor extends GlobalConfiguration implements
 	 * Retaining backward compatibility</a>
 	 * @see {@link #getConfigFile} method for loading the configuration file
 	 */
-	private static final XStream2 XSTREAM2 = new XStream2();
+	// private static final XStream2 XSTREAM2 = new XStream2();
 
-	static {
+	@Initializer(before = InitMilestone.PLUGINS_STARTED)
+	public static void addAliases() {
+	    
+		// 1 - com.kiuwan.plugins.kiuwanJenkinsPlugin.KiuwanRecorder$DescriptorImpl
+		// 2 - com.kiuwan.plugins.kiuwanJenkinsPlugin.KiuwanDescriptor
+		// Now - "com.kiuwan.plugins.kiuwanJenkinsPlugin.KiuwanGlobalConfigDescriptor"
+		
 		/*
-		XSTREAM2.addCompatibilityAlias(
-			"com.kiuwan.plugins.kiuwanJenkinsPlugin.KiuwanRecorder$DescriptorImpl",
-			com.kiuwan.plugins.kiuwanJenkinsPlugin.KiuwanDescriptor.class);
-		*/
+		Items.XSTREAM2.addCompatibilityAlias(
+	    	"com.kiuwan.plugins.kiuwanJenkinsPlugin.KiuwanRecorder$DescriptorImpl", 
+	    	com.kiuwan.plugins.kiuwanJenkinsPlugin.KiuwanDescriptor.class);
+	    */
+		
+		Items.XSTREAM2.addCompatibilityAlias(
+	    	"com.kiuwan.plugins.kiuwanJenkinsPlugin.KiuwanRecorder$DescriptorImpl", 
+	    	com.kiuwan.plugins.kiuwanJenkinsPlugin.KiuwanGlobalConfigDescriptor.class);
+		
+		Items.XSTREAM2.addCompatibilityAlias(
+	    	"com.kiuwan.plugins.kiuwanJenkinsPlugin.KiuwanDescriptor", 
+	    	com.kiuwan.plugins.kiuwanJenkinsPlugin.KiuwanGlobalConfigDescriptor.class);
+	}
+	
+	/*
+	static {
+		// XSTREAM2.addCompatibilityAlias(
+		//	"com.kiuwan.plugins.kiuwanJenkinsPlugin.KiuwanRecorder$DescriptorImpl",
+		//	com.kiuwan.plugins.kiuwanJenkinsPlugin.KiuwanDescriptor.class);
 		
 		XSTREAM2.addCompatibilityAlias(
 			"com.kiuwan.plugins.kiuwanJenkinsPlugin.KiuwanRecorder$DescriptorImpl",
@@ -184,14 +208,24 @@ public class KiuwanGlobalConfigDescriptor extends GlobalConfiguration implements
 			"com.kiuwan.plugins.kiuwanJenkinsPlugin.KiuwanDescriptor",
 			com.kiuwan.plugins.kiuwanJenkinsPlugin.KiuwanGlobalConfigDescriptor.class);
 	}
+	*/
 
 	@Override
 	protected XmlFile getConfigFile() {
+		
+		/*
 		XmlFile xmlFile = new XmlFile(new File(
 			Jenkins.getInstance().getRootDir(), 
 			"com.kiuwan.plugins.kiuwanJenkinsPlugin.KiuwanRecorder.xml"));
 		
 		return new XmlFile(XSTREAM2, xmlFile.getFile());
+		*/
+		
+		XmlFile xmlFile = new XmlFile(new File(
+			Jenkins.getInstance().getRootDir(), 
+			"com.kiuwan.plugins.kiuwanJenkinsPlugin.KiuwanGlobalConfig.xml"));
+		
+		return new XmlFile(Items.XSTREAM2, xmlFile.getFile());
 	}
 	
 }
