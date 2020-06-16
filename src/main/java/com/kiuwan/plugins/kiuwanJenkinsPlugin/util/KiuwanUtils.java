@@ -10,6 +10,7 @@ import java.net.URL;
 import java.nio.file.Files;
 import java.util.HashSet;
 import java.util.Set;
+import java.util.logging.Logger;
 
 import com.kiuwan.plugins.kiuwanJenkinsPlugin.KiuwanConnectionProfile;
 import com.kiuwan.plugins.kiuwanJenkinsPlugin.filecallable.KiuwanRemoteFilePath;
@@ -27,10 +28,16 @@ import jenkins.model.Jenkins;
 
 public class KiuwanUtils {
 
+	private static final Logger LOGGER = Logger.getLogger("com.kiuwan.plugins.kiuwanJenkinsPlugin");
+	
 	private static final String KIUWAN_DOMAIN_HEADER = "X-KW-CORPORATE-DOMAIN-ID";
 	
 	private static final String KIUWAN_CLOUD_DOWNLOAD_URL = "https://static.kiuwan.com/download";
 	private static final String KIUWAN_LOCAL_ANALYZER_DOWNLOAD_PATH = "/analyzer/KiuwanLocalAnalyzer.zip";
+	
+	public static Logger logger() {
+		return LOGGER;
+	}
 	
 	/**
 	 * Downloads a Kiuwan Local Analyzer distribution for the specified connection profile. If the file

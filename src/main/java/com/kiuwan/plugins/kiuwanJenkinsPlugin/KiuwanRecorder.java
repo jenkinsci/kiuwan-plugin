@@ -5,6 +5,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
 
 import org.kohsuke.stapler.DataBoundConstructor;
+import org.kohsuke.stapler.DataBoundSetter;
 
 import com.kiuwan.plugins.kiuwanJenkinsPlugin.model.Mode;
 import com.kiuwan.plugins.kiuwanJenkinsPlugin.runnable.KiuwanRunnable;
@@ -63,59 +64,8 @@ public class KiuwanRecorder extends Recorder {
 	private String markAsInOtherCases_em;
 	
 	@DataBoundConstructor
-	public KiuwanRecorder(String connectionProfileUuid, String mode, String applicationName, String label, String encoding, String includes,
-			String excludes, Integer timeout, Boolean indicateLanguages, String languages, String measure,
-			Double unstableThreshold, Double failureThreshold, String applicationName_dm, String label_dm,
-			String encoding_dm, String includes_dm, String excludes_dm, Integer timeout_dm,
-			Boolean indicateLanguages_dm, String languages_dm, String changeRequest_dm, String changeRequestStatus_dm,
-			String branch_dm, String analysisScope_dm, Boolean waitForAuditResults_dm, String markBuildWhenNoPass_dm,
-			Integer timeout_em, String commandArgs_em, String extraParameters_em, String successResultCodes_em,
-			String unstableResultCodes_em, String failureResultCodes_em, String notBuiltResultCodes_em,
-			String abortedResultCodes_em, String markAsInOtherCases_em) {
-		
+	public KiuwanRecorder() {
 		super();
-		
-		this.connectionProfileUuid = connectionProfileUuid;
-		
-		if (mode == null) mode = DEFAULT_MODE.name();
-		this.selectedMode = Mode.valueOf(mode);
-		
-		this.applicationName = applicationName;
-		this.label = label;
-		this.encoding = encoding;
-		this.includes = includes;
-		this.excludes = excludes;
-		this.timeout = timeout;
-		this.indicateLanguages = indicateLanguages;
-		this.languages = languages;
-		this.measure = measure;
-		this.unstableThreshold = unstableThreshold;
-		this.failureThreshold = failureThreshold;
-		
-		this.applicationName_dm = applicationName_dm;
-		this.label_dm = label_dm;
-		this.encoding_dm = encoding_dm;
-		this.includes_dm = includes_dm;
-		this.excludes_dm = excludes_dm;
-		this.timeout_dm = timeout_dm;
-		this.indicateLanguages_dm = indicateLanguages_dm;
-		this.languages_dm = languages_dm;
-		this.changeRequest_dm = changeRequest_dm;
-		this.analysisScope_dm = analysisScope_dm;
-		this.waitForAuditResults_dm = waitForAuditResults_dm;
-		this.changeRequestStatus_dm = changeRequestStatus_dm;
-		this.branch_dm = branch_dm;
-		this.markBuildWhenNoPass_dm = markBuildWhenNoPass_dm;
-		
-		this.timeout_em = timeout_em;
-		this.commandArgs_em = commandArgs_em;
-		this.extraParameters_em = extraParameters_em;
-		this.successResultCodes_em = successResultCodes_em;
-		this.unstableResultCodes_em = unstableResultCodes_em;
-		this.failureResultCodes_em = failureResultCodes_em;
-		this.notBuiltResultCodes_em = notBuiltResultCodes_em;
-		this.abortedResultCodes_em = abortedResultCodes_em;
-		this.markAsInOtherCases_em = markAsInOtherCases_em;
 	}
 
 	@Override
@@ -275,5 +225,42 @@ public class KiuwanRecorder extends Recorder {
 	public String getNotBuiltResultCodes_em() { return notBuiltResultCodes_em; }
 	public String getAbortedResultCodes_em() { return abortedResultCodes_em; }
 	public String getMarkAsInOtherCases_em() { return markAsInOtherCases_em; }
+
+	@DataBoundSetter public void setConnectionProfileUuid(String connectionProfileUuid) { this.connectionProfileUuid = connectionProfileUuid; }
+	@DataBoundSetter public void setMode(String mode) { this.selectedMode = (mode == null ? DEFAULT_MODE : Mode.valueOf(mode)); }
+	@DataBoundSetter public void setApplicationName(String applicationName) { this.applicationName = applicationName; }
+	@DataBoundSetter public void setApplicationName_dm(String applicationName_dm) { this.applicationName_dm = applicationName_dm; }
+	@DataBoundSetter public void setLabel(String label) { this.label = label; }
+	@DataBoundSetter public void setLabel_dm(String label_dm) { this.label_dm = label_dm; }
+	@DataBoundSetter public void setEncoding(String encoding) { this.encoding = encoding; }
+	@DataBoundSetter public void setEncoding_dm(String encoding_dm) { this.encoding_dm = encoding_dm; }
+	@DataBoundSetter public void setIncludes(String includes) { this.includes = includes; }
+	@DataBoundSetter public void setIncludes_dm(String includes_dm) { this.includes_dm = includes_dm; }
+	@DataBoundSetter public void setExcludes(String excludes) { this.excludes = excludes; }
+	@DataBoundSetter public void setExcludes_dm(String excludes_dm) { this.excludes_dm = excludes_dm; }
+	@DataBoundSetter public void setTimeout(Integer timeout) { this.timeout = timeout; }
+	@DataBoundSetter public void setTimeout_dm(Integer timeout_dm) { this.timeout_dm = timeout_dm; }
+	@DataBoundSetter public void setTimeout_em(Integer timeout_em) { this.timeout_em = timeout_em; }
+	@DataBoundSetter public void setIndicateLanguages(Boolean indicateLanguages) { this.indicateLanguages = indicateLanguages; }
+	@DataBoundSetter public void setMeasure(String measure) { this.measure = measure; }
+	@DataBoundSetter public void setLanguages(String languages) { this.languages = languages; }
+	@DataBoundSetter public void setIndicateLanguages_dm(Boolean indicateLanguages_dm) { this.indicateLanguages_dm = indicateLanguages_dm; }
+	@DataBoundSetter public void setLanguages_dm(String languages_dm) { this.languages_dm = languages_dm; }
+	@DataBoundSetter public void setUnstableThreshold(Double unstableThreshold) { this.unstableThreshold = unstableThreshold; }
+	@DataBoundSetter public void setFailureThreshold(Double failureThreshold) { this.failureThreshold = failureThreshold; }
+	@DataBoundSetter public void setChangeRequest_dm(String changeRequest_dm) { this.changeRequest_dm = changeRequest_dm; }
+	@DataBoundSetter public void setAnalysisScope_dm(String analysisScope_dm) { this.analysisScope_dm = analysisScope_dm; }
+	@DataBoundSetter public void setWaitForAuditResults_dm(Boolean waitForAuditResults_dm) { this.waitForAuditResults_dm = waitForAuditResults_dm; }
+	@DataBoundSetter public void setBranch_dm(String branch_dm) { this.branch_dm = branch_dm; }
+	@DataBoundSetter public void setChangeRequestStatus_dm(String changeRequestStatus_dm) { this.changeRequestStatus_dm = changeRequestStatus_dm; }
+	@DataBoundSetter public void setCommandArgs_em(String commandArgs_em) { this.commandArgs_em = commandArgs_em; }
+	@DataBoundSetter public void setExtraParameters_em(String extraParameters_em) { this.extraParameters_em = extraParameters_em; }
+	@DataBoundSetter public void setMarkBuildWhenNoPass_dm(String markBuildWhenNoPass_dm) { this.markBuildWhenNoPass_dm = markBuildWhenNoPass_dm; }
+	@DataBoundSetter public void setSuccessResultCodes_em(String successResultCodes_em) { this.successResultCodes_em = successResultCodes_em; }
+	@DataBoundSetter public void setUnstableResultCodes_em(String unstableResultCodes_em) { this.unstableResultCodes_em = unstableResultCodes_em; }
+	@DataBoundSetter public void setFailureResultCodes_em(String failureResultCodes_em) { this.failureResultCodes_em = failureResultCodes_em; }
+	@DataBoundSetter public void setNotBuiltResultCodes_em(String notBuiltResultCodes_em) { this.notBuiltResultCodes_em = notBuiltResultCodes_em; }
+	@DataBoundSetter public void setAbortedResultCodes_em(String abortedResultCodes_em) { this.abortedResultCodes_em = abortedResultCodes_em; }
+	@DataBoundSetter public void setMarkAsInOtherCases_em(String markAsInOtherCases_em) { this.markAsInOtherCases_em = markAsInOtherCases_em; }
 
 }

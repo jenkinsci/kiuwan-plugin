@@ -13,28 +13,47 @@
 -->
 
 	<f:section title="Kiuwan Global Settings">
-		<f:entry title="Connection Profiles">
-			<j:if test="${descriptor.existDuplicateNames()}">
+		
+		<!-- Error messages -->
+		<j:if test="${descriptor.existOldConfigFile()}">
+			<f:entry title="Data migration failed">
 				<div class="error">
-					There are duplicate names in connection profiles. It is recommended to avoid duplicate connection profile names:
+					An old data file has been detected. This means that the automatic migration process to the new 
+					configuration structure may have failed. If the current configuration has no connection profiles
+					or the default connection profile is misconfigured, you can re-run the migration process by clicking the 
+					"Run migration" button:
 				</div>
-				<ul class="error-inline">
-					<j:forEach items="${descriptor.getDuplicateNames()}" var="item">
-						<li>${item}</li>
-					</j:forEach>
-				</ul>
-			</j:if>
-			
-			<j:if test="${descriptor.existMisconfiguredJobs()}">
+				<f:validateButton title="Run migration" progress="Migrating old data..." method="migrateConfiguration" />
+			</f:entry>
+		</j:if>
+		<j:if test="${descriptor.existMisconfiguredJobs()}">
+			<f:entry title="Jobs missing connection profile">
 				<div class="error">
-					There are jobs that have not been assigned a connection profile yet or that reference a deleted profile. Please check the following jobs:
+					There are jobs that have not been assigned a connection profile yet or that reference a deleted profile.
+					Please check the following jobs:
 				</div>
 				<ul class="error-inline">
 					<j:forEach items="${descriptor.getMisconfiguredJobs()}" var="item">
 						<li>${item}</li>
 					</j:forEach>
 				</ul>
-			</j:if>
+			</f:entry>
+		</j:if>
+		<j:if test="${descriptor.existDuplicateNames()}">
+			<f:entry title="Connection profiles configuration warning">
+				<div class="warning">
+					There are duplicate names in connection profiles. It is recommended to avoid duplicate connection profile names:
+				</div>
+				<ul class="warning-inline">
+					<j:forEach items="${descriptor.getDuplicateNames()}" var="item">
+						<li>${item}</li>
+					</j:forEach>
+				</ul>
+			</f:entry>
+		</j:if>
+		
+		<!-- Connection profiles -->
+		<f:entry title="Connection Profiles">
 			<j:scope>
 				<f:repeatable field="connectionProfiles" name="connectionProfiles" var="connectionProfile" minimum="0" header="Connection profile">
 					<table width="100%">
@@ -48,6 +67,7 @@
 				</f:repeatable>
 			</j:scope>
 		</f:entry>
+		
 	</f:section>
 	
 </j:jelly>

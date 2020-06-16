@@ -110,11 +110,21 @@ public class KiuwanConnectionProfileDescriptor extends Descriptor<KiuwanConnecti
 			@QueryParameter String proxyProtocol, @QueryParameter String proxyAuthentication,
 			@QueryParameter String proxyUsername, @QueryParameter String proxyPassword) {
 		
-		KiuwanConnectionProfile connectionProfile = new KiuwanConnectionProfile(
-			uuid, name, username, password, domain, 
-			configureKiuwanURL, kiuwanURL, 
-			configureProxy, proxyHost, proxyPort, proxyProtocol, 
-			proxyAuthentication, proxyUsername, proxyPassword);
+		KiuwanConnectionProfile connectionProfile = new KiuwanConnectionProfile();
+		connectionProfile.setUuid(uuid);
+		connectionProfile.setName(name);
+		connectionProfile.setUsername(username);
+		connectionProfile.setPassword(password);
+		connectionProfile.setDomain(domain);
+		connectionProfile.setConfigureKiuwanURL(configureKiuwanURL);
+		connectionProfile.setKiuwanURL(kiuwanURL);
+		connectionProfile.setConfigureProxy(configureProxy);
+		connectionProfile.setProxyHost(proxyHost);
+		connectionProfile.setProxyPort(proxyPort);
+		connectionProfile.setProxyProtocol(proxyProtocol);
+		connectionProfile.setProxyAuthentication(proxyAuthentication);
+		connectionProfile.setProxyUsername(proxyUsername);
+		connectionProfile.setProxyPassword(proxyPassword);
 		
 		FormValidation formValidation = KiuwanUtils.testConnection(connectionProfile);
 		return formValidation;

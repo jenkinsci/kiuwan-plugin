@@ -1,0 +1,16 @@
+<?xml version='1.1' encoding='UTF-8'?>
+<com.kiuwan.plugins.kiuwanJenkinsPlugin.KiuwanDescriptor plugin="kiuwanJenkinsPlugin@1.5.3-SNAPSHOT">
+  <username>lab-dev</username>
+  <password>{AQAAABAAAAAQvyD8elzac5yQoHRy3y9HGUiTyg1s8WCuA8/XE+f/0xI=}</password>
+  <domain></domain>
+  <configureKiuwanURL>true</configureKiuwanURL>
+  <kiuwanURL>http://kiuwanlabdev.optimyth.com:9080/saas</kiuwanURL>
+  <configureProxy>false</configureProxy>
+  <proxyHost></proxyHost>
+  <proxyPort>3128</proxyPort>
+  <proxyProtocol>http</proxyProtocol>
+  <proxyAuthentication>None</proxyAuthentication>
+  <proxyUsername></proxyUsername>
+  <proxyPassword>{AQAAABAAAAAQJAOKdRDsYkjwvi+s2DbuHQfhMWJRlFOWeWq55vKi7Dw=}</proxyPassword>
+  <configSaveStamp>16fa8bf7234</configSaveStamp>
+</com.kiuwan.plugins.kiuwanJenkinsPlugin.KiuwanDescriptor>
