@@ -88,10 +88,12 @@ public class KiuwanGlobalConfigDescriptor extends GlobalConfiguration implements
 	}
 
 	public FormValidation doMigrateConfiguration() {
-		boolean ok = migrateConfiguration();
+		boolean configurationOk = migrateConfiguration();
 		
 		FormValidation ret = null;
-		if (ok) {
+		if (configurationOk) {
+			migratePublishers();
+			
 			ret = FormValidation.okWithMarkup("Migration done! Please reload the <a href=\"" + 
 				Jenkins.getInstance().getRootUrl() + "configure\">settings page</a>.");
 		} else {
@@ -196,11 +198,11 @@ public class KiuwanGlobalConfigDescriptor extends GlobalConfiguration implements
 		// the aliases only to be applied during the migration process
 		XStream2 xstream2 = new XStream2();
 		
-		// Kiuwan plugin version <= 1.4.6
+		// 1.0.0 <= Kiuwan plugin version <= 1.4.6
 		xstream2.addCompatibilityAlias("com.kiuwan.plugins.kiuwanJenkinsPlugin.KiuwanRecorder$DescriptorImpl", 
 			com.kiuwan.plugins.kiuwanJenkinsPlugin.KiuwanConnectionProfile.class);
 		
-		// Kiuwan plugin version <= 1.5.2
+		// 1.4.6 <= Kiuwan plugin version <= 1.5.2
 		xstream2.addCompatibilityAlias("com.kiuwan.plugins.kiuwanJenkinsPlugin.KiuwanDescriptor", 
 			com.kiuwan.plugins.kiuwanJenkinsPlugin.KiuwanConnectionProfile.class);
 		
