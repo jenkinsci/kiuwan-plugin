@@ -163,6 +163,10 @@ public class KiuwanUtils {
 			return FormValidation.warning("Could not initiate the authentication process. Reason: " + throwable.getMessage());
 		}
 	}
+	
+	public static String getCurrentTimestampString() {
+		return Long.toHexString(System.currentTimeMillis());
+	}
 
 	private static ApiClient newApiClient(KiuwanConnectionProfile connectionProfile) {
 		return Configuration.newClient(

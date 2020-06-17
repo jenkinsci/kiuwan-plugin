@@ -15,15 +15,14 @@
 	<f:section title="Kiuwan Global Settings">
 		
 		<!-- Error messages -->
-		<j:if test="${descriptor.existOldConfigFile()}">
-			<f:entry title="Data migration failed">
+		<j:if test="${!descriptor.isConfigUpgradedToConnectionProfiles() || !descriptor.isJobsUpgradedToConnectionProfiles()}">
+			<f:entry title="Data upgrade failed">
 				<div class="error">
-					An old data file has been detected. This means that the automatic migration process to the new 
-					configuration structure may have failed. If the current configuration has no connection profiles
-					or the default connection profile is misconfigured, you can re-run the migration process by clicking the 
-					"Run migration" button:
+					The automatic upgrade to support multiple connection profiles has not been run.
+					If the current configuration has no connection profiles or the default connection profile is misconfigured,
+					you can re-run the upgrade process by clicking the "Upgrade to connection profiles" button:
 				</div>
-				<f:validateButton title="Run migration" progress="Migrating old data..." method="migrateConfiguration" />
+				<f:validateButton title="Upgrade to connection profiles" progress="Upgrading data..." method="upgradeToConnectionProfiles" />
 			</f:entry>
 		</j:if>
 		<j:if test="${descriptor.existMisconfiguredJobs()}">
