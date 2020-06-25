@@ -10,13 +10,13 @@ import java.io.IOException;
 import hudson.FilePath.FileCallable;
 import hudson.remoting.VirtualChannel;
 
-public class KiuwanAgentProperties implements FileCallable<Void> {
+public class LocalAnalyzerProperties implements FileCallable<Void> {
 
 	private static final long serialVersionUID = 2265079817570278194L;
 
 	private String username;
 
-	public KiuwanAgentProperties(String username) {
+	public LocalAnalyzerProperties(String username) {
 		this.username = username;
 	}
 
@@ -40,7 +40,9 @@ public class KiuwanAgentProperties implements FileCallable<Void> {
 			}
 		}
 
-		try (BufferedWriter bufferedWriter = new BufferedWriter(new FileWriter(propertiesFilePath))) {
+		try (FileWriter fw = new FileWriter(propertiesFilePath);
+			 BufferedWriter bufferedWriter = new BufferedWriter(fw)) {
+			
 			bufferedWriter.write(stringBuilder.toString());
 		}
 

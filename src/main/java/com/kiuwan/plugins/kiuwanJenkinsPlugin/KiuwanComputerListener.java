@@ -38,9 +38,9 @@ public class KiuwanComputerListener extends ComputerListener {
     public void process(Computer c, FilePath root, TaskListener listener) throws IOException, InterruptedException {
     	KiuwanDescriptor descriptor = (KiuwanDescriptor) Jenkins.getInstance().getDescriptor(KiuwanRecorder.class);
     	try {
-            String installDir = KiuwanUtils.getPathFromConfiguredKiuwanURL(KiuwanRunnable.AGENT_DIRECTORY, descriptor);
+            String installDir = KiuwanUtils.getPathFromConfiguredKiuwanURL(KiuwanRunnable.LOCAL_ANALYZER_PARENT_DIRECTORY, descriptor);
     		FilePath remoteDir = root.child(installDir);
-            if (!remoteDir.child(KiuwanRunnable.AGENT_HOME).exists()) {
+            if (!remoteDir.child(KiuwanRunnable.LOCAL_ANALYZER_DIRECTORY).exists()) {
                 listener.getLogger().println("Installing KiuwanAnalyzer to "+remoteDir);
                 File zip = kiuwanDownloadable.resolve(listener, descriptor);
                 remoteDir.mkdirs();

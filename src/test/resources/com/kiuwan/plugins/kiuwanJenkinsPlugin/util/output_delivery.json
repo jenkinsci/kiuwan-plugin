@@ -1,0 +1,139 @@
+{
+	"name": "Example application",
+	"description": "",
+	"auditName": "Kiuwan default audit",
+	"applicationBusinessValue": "CRITICAL",
+	"applicationPortfolios": {
+		
+	},
+	"label": "Delivery label",
+	"date": "2019-01-22T11:13:57Z",
+	"modelId": 12903,
+	"encoding": "UTF-8",
+	"analysisCode": "A-7e3-632462c1580",
+	"auditResultURL": "https://www.kiuwan.com/saas/web/dashboard/delivery?h=ZJ2MWW4D4S1L3VZXRIBSWBE2QR6X52T53G0I2LLPD56Y9M6M29UZVC3NE34XQYTM",
+	"analysisBusinessValue": "CRITICAL",
+	"analysisPortfolios": {
+		
+	},
+	"analysisStatus": "FINISHED",
+	"languages": [
+		{
+			"name": "html",
+			"size": 1212
+		},
+		{
+			"name": "javascript",
+			"size": 107278
+		}
+	],
+	"analysisScope": "Partial delivery",
+	"changeRequest": "CR-2",
+	"changeRequestStatus": "Resolved",
+	"branchName": "",
+	"baselineAnalysisCode": "A-7e3-126672a126f",
+	"deliveryFiles": {
+		"count": 365
+	},
+	"deliveryDefects": {
+		"newDefects": 0,
+		"removedDefects": 0,
+		"defects": 2114
+	},
+	"auditResult": {
+		"approvalThreshold": 50.0,
+		"overallResult": "OK",
+		"score": 100.0,
+		"checkpointResults": [
+			{
+				"checkpoint": "355",
+				"result": "OK",
+				"name": "No new defects",
+				"description": "If a new defect is detected, the checkpoint will not pass.",
+				"weight": 1,
+				"mandatory": true,
+				"type": "Threshold for maximum new defects",
+				"score": 100.0,
+				"violatedRules": []
+			}
+		]
+	},
+	"quality_model": "CQM",
+	"ordered_by": "Example user",
+	"Quality indicator": {
+		"value": 44.20997951074534,
+		"children": [
+			{
+				"name": "Efficiency",
+				"value": 99.80981834625459
+			},
+			{
+				"name": "Maintainability",
+				"value": 0.04130012803058744
+			},
+			{
+				"name": "Portability",
+				"value": 99.24237670275278
+			},
+			{
+				"name": "Reliability",
+				"value": 35.66750821500371
+			},
+			{
+				"name": "Security",
+				"value": 99.74537105451833
+			}
+		]
+	},
+	"Main metrics": [
+		{
+			"name": "Duplicated code",
+			"value": 0.20452556117392596
+		},
+		{
+			"name": "Total defects",
+			"value": 2114.0
+		},
+		{
+			"name": "Very high defects",
+			"value": 560.0
+		},
+		{
+			"name": "Supressed defects",
+			"value": 0.0
+		},
+		{
+			"name": "Files",
+			"value": 365.0
+		},
+		{
+			"name": "Lines of code",
+			"value": 108490.0
+		},
+		{
+			"name": "Audit result",
+			"value": 1.0
+		},
+		{
+			"name": "Complexity",
+			"value": 7.844663494221618
+		}
+	],
+	"Security": {
+		"Rating": 1.0,
+		"Effort": {
+			"3Stars": 35.166666666666667,
+			"5Stars": 37.75,
+			"2Stars": 27.266666666666663,
+			"4Stars": 35.166666666666667
+		},
+		"Vulnerabilities": {
+			"High": 6.0,
+			"Low": 1.0,
+			"VeryHigh": 22.0,
+			"Total": 29,
+			"Normal": 0.0,
+			"VeryLow": 0.0
+		}
+	}
+}

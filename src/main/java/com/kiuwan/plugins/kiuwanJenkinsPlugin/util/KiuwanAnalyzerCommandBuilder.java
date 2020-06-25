@@ -2,6 +2,7 @@ package com.kiuwan.plugins.kiuwanJenkinsPlugin.util;
 
 import static com.kiuwan.plugins.kiuwanJenkinsPlugin.util.KiuwanUtils.buildAdditionalParameterExpression;
 import static com.kiuwan.plugins.kiuwanJenkinsPlugin.util.KiuwanUtils.buildArgument;
+import static com.kiuwan.plugins.kiuwanJenkinsPlugin.util.KiuwanUtils.getOutputFile;
 import static com.kiuwan.plugins.kiuwanJenkinsPlugin.util.KiuwanUtils.getRemoteFileAbsolutePath;
 
 import java.io.BufferedReader;
@@ -20,11 +21,13 @@ import com.kiuwan.plugins.kiuwanJenkinsPlugin.KiuwanDescriptor;
 import com.kiuwan.plugins.kiuwanJenkinsPlugin.KiuwanRecorder;
 import com.kiuwan.plugins.kiuwanJenkinsPlugin.model.ChangeRequestStatusType;
 import com.kiuwan.plugins.kiuwanJenkinsPlugin.model.DeliveryType;
+import com.kiuwan.plugins.kiuwanJenkinsPlugin.model.Measure;
 import com.kiuwan.plugins.kiuwanJenkinsPlugin.model.Mode;
 
 import hudson.EnvVars;
 import hudson.FilePath;
 import hudson.Launcher;
+import hudson.model.AbstractBuild;
 import hudson.model.TaskListener;
 
 public class KiuwanAnalyzerCommandBuilder {
@@ -51,17 +54,18 @@ public class KiuwanAnalyzerCommandBuilder {
 	
 	private KiuwanDescriptor descriptor;
 	private KiuwanRecorder recorder;
+	private AbstractBuild<?, ?> build;
 	
-	public KiuwanAnalyzerCommandBuilder(KiuwanDescriptor descriptor, KiuwanRecorder recorder) {
+	public KiuwanAnalyzerCommandBuilder(KiuwanDescriptor descriptor, KiuwanRecorder recorder, AbstractBuild<?, ?> build) {
 		super();
 		this.descriptor = descriptor;
 		this.recorder = recorder;
+		this.build = build;
 	}
 
-	public List<String> buildAgentCommand(Launcher launcher, String name, 
-			String analysisLabel, String analysisEncoding, FilePath srcFolder, 
-			String command, FilePath agentBinDir, TaskListener listener,
-			EnvVars envVars) throws IOException, InterruptedException {
+	public List<String> buildLocalAnalyzerCommand(Launcher launcher, TaskListener listener, FilePath agentHome, 
+			FilePath srcFolder, String name, String analysisLabel, String analysisEncoding, EnvVars envVars) 
+			throws IOException, InterruptedException {
 		
 		Integer timeout = null;
 		String includes = null;
@@ -90,11 +94,16 @@ public class KiuwanAnalyzerCommandBuilder {
 		List<String> args = new ArrayList<String>();
 
 		// Always quote command absolute path under windows
-		String commandAbsolutePath = getRemoteFileAbsolutePath(agentBinDir.child(command), listener);
+		FilePath command = getLocalAnalyzerCommandFilePath(launcher, agentHome);
+		String commandAbsolutePath = getRemoteFileAbsolutePath(command, listener);
 		args.add(launcher.isUnix() ? commandAbsolutePath : "\"" + commandAbsolutePath + "\"");
 
 		args.add("-s");
 		args.add(buildArgument(launcher, getRemoteFileAbsolutePath(srcFolder, listener)));
+		
+		// TODO: check if this automatically points to master (not being FilePath object should mean so?)
+		args.add("-o");
+		args.add(buildArgument(launcher, getOutputFile(build).getAbsolutePath()));
 
 		args.add("--user");
 		args.add(buildArgument(launcher, descriptor.getUsername()));
@@ -114,6 +123,11 @@ public class KiuwanAnalyzerCommandBuilder {
 			args.add(buildArgument(launcher, analysisLabel));
 			args.add("-c");
 			
+			// In standard mode, wait for results as long as a measure is specified 
+			if (!Measure.NONE.name().equalsIgnoreCase(recorder.getMeasure())) {
+				args.add("-wr");
+			}
+			
 		} else if (Mode.DELIVERY_MODE.equals(recorder.getSelectedMode())) {
 			args.add("-n");
 			args.add(buildArgument(launcher, name));
@@ -129,8 +143,8 @@ public class KiuwanAnalyzerCommandBuilder {
 			} else if (DeliveryType.PARTIAL_DELIVERY.name().equals(deliveryType)) {
 				deliveryType = "partialDelivery";
 			}
-			
 			args.add(buildArgument(launcher, deliveryType));
+			
 			if (recorder.getWaitForAuditResults_dm()) {
 				args.add("-wr");
 			}
@@ -159,6 +173,7 @@ public class KiuwanAnalyzerCommandBuilder {
 		}
 
 		args.add(buildAdditionalParameterExpression(launcher, "timeout", timeoutAsString));
+		args.add(buildAdditionalParameterExpression(launcher, "results.timeout", timeoutAsString));
 
 		if (!Mode.EXPERT_MODE.equals(recorder.getSelectedMode())) {
 			if (StringUtils.isNotBlank(includes)) {
@@ -170,11 +185,8 @@ public class KiuwanAnalyzerCommandBuilder {
 			}
 			
 			args.add(buildAdditionalParameterExpression(launcher, "encoding", analysisEncoding));
-			if (
-				(Mode.STANDARD_MODE.equals(recorder.getSelectedMode()) && (recorder.getIndicateLanguages() != null && recorder.getIndicateLanguages() == true))
-				|| 
-				(Mode.DELIVERY_MODE.equals(recorder.getSelectedMode()) && (recorder.getIndicateLanguages_dm() != null && recorder.getIndicateLanguages_dm() == true))
-			) {
+			if ((Mode.STANDARD_MODE.equals(recorder.getSelectedMode()) && Boolean.TRUE.equals(recorder.getIndicateLanguages())) || 
+				(Mode.DELIVERY_MODE.equals(recorder.getSelectedMode()) && Boolean.TRUE.equals(recorder.getIndicateLanguages_dm()))) {
 				args.add(buildAdditionalParameterExpression(launcher, "supported.technologies", languages));
 			}
 		}
@@ -196,7 +208,8 @@ public class KiuwanAnalyzerCommandBuilder {
 			proxyUsername = "";
 			proxyPassword = "";
 		}
-			
+		
+		FilePath agentBinDir = getAgentBinDir(agentHome);
 		writeConfigToProperties(agentBinDir, 
 			proxyHost, proxyPort, proxyProtocol, proxyAuthentication,
 			proxyUsername, proxyPassword, configSaveStamp);
@@ -204,6 +217,37 @@ public class KiuwanAnalyzerCommandBuilder {
 		return args;
 	}
 	
+	public static FilePath getAgentBinDir(FilePath agentHome) {
+		return agentHome.child("bin");
+	}
+
+	public static String getLocalAnalyzerCommandFileName(Launcher launcher) {
+		return launcher.isUnix() ? "agent.sh" : "agent.cmd";
+	}
+	
+	public static FilePath getLocalAnalyzerCommandFilePath(Launcher launcher, FilePath agentHome) {
+		String command = getLocalAnalyzerCommandFileName(launcher);
+		FilePath binDir = getAgentBinDir(agentHome);
+		FilePath script = binDir.child(command);
+		return script;
+	}
+
+	public static boolean[] getMasks(List<String> args) {
+		boolean[] masks = new boolean[args.size()];
+		boolean mask = false;
+		for (int i = 1; i < masks.length; i++) {
+			masks[i] = mask;
+			if ("--user".equals(args.get(i)) || "--pass".equals(args.get(i))) {
+				mask = true;
+			} else if (args.get(i).contains("username") || args.get(i).contains("password")) {
+				masks[i] = true;
+			} else {
+				mask = false;
+			}
+		}
+		return masks;
+	}
+
 	private void parseOptions(List<String> args, Launcher launcher) {
 		String commandArgs = recorder.getCommandArgs_em();
 		String escapedBackslash = null;

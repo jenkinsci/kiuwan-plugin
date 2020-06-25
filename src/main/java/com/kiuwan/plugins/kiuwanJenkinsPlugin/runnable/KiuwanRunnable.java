@@ -1,24 +1,25 @@
 package com.kiuwan.plugins.kiuwanJenkinsPlugin.runnable;
 
+import static com.kiuwan.plugins.kiuwanJenkinsPlugin.model.results.AnalysisResult.ANALYSIS_STATUS_FINISHED;
+import static com.kiuwan.plugins.kiuwanJenkinsPlugin.util.KiuwanAnalyzerCommandBuilder.getAgentBinDir;
+import static com.kiuwan.plugins.kiuwanJenkinsPlugin.util.KiuwanAnalyzerCommandBuilder.getLocalAnalyzerCommandFilePath;
+import static com.kiuwan.plugins.kiuwanJenkinsPlugin.util.KiuwanAnalyzerCommandBuilder.getMasks;
+import static com.kiuwan.plugins.kiuwanJenkinsPlugin.util.KiuwanUtils.getOutputFile;
+import static com.kiuwan.plugins.kiuwanJenkinsPlugin.util.KiuwanUtils.getOutputRelativePath;
 import static com.kiuwan.plugins.kiuwanJenkinsPlugin.util.KiuwanUtils.getRemoteFileAbsolutePath;
-import static com.kiuwan.plugins.kiuwanJenkinsPlugin.util.KiuwanUtils.instantiateClient;
 import static com.kiuwan.plugins.kiuwanJenkinsPlugin.util.KiuwanUtils.parseErrorCodes;
+import static com.kiuwan.plugins.kiuwanJenkinsPlugin.util.KiuwanUtils.readAnalysisResult;
+import static com.kiuwan.plugins.kiuwanJenkinsPlugin.util.KiuwanUtils.roundDouble;
 
-import java.io.BufferedReader;
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.IOException;
-import java.io.InputStreamReader;
+import java.io.InputStream;
 import java.io.PrintStream;
-import java.io.PrintWriter;
-import java.io.StringWriter;
-import java.math.BigDecimal;
-import java.math.RoundingMode;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicReference;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
 import org.apache.commons.lang.StringUtils;
 import org.apache.commons.lang.exception.ExceptionUtils;
@@ -31,13 +32,10 @@ import com.kiuwan.plugins.kiuwanJenkinsPlugin.filecallable.KiuwanRemoteEnvironme
 import com.kiuwan.plugins.kiuwanJenkinsPlugin.filecallable.KiuwanRemoteFilePath;
 import com.kiuwan.plugins.kiuwanJenkinsPlugin.model.Measure;
 import com.kiuwan.plugins.kiuwanJenkinsPlugin.model.Mode;
+import com.kiuwan.plugins.kiuwanJenkinsPlugin.model.results.AnalysisResult;
 import com.kiuwan.plugins.kiuwanJenkinsPlugin.util.KiuwanAnalyzerCommandBuilder;
 import com.kiuwan.plugins.kiuwanJenkinsPlugin.util.KiuwanException;
 import com.kiuwan.plugins.kiuwanJenkinsPlugin.util.KiuwanUtils;
-import com.kiuwan.rest.client.ApiClient;
-import com.kiuwan.rest.client.ApiException;
-import com.kiuwan.rest.client.api.ApplicationApi;
-import com.kiuwan.rest.client.model.ApplicationBean;
 
 import hudson.EnvVars;
 import hudson.FilePath;
@@ -53,8 +51,10 @@ import hudson.util.FormValidation.Kind;
 
 public class KiuwanRunnable implements Runnable {
 	
-	public static final String AGENT_DIRECTORY = "tools/kiuwan";
-    public static final String AGENT_HOME = "KiuwanLocalAnalyzer";
+	public static final String LOCAL_ANALYZER_PARENT_DIRECTORY = "tools/kiuwan";
+    public static final String LOCAL_ANALYZER_DIRECTORY = "KiuwanLocalAnalyzer";
+    
+    private static final int KLA_RETURN_CODE_AUDIT_FAILED = 10;
 	
 	private KiuwanDescriptor descriptor;
 	private KiuwanRecorder recorder;
@@ -65,6 +65,7 @@ public class KiuwanRunnable implements Runnable {
 	private AtomicReference<Result> resultReference;
 	private AtomicReference<Throwable> exceptionReference;
 	private KiuwanAnalyzerCommandBuilder commandBuilder;
+	private PrintStream loggerPrintStream;
 	
 	public KiuwanRunnable(KiuwanDescriptor descriptor, KiuwanRecorder recorder, 
 			Node node, AbstractBuild<?, ?> build, Launcher launcher, BuildListener listener,
@@ -79,7 +80,8 @@ public class KiuwanRunnable implements Runnable {
 		this.listener = listener;
 		this.resultReference = resultReference;
 		this.exceptionReference = exceptionReference;
-		this.commandBuilder = new KiuwanAnalyzerCommandBuilder(descriptor, recorder);
+		this.commandBuilder = new KiuwanAnalyzerCommandBuilder(descriptor, recorder, build);
+		this.loggerPrintStream = listener.getLogger();
 	}
 
 	public void run() {
@@ -93,44 +95,152 @@ public class KiuwanRunnable implements Runnable {
 				descriptor.getProxyPassword());
 
 			if (Kind.OK.equals(connectionTestResult.kind)) {
-				performScan(node, build, launcher, listener, resultReference);
+				performAnalysis();
 				
 			} else {
-				listener.getLogger().print("Could not get authorization from Kiuwan. Verify your ");
+				loggerPrintStream.print("Could not get authorization from Kiuwan. Verify your ");
 				listener.hyperlink("/configure", "Kiuwan account settings");
-				listener.getLogger().println(".");
-				listener.getLogger().println(connectionTestResult.getMessage());
+				loggerPrintStream.println(".");
+				loggerPrintStream.println(connectionTestResult.getMessage());
 				resultReference.set(Result.NOT_BUILT);
 			}
 		
 		} catch (KiuwanException e) {
-			listener.getLogger().println(e.getMessage());
+			loggerPrintStream.println(e.getMessage());
 			listener.fatalError(e.getMessage());
+			// TODO: check this
+			/*
 			StringWriter sw = new StringWriter();
 			PrintWriter pw = new PrintWriter(sw);
 			e.printStackTrace(pw);
-			listener.getLogger().println(sw.toString());
+			loggerPrintStream.println(sw.toString());
+			 */
+			e.printStackTrace(loggerPrintStream);
 			resultReference.set(Result.NOT_BUILT);
 			exceptionReference.set(e);
 			
 		} catch (IOException e) {
-			listener.getLogger().println(e.toString());
+			loggerPrintStream.println(e.toString());
 			exceptionReference.set(e);
 			resultReference.set(Result.NOT_BUILT);
 			
 		} catch (InterruptedException e) {
-			listener.getLogger().println("Analysis interrupted.");
+			loggerPrintStream.println("Analysis interrupted.");
 			exceptionReference.set(e);
 			resultReference.set(Result.ABORTED);
 			
 		} catch (Throwable throwable) {
-			listener.getLogger().println(ExceptionUtils.getFullStackTrace(throwable));
+			loggerPrintStream.println(ExceptionUtils.getFullStackTrace(throwable));
 			resultReference.set(Result.NOT_BUILT);
 		}
 	}
 	
-	private void performScan(Node node, AbstractBuild<?, ?> build, Launcher launcher, final BuildListener listener,
-			AtomicReference<Result> resultReference) throws KiuwanException, IOException, InterruptedException {
+	private void performAnalysis() throws KiuwanException, IOException, InterruptedException {
+		
+		// 1 - Install Local Analyzer if not already installed
+		FilePath localAnalyzerHome = installLocalAnalyzer();
+		
+		// 2 - Extract environment variables
+		EnvVars envVars = buildEnvVars();
+		
+		// 3 - Print execution information to console
+		printExecutionConfiguration(localAnalyzerHome);
+		
+		// 4 - Get the command line arguments to use
+		List<String> args = buildLocalAnalyzerCommand(localAnalyzerHome, envVars);
+		
+		// 5 - Execute Kiuwan Local Analyzer
+		int klaReturnCode = runKiuwanLocalAnalyzer(args, envVars, localAnalyzerHome);
+		
+		// 6 - Read analysis results
+		AnalysisResult analysisResult = loadAnalysisResults();
+		
+		// 7 - Process results
+		String analysisCode = analysisResult != null ? analysisResult.getAnalysisCode() : null;
+		if (analysisCode == null) {
+			onNoCodeAnalysisFinished();
+			
+		} else if (Mode.STANDARD_MODE.equals(recorder.getSelectedMode())) {
+			onAnalysisFinishedStandardMode(klaReturnCode, analysisResult);
+		
+		} else if (Mode.DELIVERY_MODE.equals(recorder.getSelectedMode())) {
+			onAnalysisFinishedDeliveryMode(klaReturnCode, analysisResult);
+			
+		} else if (Mode.EXPERT_MODE.equals(recorder.getSelectedMode())) {
+			onAnalysisFinishedExpertMode(klaReturnCode, analysisResult);
+			
+		} 
+		/* else {
+			onAnalysisFinishedFallback();
+		} */
+		
+		KiuwanBuildSummaryAction resultsSummaryAction = new KiuwanBuildSummaryAction(
+			analysisResult, getOutputRelativePath(build));
+		build.addAction(resultsSummaryAction);
+	}
+	
+	private FilePath installLocalAnalyzer() throws IOException, InterruptedException {
+		FilePath rootPath = node.getRootPath();
+		FilePath workspace = build.getWorkspace();
+		
+		FilePath jenkinsRootDir = null;
+		if (workspace.isRemote()) {
+			jenkinsRootDir = new FilePath(workspace.getChannel(), rootPath.getRemote());
+		} else {
+			jenkinsRootDir = new FilePath(new File(rootPath.getRemote()));
+		}
+		
+		String agentDirectory = KiuwanUtils.getPathFromConfiguredKiuwanURL(LOCAL_ANALYZER_PARENT_DIRECTORY, descriptor);
+		FilePath installDir = jenkinsRootDir.child(agentDirectory);
+		FilePath agentHome = installDir.child(LOCAL_ANALYZER_DIRECTORY);
+		
+		// If installDir does not exist, install KLA
+		if (agentHome.act(new KiuwanRemoteFilePath()) == null) {
+			KiuwanDownloadable kiuwanDownloadable = new KiuwanDownloadable();
+			loggerPrintStream.println("Installing KiuwanLocalAnalyzer in " + installDir);
+			File zip = kiuwanDownloadable.resolve(listener, descriptor);
+			installDir.mkdirs();
+			new FilePath(zip).unzip(installDir);
+			
+			FilePath agentBinDir = agentHome.child("bin");
+			if (launcher.isUnix()) {
+				loggerPrintStream.println("Changing agent.sh permission");
+				agentBinDir.child("agent.sh").chmod(0755);
+			}
+		}
+		
+		return agentHome;
+	}
+	
+	private EnvVars buildEnvVars() throws IOException, InterruptedException {
+		EnvVars environment = build.getEnvironment(listener);
+		EnvVars envVars = new EnvVars(environment);
+		
+		Map<String, String> buildVariables = build.getBuildVariables();
+		envVars.putAll(buildVariables);
+
+		EnvVars remoteEnv = build.getWorkspace().act(new KiuwanRemoteEnvironment());
+		envVars.putAll(remoteEnv);
+		
+		return envVars;
+	}
+
+	private void printExecutionConfiguration(FilePath agentHome) throws IOException, InterruptedException {
+		FilePath script = getLocalAnalyzerCommandFilePath(launcher, agentHome);
+		loggerPrintStream.println("Script: " + getRemoteFileAbsolutePath(script, listener));
+		
+		if (Mode.STANDARD_MODE.equals(recorder.getSelectedMode())) {
+			loggerPrintStream.println("Threshold measure: " + recorder.getMeasure());
+			
+			if (!Measure.NONE.name().equalsIgnoreCase(recorder.getMeasure())) {
+				loggerPrintStream.println("Unstable threshold: " + recorder.getUnstableThreshold());
+				loggerPrintStream.println("Failure threshold: " + recorder.getFailureThreshold());
+			}
+		}
+	}
+	
+	private List<String> buildLocalAnalyzerCommand(FilePath localAnalyzerHome, EnvVars envVars) 
+			throws IOException, InterruptedException {
 		
 		String name = null;
 		String analysisLabel = null;
@@ -160,320 +270,200 @@ public class KiuwanRunnable implements Runnable {
 		}
 
 		FilePath srcFolder = build.getModuleRoot();
-
-		EnvVars environment = build.getEnvironment(listener);
+		List<String> args = commandBuilder.buildLocalAnalyzerCommand(launcher, listener, 
+			localAnalyzerHome, srcFolder, name, analysisLabel, analysisEncoding, envVars);
 		
-		FilePath workspace = build.getWorkspace();
-		EnvVars remoteEnv = workspace.act(new KiuwanRemoteEnvironment());
-		Map<String, String> builtVariables = build.getBuildVariables();
-
-		EnvVars envVars = new EnvVars(environment);
-		envVars.putAll(builtVariables);
-		envVars.putAll(remoteEnv);
+		return args;
+	}
+	
+	private int runKiuwanLocalAnalyzer(List<String> args, EnvVars envVars, FilePath localAnalyzerHome)
+			throws IOException, InterruptedException {
 		
-		FilePath jenkinsRootDir = null;
-		FilePath rootPath = node.getRootPath();
-		if (workspace.isRemote()) {
-			jenkinsRootDir = new FilePath(workspace.getChannel(), rootPath.getRemote());
-		} else {
-			jenkinsRootDir = new FilePath(new File(rootPath.getRemote()));
-		}
+		FilePath localAnalyzerBinDir = getAgentBinDir(localAnalyzerHome);
+		boolean[] masks = getMasks(args);
 		
-		String agentDirectory = KiuwanUtils.getPathFromConfiguredKiuwanURL(AGENT_DIRECTORY, descriptor);
-		FilePath installDir = jenkinsRootDir.child(agentDirectory);
-		FilePath agentHome = installDir.child(AGENT_HOME);
+		ProcStarter procStarter = launcher.launch()
+			.cmds(args)
+			.masks(masks)
+			.envs(envVars)
+			.pwd(localAnalyzerBinDir)
+			.stdout(listener);
 		
-		String command = launcher.isUnix() ? "agent.sh" : "agent.cmd";
-		FilePath agentBinDir = agentHome.child("bin");
-		FilePath script = agentBinDir.child(command);
-		
-		final PrintStream loggerStream = listener.getLogger();
-		if (agentHome.act(new KiuwanRemoteFilePath()) == null) {
-			installLocalAnalyzer(jenkinsRootDir, listener);
-		}
-
-		if (launcher.isUnix()) {
-			loggerStream.println("Changing " + command + " permission");
-			agentBinDir.child("agent.sh").chmod(0755);
-		}
-
-		printExecutionConfiguration(listener, script);
-
-		String analysisCode = null;
-		int result = -1;
-
-		List<String> args = commandBuilder.buildAgentCommand(launcher, name, analysisLabel, analysisEncoding, 
-			srcFolder, command, agentBinDir, listener, envVars);
-
-		boolean[] masks = new boolean[args.size()];
-		boolean mask = false;
-		for (int i = 1; i < masks.length; i++) {
-			masks[i] = mask;
-			if ("--user".equals(args.get(i)) || "--pass".equals(args.get(i))) {
-				mask = true;
-			} else if (args.get(i).contains("username") || args.get(i).contains("password")) {
-				masks[i] = true;
-			} else {
-				mask = false;
-			}
-		}
-
-		ProcStarter procStarter = launcher.launch().cmds(args).masks(masks);
-
-		procStarter = procStarter.envs(envVars).readStdout().pwd(script.getParent());
 		Proc process = procStarter.start();
+		int klaReturnCode = process.join();
+		loggerPrintStream.println("Result code: " + klaReturnCode);
 
-		BufferedReader bufferedReader = null;
-		Pattern pattern = Pattern.compile(".*Analysis created in Kiuwan with code: (.*)$");
-		bufferedReader = new BufferedReader(new InputStreamReader(process.getStdout()));
-		String line = null;
-		while ((line = bufferedReader.readLine()) != null) {
-			Matcher matcher = pattern.matcher(line);
-			boolean found = matcher.find();
-			if (found) {
-				analysisCode = matcher.group(1);
-			}
-			listener.getLogger().println(line);
+		return klaReturnCode;
+	}
+	
+	private AnalysisResult loadAnalysisResults() {
+		AnalysisResult analysisResults = null;
+		File outputReportFile = getOutputFile(build);
+		if (outputReportFile != null && outputReportFile.exists() && outputReportFile.canRead()) {
+			try (InputStream is = new FileInputStream(outputReportFile)) {
+		  		analysisResults = readAnalysisResult(is);
+		  	} catch (IOException e) {
+		  		loggerPrintStream.println("Could not read analysis results: " + e);
+		  	}
 		}
-		result = process.join();
-		loggerStream.println("Result code: "+result);
-		
-		if (analysisCode == null) {
-			listener.getLogger().println("Could not retrieve analysis code.");
+		return analysisResults;
+	}
+	
+	private void onNoCodeAnalysisFinished() {
+		loggerPrintStream.println("Could not retrieve analysis code.");
+		resultReference.set(Result.NOT_BUILT);
+	}
+	
+	private void onAnalysisFinishedStandardMode(int klaReturnCode, AnalysisResult analysisResult) {
+		if (klaReturnCode != 0) {
+			loggerPrintStream.println("Kiuwan Analyzer not finalized with success.");
 			resultReference.set(Result.NOT_BUILT);
-			
-		} else if (Mode.STANDARD_MODE.equals(recorder.getSelectedMode())) {
-			if (result != 0) {
-				listener.getLogger().println("Kiuwan Analyzer not finalized with success.");
-				resultReference.set(Result.NOT_BUILT);
-			} else {
-				double qualityIndicator = -1d;
-				double effortToTarget = -1d;
-				double riskIndex = -1d;
-				boolean buildFailedInKiuwan = false;
-
-				boolean end = false;
-				ApiClient client = instantiateClient(descriptor);
-				ApplicationApi api = new ApplicationApi(client);
-				int retries = 3;
-				String analysisUrl = null;
-				do {
-					try {
-						loggerStream.println("Query for result: " + analysisCode);
-						ApplicationBean results = api.getAnalysis(analysisCode);
-						loggerStream.println("Analysis status in Kiuwan: " + results.getAnalysisStatus());
-						if ("FINISHED".equalsIgnoreCase(results.getAnalysisStatus())) {
-							qualityIndicator = results.getQualityIndicator().getValue();
-							effortToTarget = results.getEffortToTarget().getValue();
-							BigDecimal rawRiskIndex = new BigDecimal(results.getRiskIndex().getValue());
-							rawRiskIndex = rawRiskIndex.setScale(2, RoundingMode.HALF_UP);
-							riskIndex = rawRiskIndex.doubleValue();
-							analysisUrl = results.getAnalysisURL();
-							end = true;
-						} else if ("FINISHED_WITH_ERROR".equalsIgnoreCase(results.getAnalysisStatus())) {
-							buildFailedInKiuwan = true;
-							end = true;
-						}
-						
-					} catch (ApiException e) {
-						if (retries > 0) {
-							// Re-initializes the client.
-							client = instantiateClient(descriptor);
-							retries--;
-						} else {
-							loggerStream.println("Could not get analysis results from Kiuwan: " + e);
-							buildFailedInKiuwan = true;
-							end = true;
-						}
-					}
-
-					if (!end) {
-						Thread.sleep(30000);
-					}
-				} while (!end);
-
-				if (buildFailedInKiuwan) {
-					loggerStream.println("Build failed in Kiuwan");
-					resultReference.set(Result.NOT_BUILT);
-				} else {
-					printAnalysisSummary(listener, qualityIndicator, effortToTarget, riskIndex);
-					checkThresholds(listener, qualityIndicator, effortToTarget, riskIndex, resultReference);
-					KiuwanBuildSummaryAction link = new KiuwanBuildSummaryAction(analysisUrl);
-					build.addAction(link);
-				}
-			}
-			
-		} else if (Mode.DELIVERY_MODE.equals(recorder.getSelectedMode())) {
-			if (recorder.getWaitForAuditResults_dm()) {
-				if (result == 10) {// Audit not passed
-					String markBuildWhenNoPass = recorder.getMarkBuildWhenNoPass_dm();
-					listener.getLogger().println("Audit not passed. Marking build as " + markBuildWhenNoPass);
-					resultReference.set(Result.fromString(markBuildWhenNoPass));
-				}
-			}
-
-			String auditResultURL = getAuditResultURL(descriptor, analysisCode);
-			if (auditResultURL != null) {
-				addLink(build, auditResultURL);
-			}
-			
-		} else if (Mode.EXPERT_MODE.equals(recorder.getSelectedMode())) {
-			Set<Integer> successCodes = parseErrorCodes(recorder.getSuccessResultCodes_em());
-			Set<Integer> failureCodes = parseErrorCodes(recorder.getFailureResultCodes_em());
-			Set<Integer> unstableCodes = parseErrorCodes(recorder.getUnstableResultCodes_em());
-			Set<Integer> abortedCodes = parseErrorCodes(recorder.getAbortedResultCodes_em());
-			Set<Integer> notBuiltCodes = parseErrorCodes(recorder.getNotBuiltResultCodes_em());
-
-			if (successCodes.contains(result)) {
-				// continue
-			} else if (failureCodes.contains(result)) {
-				resultReference.set(Result.FAILURE);
-			} else if (unstableCodes.contains(result)) {
-				resultReference.set(Result.UNSTABLE);
-			} else if (abortedCodes.contains(result)) {
-				resultReference.set(Result.ABORTED);
-			} else if (notBuiltCodes.contains(result)) {
-				resultReference.set(Result.NOT_BUILT);
-			} else {
-				String markAsInOtherCases = recorder.getMarkAsInOtherCases_em();
-				loggerStream.println("Not configured result code received: " + result + 
-					". Marking build as " + markAsInOtherCases + ".");
-				resultReference.set(Result.fromString(markAsInOtherCases));
-			}
-
-			String auditResultURL = getAuditResultURL(descriptor, analysisCode);
-
-			if (auditResultURL != null) {
-				addLink(build, auditResultURL);
-			} else {
-				String analysisURL = getAnalysisURL(descriptor, analysisCode);
-				if (analysisURL != null) {
-					addLink(build, analysisURL);
-				} else {
-					addDefaultAnalysisLink(build, name, analysisLabel);
-				}
-			}
-			
+		
 		} else {
-			addDefaultAnalysisLink(build, name, analysisLabel);
+			// String analysisUrl = null;
+			double qualityIndicator = -1d;
+			double effortToTarget = -1d;
+			double riskIndex = -1d;
+
+			String analysisStatus = analysisResult != null ? analysisResult.getAnalysisStatus() : null;
+			if (ANALYSIS_STATUS_FINISHED.equalsIgnoreCase(analysisStatus)) {
+				
+				qualityIndicator = roundDouble(analysisResult.getQualityIndicator().getValue());
+				effortToTarget = roundDouble(analysisResult.getEffortToTarget().getValue());
+				riskIndex = roundDouble(analysisResult.getRiskIndex().getValue());
+				
+				// TODO: is this still needed?
+				printStandardModeConsoleSummary(qualityIndicator, effortToTarget, riskIndex);
+				
+				checkThresholds(qualityIndicator, effortToTarget, riskIndex);
+				// addLink(analysisUrl);
+
+			} else {
+				loggerPrintStream.println("Build failed in Kiuwan");
+				resultReference.set(Result.NOT_BUILT);
+			}
 		}
 	}
 	
-	private void addLink(AbstractBuild<?, ?> build, String url) {
+	private void onAnalysisFinishedDeliveryMode(int klaReturnCode, AnalysisResult analysisResult) {
+		if (recorder.getWaitForAuditResults_dm()) {
+			if (klaReturnCode == KLA_RETURN_CODE_AUDIT_FAILED) {
+				String markBuildWhenNoPass = recorder.getMarkBuildWhenNoPass_dm();
+				loggerPrintStream.println("Audit not passed. Marking build as " + markBuildWhenNoPass);
+				resultReference.set(Result.fromString(markBuildWhenNoPass));
+			}
+		}
+
+		/*
+		String auditResultURL = analysisResult != null ? analysisResult.getAuditResultURL() : null;
+		if (auditResultURL != null) {
+			addLink(auditResultURL);
+		}
+		*/
+	}
+	
+	private void onAnalysisFinishedExpertMode(int klaReturnCode, AnalysisResult analysisResult) {
+		Set<Integer> successCodes = parseErrorCodes(recorder.getSuccessResultCodes_em());
+		Set<Integer> failureCodes = parseErrorCodes(recorder.getFailureResultCodes_em());
+		Set<Integer> unstableCodes = parseErrorCodes(recorder.getUnstableResultCodes_em());
+		Set<Integer> abortedCodes = parseErrorCodes(recorder.getAbortedResultCodes_em());
+		Set<Integer> notBuiltCodes = parseErrorCodes(recorder.getNotBuiltResultCodes_em());
+
+		if (successCodes.contains(klaReturnCode)) {
+			// continue
+		
+		} else if (failureCodes.contains(klaReturnCode)) {
+			resultReference.set(Result.FAILURE);
+			
+		} else if (unstableCodes.contains(klaReturnCode)) {
+			resultReference.set(Result.UNSTABLE);
+		
+		} else if (abortedCodes.contains(klaReturnCode)) {
+			resultReference.set(Result.ABORTED);
+		
+		} else if (notBuiltCodes.contains(klaReturnCode)) {
+			resultReference.set(Result.NOT_BUILT);
+		
+		} else {
+			String markAsInOtherCases = recorder.getMarkAsInOtherCases_em();
+			loggerPrintStream.println("Kiuwan Local Analyzer has returned an exit code not configured: " + 
+				klaReturnCode + ". Marking build as " + markAsInOtherCases + ".");
+			resultReference.set(Result.fromString(markAsInOtherCases));
+		}
+
+		/*
+		String auditResultURL = analysisResult != null ? analysisResult.getAuditResultURL() : null;
+		
+		if (auditResultURL != null) {
+			addLink(auditResultURL);
+			
+		} else {
+			String analysisURL = analysisResult != null ? analysisResult.getAnalysisURL() : null;
+			if (analysisURL != null) {
+				addLink(analysisURL);
+
+			} else {
+				addLink(buildKiuwanResultUrl(name, analysisLabel));
+			}
+		}
+		*/
+	}
+	
+	/*
+	private void onAnalysisFinishedFallback() {
+		addLink(buildKiuwanResultUrl(name, analysisLabel));
+	}
+	*/
+	
+	private void printStandardModeConsoleSummary(double qualityIndicator, double effortToTarget, double riskIndex) {
+		loggerPrintStream.println("==========================================================================");
+		loggerPrintStream.println("                    Kiuwan Static Analysis Summary                        ");
+		loggerPrintStream.println("==========================================================================");
+		loggerPrintStream.println(" - Global indicator: " + qualityIndicator);
+		loggerPrintStream.println(" - Effort to target: " + effortToTarget);
+		loggerPrintStream.println(" - Risk index: " + riskIndex);
+		loggerPrintStream.println();
+	}
+
+	/*
+	private void addLink(String url) {
 		KiuwanBuildSummaryAction link = new KiuwanBuildSummaryAction(url);
 		build.addAction(link);
-	}
-
-	private void addDefaultAnalysisLink(AbstractBuild<?, ?> build, String name, String analysisLabel) {
-		KiuwanBuildSummaryAction link = new KiuwanBuildSummaryAction(buildKiuwanResultUrl(name, analysisLabel));
-		build.addAction(link);
-	}
-
-	private String getAuditResultURL(KiuwanDescriptor descriptor, String analysisCode) {
-		ApiClient client = instantiateClient(descriptor);
-		ApplicationApi api = new ApplicationApi(client);
-
-		int retries = 3;
-		String auditResultURL = null;
-		do {
-			try {
-				ApplicationBean results = api.getAnalysis(analysisCode);
-				auditResultURL = results.getAuditResultURL();
-				retries = 0;
-			
-			} catch (ApiException e) {
-				retries--;
-			}
-			
-		} while (retries > 0);
-		return auditResultURL;
-	}
-
-	private String getAnalysisURL(KiuwanDescriptor descriptor, String analysisCode) {
-		ApiClient client = instantiateClient(descriptor);
-		ApplicationApi api = new ApplicationApi(client);
-
-		int retries = 3;
-		String analysisReslultURL = null;
-		do {
-			try {
-				ApplicationBean results = api.getAnalysis(analysisCode);
-				analysisReslultURL = results.getAnalysisURL();
-				retries = 0;
-			
-			} catch (ApiException e) {
-				if (retries > 0) {
-					client = instantiateClient(descriptor);
-				}
-				retries--;
-			}
-		} while (retries > 0);
-		return analysisReslultURL;
-	}
-	
-	private void printExecutionConfiguration(BuildListener listener, FilePath script) throws IOException, InterruptedException {
-		listener.getLogger().println("Script: " + getRemoteFileAbsolutePath(script, listener));
-		
-		if (Mode.STANDARD_MODE.equals(recorder.getSelectedMode())) {
-			listener.getLogger().println("Threshold measure: " + recorder.getMeasure());
-			listener.getLogger().println("Unstable threshold: " + recorder.getUnstableThreshold());
-			listener.getLogger().println("Failure threshold: " + recorder.getFailureThreshold());
-		}
-	}
-
-	private void checkThresholds(BuildListener listener, double qualityIndicator,
-	        double effortToTarget, double riskIndex, AtomicReference<Result> resultReference) {
-	    
-		String measure = recorder.getMeasure();
-		if (Measure.QUALITY_INDICATOR.name().equals(measure)) {
-			if (qualityIndicator < recorder.getFailureThreshold()) {
-				resultReference.set(Result.FAILURE);
-				listener.getLogger().println("Global indicator is lower than " + recorder.getFailureThreshold());
-			} else if (qualityIndicator < recorder.getUnstableThreshold()) {
-				resultReference.set(Result.UNSTABLE);
-				listener.getLogger().println("Global indicator is lower than " + recorder.getUnstableThreshold());
-			}
-		} else if (Measure.EFFORT_TO_TARGET.name().equals(measure)) {
-			if (effortToTarget > recorder.getFailureThreshold()) {
-				resultReference.set(Result.FAILURE);
-				listener.getLogger().println("Effort to target is greater than " + recorder.getFailureThreshold());
-			} else if (effortToTarget > recorder.getUnstableThreshold()) {
-				resultReference.set(Result.UNSTABLE);
-				listener.getLogger().println("Effort to target is greater than " + recorder.getUnstableThreshold());
-			}
-		} else if (Measure.RISK_INDEX.name().equals(measure)) {
-			if (riskIndex > recorder.getFailureThreshold()) {
-				resultReference.set(Result.FAILURE);
-				listener.getLogger().println("Risk index is greater than " + recorder.getFailureThreshold());
-			} else if (riskIndex > recorder.getUnstableThreshold()) {
-				resultReference.set(Result.UNSTABLE);
-				listener.getLogger().println("Risk index is greater than " + recorder.getUnstableThreshold());
-			}
-		}
-	}
-
-	private void printAnalysisSummary(BuildListener listener, double qualityIndicator, double effortToTarget, double riskIndex) {
-		listener.getLogger().println("==========================================================================");
-		listener.getLogger().println("                    Kiuwan Static Analysis Summary                        ");
-		listener.getLogger().println("==========================================================================");
-		listener.getLogger().println(" - Global indicator: " + qualityIndicator);
-		listener.getLogger().println(" - Effort to target: " + effortToTarget);
-		listener.getLogger().println(" - Risk index: " + riskIndex);
-		listener.getLogger().println();
 	}
 
 	private String buildKiuwanResultUrl(String applicationName, String analysisLabel) {
 		return descriptor.getKiuwanURL() + "/application?app=" + applicationName + "&label=" + analysisLabel;
 	}
+	*/
+	
+	private void checkThresholds(double qualityIndicator, double effortToTarget, double riskIndex) {
+		String measure = recorder.getMeasure();
 
-	private void installLocalAnalyzer(FilePath root, BuildListener listener) throws IOException, InterruptedException {
-		KiuwanDownloadable kiuwanDownloadable = new KiuwanDownloadable();
-		String installDir = KiuwanUtils.getPathFromConfiguredKiuwanURL(KiuwanRunnable.AGENT_DIRECTORY, descriptor);
-		FilePath remoteDir = root.child(installDir);
-		listener.getLogger().println("Installing KiuwanLocalAnalyzer in " + remoteDir);
-		File zip = kiuwanDownloadable.resolve(listener, descriptor);
-		remoteDir.mkdirs();
-		new FilePath(zip).unzip(remoteDir);
+		if (Measure.QUALITY_INDICATOR.name().equals(measure)) {
+			if (qualityIndicator < recorder.getFailureThreshold()) {
+				resultReference.set(Result.FAILURE);
+				loggerPrintStream.println("Global indicator is lower than " + recorder.getFailureThreshold());
+			} else if (qualityIndicator < recorder.getUnstableThreshold()) {
+				resultReference.set(Result.UNSTABLE);
+				loggerPrintStream.println("Global indicator is lower than " + recorder.getUnstableThreshold());
+			}
+		} else if (Measure.EFFORT_TO_TARGET.name().equals(measure)) {
+			if (effortToTarget > recorder.getFailureThreshold()) {
+				resultReference.set(Result.FAILURE);
+				loggerPrintStream.println("Effort to target is greater than " + recorder.getFailureThreshold());
+			} else if (effortToTarget > recorder.getUnstableThreshold()) {
+				resultReference.set(Result.UNSTABLE);
+				loggerPrintStream.println("Effort to target is greater than " + recorder.getUnstableThreshold());
+			}
+		} else if (Measure.RISK_INDEX.name().equals(measure)) {
+			if (riskIndex > recorder.getFailureThreshold()) {
+				resultReference.set(Result.FAILURE);
+				loggerPrintStream.println("Risk index is greater than " + recorder.getFailureThreshold());
+			} else if (riskIndex > recorder.getUnstableThreshold()) {
+				resultReference.set(Result.UNSTABLE);
+				loggerPrintStream.println("Risk index is greater than " + recorder.getUnstableThreshold());
+			}
+		}
 	}
 	
 }

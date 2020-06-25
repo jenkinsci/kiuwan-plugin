@@ -1,0 +1,191 @@
+{
+	"name": "Example application",
+	"description": "",
+	"auditName": "Kiuwan default audit",
+	"applicationBusinessValue": "CRITICAL",
+	"applicationPortfolios": {
+		
+	},
+	"label": "",
+	"date": "2019-04-08T09:00:53Z",
+	"modelId": 13153,
+	"encoding": "UTF-8",
+	"analysisCode": "A-7e3-112ac2818fc",
+	"analysisURL": "https://www.kiuwan.com/saas/web/dashboard/dashboard#$pe=$sei=252129$mi=dashboard$ac=A-7e3-112ac2818fc",
+	"analysisBusinessValue": "CRITICAL",
+	"analysisPortfolios": {
+		
+	},
+	"analysisStatus": "FINISHED",
+	"languages": [
+		{
+			"name": "java",
+			"size": 7625
+		},
+		{
+			"name": "javascript",
+			"size": 17632
+		},
+		{
+			"name": "jsp",
+			"size": 891
+		}
+	],
+	"insightsData": {
+		"components": 104,
+		"vulnerabilities": 47,
+		"licenses": 18,
+		"duplicates": 0,
+		"risks": [
+			{
+				"name": "Vulnerability risk",
+				"risk": {
+					"HIGH": 10,
+					"MEDIUM": 4,
+					"NONE": 90
+				}
+			},
+			{
+				"name": "Obsolescence risk",
+				"risk": {
+					"HIGH": 15,
+					"MEDIUM": 77,
+					"LOW": 1,
+					"UNKNOWN": 11
+				}
+			},
+			{
+				"name": "License risk",
+				"risk": {
+					"UNKNOWN": 53,
+					"NONE": 51
+				}
+			}
+		]
+	},
+	"analysisScope": "Baseline",
+	"quality_model": "CQM",
+	"ordered_by": "Example user",
+	"Risk index": {
+		"value": 1.8798799916891263,
+		"children": [
+			{
+				"name": "Efficiency",
+				"value": 0.0
+			},
+			{
+				"name": "Maintainability",
+				"value": 0.0
+			},
+			{
+				"name": "Portability",
+				"value": 0.0
+			},
+			{
+				"name": "Reliability",
+				"value": 0.0
+			},
+			{
+				"name": "Security",
+				"value": 6.6839745606397609
+			}
+		]
+	},
+	"Quality indicator": {
+		"value": 98.78383131473629,
+		"children": [
+			{
+				"name": "Efficiency",
+				"value": 99.95893287555421
+			},
+			{
+				"name": "Maintainability",
+				"value": 99.95893287555421
+			},
+			{
+				"name": "Portability",
+				"value": 100.0
+			},
+			{
+				"name": "Reliability",
+				"value": 97.69639845036605
+			},
+			{
+				"name": "Security",
+				"value": 51.73960568305244
+			}
+		]
+	},
+	"Effort to target": {
+		"value": 99.63333333333338,
+		"children": [
+			{
+				"name": "Efficiency",
+				"value": 0.0
+			},
+			{
+				"name": "Maintainability",
+				"value": 0.0
+			},
+			{
+				"name": "Portability",
+				"value": 0.0
+			},
+			{
+				"name": "Reliability",
+				"value": 0.0
+			},
+			{
+				"name": "Security",
+				"value": 99.63333333333338
+			}
+		]
+	},
+	"Main metrics": [
+		{
+			"name": "Duplicated code",
+			"value": 0.0
+		},
+		{
+			"name": "Total defects",
+			"value": 315.0
+		},
+		{
+			"name": "Very high defects",
+			"value": 69.0
+		},
+		{
+			"name": "Supressed defects",
+			"value": 0.0
+		},
+		{
+			"name": "Files",
+			"value": 180.0
+		},
+		{
+			"name": "Lines of code",
+			"value": 26148.0
+		},
+		{
+			"name": "Complexity",
+			"value": 7.885357548240636
+		}
+	],
+	"Security": {
+		"Rating": 1.0,
+		"Effort": {
+			"3Stars": 155.48333333333336,
+			"5Stars": 313.45000000000007,
+			"2Stars": 79.51666666666668,
+			"4Stars": 225.33333333333338
+		},
+		"Vulnerabilities": {
+			"High": 63.0,
+			"Low": 65.0,
+			"VeryHigh": 69.0,
+			"Total": 315,
+			"Normal": 55.0,
+			"VeryLow": 63.0
+		}
+	}
+}

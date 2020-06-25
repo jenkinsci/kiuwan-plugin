@@ -1,22 +1,32 @@
 package com.kiuwan.plugins.kiuwanJenkinsPlugin.util;
 
+import java.io.File;
 import java.io.IOException;
+import java.io.InputStream;
+import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.nio.file.Path;
 import java.util.Base64;
 import java.util.HashSet;
 import java.util.Set;
 
 import org.apache.commons.lang.StringUtils;
 
+import com.fasterxml.jackson.core.JsonParser.Feature;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.kiuwan.plugins.kiuwanJenkinsPlugin.KiuwanDescriptor;
 import com.kiuwan.plugins.kiuwanJenkinsPlugin.filecallable.KiuwanRemoteFilePath;
+import com.kiuwan.plugins.kiuwanJenkinsPlugin.model.results.AnalysisResult;
 import com.kiuwan.rest.client.ApiClient;
 import com.kiuwan.rest.client.Configuration;
 
 import hudson.FilePath;
 import hudson.Launcher;
+import hudson.model.AbstractBuild;
 import hudson.model.TaskListener;
+import jenkins.model.Jenkins;
 
 public class KiuwanUtils {
 
@@ -86,6 +96,29 @@ public class KiuwanUtils {
 		}
 		return path;
 	}
+
+	/** 
+	 * Returns the location at the master node for the KLA output file:
+	 * $JENKINS_HOME/jobs/$JOBNAME/builds/#BUILD/kiuwan/output.json
+	 * @param build the current build object
+	 * @return the file location
+	 */
+	public static File getOutputFile(AbstractBuild<?, ?> build) {
+		return new File(build.getRootDir(), "kiuwan/output.json");
+	}
+	
+	public static String getOutputRelativePath(AbstractBuild<?, ?> build) {
+		File outputFile = getOutputFile(build);
+		Path outputPath = outputFile.toPath();
+		Path outputPathRelative = outputPath.relativize(Jenkins.getInstance().getRootDir().toPath());
+		return outputPathRelative.toUri().getPath();
+	}
+	
+	public static double roundDouble(Double value) {
+		BigDecimal valueBigDecimnal = new BigDecimal(value);
+		valueBigDecimnal = valueBigDecimnal.setScale(2, RoundingMode.HALF_UP);
+		return valueBigDecimnal.doubleValue();
+	}
 	
 	public static Set<Integer> parseErrorCodes(String resultCodes) {
 		Set<Integer> errorCodes = new HashSet<Integer>();
@@ -145,11 +178,20 @@ public class KiuwanUtils {
 		com.kiuwan.rest.client.ApiClient apiClient = ApiClient(descriptor);
 		
 		String domain = descriptor.getDomain();
-		if(StringUtils.isNotBlank(domain)) {
+		if (StringUtils.isNotBlank(domain)) {
 			apiClient.addDefaultHeader(KIUWAN_DOMAIN_HEADER, domain);
 		}
 		
 		return apiClient;
+	}
+	
+	public static AnalysisResult readAnalysisResult(InputStream is) throws IOException {
+		ObjectMapper mapper = new ObjectMapper();
+	  	mapper.configure(Feature.IGNORE_UNDEFINED, true);
+	  	mapper.configure(Feature.ALLOW_MISSING_VALUES, true);
+	  	
+	  	AnalysisResult AnalysisResult = mapper.readValue(is, AnalysisResult.class);
+		return AnalysisResult;
 	}
 
 	/**
