@@ -4,6 +4,8 @@ import java.util.Date;
 import java.util.List;
 import java.util.Map;
 
+import org.apache.commons.lang.builder.ToStringBuilder;
+
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
@@ -15,6 +17,10 @@ public class AnalysisResult {
 	public static final String ANALYSIS_STATUS_FINISHED = "FINISHED";
 	public static final String ANALYSIS_STATUS_FINISHED_WITH_ERROR = "FINISHED_WITH_ERROR";
 	public static final String MAIN_METRICS_AUDIT_RESULT = "Audit result";
+	
+	public static final String ANALYSIS_SCOPE_BASELINE = "Baseline";
+	public static final String ANALYSIS_SCOPE_COMPLETE_DELIVERY = "Complete delivery";
+	public static final String ANALYSIS_SCOPE_PARTIAL_DELIVERY = "Partial delivery";
 	
 	private String name;
 	private String description;
@@ -53,27 +59,9 @@ public class AnalysisResult {
 	private DeliveryDefects deliveryDefects;
 	private AuditResult auditResult;
 
-	public Double getMainMetricValue(String name) {
-		if (mainMetrics != null) {
-			for (MetricValue metricValue : mainMetrics) {
-				if (name.equals(metricValue.getName())) {
-					return metricValue.getValue();
-				}
-			}
-		}
-		return null;
-	}
-
 	@Override 
 	public String toString() {
-		return "AnalysisResult [name=" + name 
-				+ ", description=" + description + ", label=" + label + ", date=" + date
-				+ ", encoding=" + encoding + ", analysisCode=" + analysisCode
-				+ ", analysisURL=" + analysisURL + ", analysisStatus=" + analysisStatus
-				+ ", languages=" + languages + ", qualityModel=" + qualityModel 
-				+ ", orderedBy=" + orderedBy + ", riskIndex=" + riskIndex 
-				+ ", qualityIndicator=" + qualityIndicator + ", effortToTarget=" + effortToTarget
-				+ ", mainMetrics=" + mainMetrics + "]";
+		return ToStringBuilder.reflectionToString(this);
 	}
 	
 	public String getName() { return name; }

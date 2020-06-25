@@ -41,15 +41,17 @@ public class KiuwanDescriptor extends BuildStepDescriptor<Publisher> {
 	private static final String PROXY_TYPE_SOCKS = "socks";
 
 	private final static String[] measureComboNames = {
-		"Global indicator", 
-		"Risk index", 
-		"Effort to target"
+		Measure.QUALITY_INDICATOR.getLabel(), 
+		Measure.RISK_INDEX.getLabel(), 
+		Measure.EFFORT_TO_TARGET.getLabel(),
+		Measure.NONE.getLabel()
 	};
 	
 	private final static String[] measureComboValues = { 
 		Measure.QUALITY_INDICATOR.name(), 
 		Measure.RISK_INDEX.name(), 
-		Measure.EFFORT_TO_TARGET.name() 
+		Measure.EFFORT_TO_TARGET.name(),
+		Measure.NONE.name()
 	};
 
 	private final static String[] proxyProtocolComboValues = { 

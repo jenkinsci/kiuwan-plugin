@@ -5,7 +5,6 @@ import static com.kiuwan.plugins.kiuwanJenkinsPlugin.util.KiuwanAnalyzerCommandB
 import static com.kiuwan.plugins.kiuwanJenkinsPlugin.util.KiuwanAnalyzerCommandBuilder.getLocalAnalyzerCommandFilePath;
 import static com.kiuwan.plugins.kiuwanJenkinsPlugin.util.KiuwanAnalyzerCommandBuilder.getMasks;
 import static com.kiuwan.plugins.kiuwanJenkinsPlugin.util.KiuwanUtils.getOutputFile;
-import static com.kiuwan.plugins.kiuwanJenkinsPlugin.util.KiuwanUtils.getOutputRelativePath;
 import static com.kiuwan.plugins.kiuwanJenkinsPlugin.util.KiuwanUtils.getRemoteFileAbsolutePath;
 import static com.kiuwan.plugins.kiuwanJenkinsPlugin.util.KiuwanUtils.parseErrorCodes;
 import static com.kiuwan.plugins.kiuwanJenkinsPlugin.util.KiuwanUtils.readAnalysisResult;
@@ -24,10 +23,11 @@ import java.util.concurrent.atomic.AtomicReference;
 import org.apache.commons.lang.StringUtils;
 import org.apache.commons.lang.exception.ExceptionUtils;
 
-import com.kiuwan.plugins.kiuwanJenkinsPlugin.KiuwanBuildSummaryAction;
 import com.kiuwan.plugins.kiuwanJenkinsPlugin.KiuwanDescriptor;
 import com.kiuwan.plugins.kiuwanJenkinsPlugin.KiuwanDownloadable;
 import com.kiuwan.plugins.kiuwanJenkinsPlugin.KiuwanRecorder;
+import com.kiuwan.plugins.kiuwanJenkinsPlugin.action.KiuwanBuildSummaryAction;
+import com.kiuwan.plugins.kiuwanJenkinsPlugin.action.KiuwanBuildSummaryView;
 import com.kiuwan.plugins.kiuwanJenkinsPlugin.filecallable.KiuwanRemoteEnvironment;
 import com.kiuwan.plugins.kiuwanJenkinsPlugin.filecallable.KiuwanRemoteFilePath;
 import com.kiuwan.plugins.kiuwanJenkinsPlugin.model.Measure;
@@ -174,8 +174,8 @@ public class KiuwanRunnable implements Runnable {
 			onAnalysisFinishedFallback();
 		} */
 		
-		KiuwanBuildSummaryAction resultsSummaryAction = new KiuwanBuildSummaryAction(
-			analysisResult, getOutputRelativePath(build));
+		KiuwanBuildSummaryView summaryView = new KiuwanBuildSummaryView(analysisResult);
+		KiuwanBuildSummaryAction resultsSummaryAction = new KiuwanBuildSummaryAction(summaryView);
 		build.addAction(resultsSummaryAction);
 	}
 	

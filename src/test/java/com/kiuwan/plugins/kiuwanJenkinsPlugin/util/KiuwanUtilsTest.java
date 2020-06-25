@@ -23,6 +23,7 @@ import org.junit.Test;
 
 import com.kiuwan.plugins.kiuwanJenkinsPlugin.model.results.AnalysisResult;
 import com.kiuwan.plugins.kiuwanJenkinsPlugin.model.results.InsightsData;
+import com.kiuwan.plugins.kiuwanJenkinsPlugin.model.results.MetricValue;
 
 public class KiuwanUtilsTest {
 
@@ -66,8 +67,14 @@ public class KiuwanUtilsTest {
 			AnalysisResult analysisResult = KiuwanUtils.readAnalysisResult(is);
 			
 			Assert.assertEquals("CRITICAL", analysisResult.getAnalysisBusinessValue());
-			Assert.assertEquals(new Double("26148.0"), analysisResult.getMainMetricValue("Lines of code"));
 			Assert.assertEquals(new Double("1.0"), analysisResult.getSecurityMetrics().get("Rating"));
+			
+			for (MetricValue metricValue : analysisResult.getMainMetrics()) {
+				if ("Lines of code".equals(metricValue.getName())) {
+					Assert.assertEquals(new Double("26148.0"), metricValue.getValue());
+					break;
+				}
+			}
 			
 			Object effort = analysisResult.getSecurityMetrics().get("Effort");
 			Map<?, ?> effortMap = (Map<?, ?>) effort;
@@ -92,9 +99,13 @@ public class KiuwanUtilsTest {
 			AnalysisResult analysisResult = KiuwanUtils.readAnalysisResult(is);
 			
 			Assert.assertEquals("CRITICAL", analysisResult.getAnalysisBusinessValue());
-			Assert.assertEquals(new Double("108490.0"), analysisResult.getMainMetricValue("Lines of code"));
 			Assert.assertEquals(new Double("1.0"), analysisResult.getSecurityMetrics().get("Rating"));
-			
+			for (MetricValue metricValue : analysisResult.getMainMetrics()) {
+				if ("Lines of code".equals(metricValue.getName())) {
+					Assert.assertEquals(new Double("108490.0"), metricValue.getValue());
+					break;
+				}
+			}			
 			Object effort = analysisResult.getSecurityMetrics().get("Effort");
 			Map<?, ?> effortMap = (Map<?, ?>) effort;
 			

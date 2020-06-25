@@ -1,0 +1,69 @@
+.kwn-summary {
+	padding: 0 12px;
+	border: 1px solid #dedede;
+}
+
+.kwn-table {
+	border-collapse: collapse;
+	display: inline-block;
+}
+
+.kwn-table td {
+	vertical-align: middle;
+}
+
+.kwn-scores {
+	border-collapse: collapse;
+}
+
+.kwn-scores td,
+.kwn-risk,
+.kwn-quality-indicator,
+.kwn-effort-to-target {
+	color: white;
+	padding: 6px 12px;
+	text-align: center;
+	width: 160px;
+}
+	
+.kwn-vh { background-color: #c21b2c; }
+.kwn-h  { background-color: #e34b1d; }
+.kwn-n  { background-color: #e3971d; }
+.kwn-l  { background-color: #e3d31d; }
+
+.kwn-risk { background-color: #ecc2c6; }
+.kwn-quality-indicator { background-color: #42acc0; }
+.kwn-effort-to-target { background-color: #42acc0; }
+
+.kwn-risk-bg,
+.kwn-quality-indicator-bg,
+.kwn-effort-to-target-bg {
+	background-size: contain;
+	height: 12px;
+}
+
+.kwn-risk-bg { background-image: url('images/risk-legend.png'); }
+.kwn-quality-indicator-bg { background-image: url('images/qa-legend.png'); }
+
+.kwn-global-indicator {
+	color: #42acc0;
+	font-weight: bold;
+	font-size: 110%;
+}
+
+.kwn-star {
+	width: 24px;
+	height: 30px;
+	background-position: center;
+	background-repeat: no-repeat;
+	display: inline-block;
+	vertical-align: middle;
+}
+
+.kwn-star.kwn-star-yes { background-image: url('images/star-yes.png'); }
+.kwn-star.kwn-star-no  { background-image: url('images/star-no.png'); }
+
+.kwn-ins-h { background-color: #c21b2c; }
+.kwn-ins-m { background-color: #faa61a; }
+.kwn-ins-l { background-color: #add58a; }
+.kwn-ins-n { background-color: #cccccc; }

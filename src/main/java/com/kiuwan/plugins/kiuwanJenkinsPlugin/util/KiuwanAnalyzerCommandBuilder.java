@@ -1,5 +1,7 @@
 package com.kiuwan.plugins.kiuwanJenkinsPlugin.util;
 
+import static com.kiuwan.plugins.kiuwanJenkinsPlugin.KiuwanRecorder.TIMEOUT_MARGIN_MILLIS;
+import static com.kiuwan.plugins.kiuwanJenkinsPlugin.KiuwanRecorder.TIMEOUT_MARGIN_SECONDS;
 import static com.kiuwan.plugins.kiuwanJenkinsPlugin.util.KiuwanUtils.buildAdditionalParameterExpression;
 import static com.kiuwan.plugins.kiuwanJenkinsPlugin.util.KiuwanUtils.buildArgument;
 import static com.kiuwan.plugins.kiuwanJenkinsPlugin.util.KiuwanUtils.getOutputFile;
@@ -89,7 +91,10 @@ public class KiuwanAnalyzerCommandBuilder {
 			languages = recorder.getLanguages();
 		}
 		
-		String timeoutAsString = Long.toString(TimeUnit.MILLISECONDS.convert(timeout, TimeUnit.MINUTES) - KiuwanRecorder.TIMEOUT_MARGIN);
+		long timeoutMillis = TimeUnit.MILLISECONDS.convert(timeout, TimeUnit.MINUTES);
+		long timeoutSeconds = TimeUnit.SECONDS.convert(timeout, TimeUnit.MINUTES);
+		String timeoutAsStringMillis = Long.toString(timeoutMillis - TIMEOUT_MARGIN_MILLIS);
+		String timeoutAsStringSeconds = Long.toString(timeoutSeconds - TIMEOUT_MARGIN_SECONDS);
 
 		List<String> args = new ArrayList<String>();
 
@@ -172,8 +177,8 @@ public class KiuwanAnalyzerCommandBuilder {
 			parseParameters(args, launcher);
 		}
 
-		args.add(buildAdditionalParameterExpression(launcher, "timeout", timeoutAsString));
-		args.add(buildAdditionalParameterExpression(launcher, "results.timeout", timeoutAsString));
+		args.add(buildAdditionalParameterExpression(launcher, "timeout", timeoutAsStringMillis));
+		args.add(buildAdditionalParameterExpression(launcher, "results.timeout", timeoutAsStringSeconds));
 
 		if (!Mode.EXPERT_MODE.equals(recorder.getSelectedMode())) {
 			if (StringUtils.isNotBlank(includes)) {

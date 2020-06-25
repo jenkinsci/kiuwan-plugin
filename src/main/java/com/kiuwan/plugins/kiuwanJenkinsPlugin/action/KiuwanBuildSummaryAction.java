@@ -1,33 +1,29 @@
-package com.kiuwan.plugins.kiuwanJenkinsPlugin;
+package com.kiuwan.plugins.kiuwanJenkinsPlugin.action;
 
 import org.kohsuke.stapler.DataBoundConstructor;
 import org.kohsuke.stapler.export.Exported;
 import org.kohsuke.stapler.export.ExportedBean;
-
-import com.kiuwan.plugins.kiuwanJenkinsPlugin.model.results.AnalysisResult;
 
 import hudson.model.Action;
 
 @ExportedBean(defaultVisibility = 2)
 public class KiuwanBuildSummaryAction implements Action {
 
-	private AnalysisResult analysisResult;
-	private String outputPath;
+	private KiuwanBuildSummaryView summaryView;
 	private String icon;
 
 	@DataBoundConstructor
-	public KiuwanBuildSummaryAction(AnalysisResult analysisResult, String outputPath) {
+	public KiuwanBuildSummaryAction(KiuwanBuildSummaryView summaryView) {
 		super();
-		this.analysisResult = analysisResult;
-		this.outputPath = outputPath;
-		this.icon = "/plugin/kiuwanJenkinsPlugin/logo.png";
+		this.summaryView = summaryView;
+		this.icon = "/plugin/kiuwanJenkinsPlugin/images/kiuwan-logo.png";
 	}
 
-	@Exported public AnalysisResult getAnalysisResult() { return analysisResult; }
+	@Exported public KiuwanBuildSummaryView getSummaryView() { return summaryView; }
 	@Exported public String getIcon() { return icon; }
 
 	public String getIconFileName() {
-		return "";
+		return "/plugin/kiuwanJenkinsPlugin/images/kiuwan-sign.png";
 	}
 
 	public String getDisplayName() {
@@ -35,7 +31,7 @@ public class KiuwanBuildSummaryAction implements Action {
 	}
 
 	public String getUrlName() {
-		return "/" + outputPath;
+		return summaryView.getUrl();
 	}
 
 }

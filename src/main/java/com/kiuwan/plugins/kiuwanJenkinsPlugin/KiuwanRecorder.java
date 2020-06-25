@@ -1,5 +1,8 @@
 package com.kiuwan.plugins.kiuwanJenkinsPlugin;
 
+import static java.util.concurrent.TimeUnit.MILLISECONDS;
+import static java.util.concurrent.TimeUnit.SECONDS;
+
 import java.io.IOException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
@@ -20,7 +23,8 @@ import hudson.tasks.Recorder;
 
 public class KiuwanRecorder extends Recorder {
 
-	public final static Long TIMEOUT_MARGIN = 5000L;
+	public final static Long TIMEOUT_MARGIN_MILLIS = 5000L;
+	public final static Long TIMEOUT_MARGIN_SECONDS = SECONDS.convert(TIMEOUT_MARGIN_MILLIS, MILLISECONDS);
 	public final static Mode DEFAULT_MODE = Mode.STANDARD_MODE;
 	
 	private Mode selectedMode;
@@ -159,7 +163,7 @@ public class KiuwanRecorder extends Recorder {
 		long currentTime = System.currentTimeMillis();
 		try {
 			while (thread.isAlive() && currentTime < endTime) {
-				TimeUnit.MILLISECONDS.sleep(TIMEOUT_MARGIN);
+				TimeUnit.MILLISECONDS.sleep(TIMEOUT_MARGIN_MILLIS);
 				currentTime = System.currentTimeMillis();
 			}
 		} catch (InterruptedException interruptedException) {

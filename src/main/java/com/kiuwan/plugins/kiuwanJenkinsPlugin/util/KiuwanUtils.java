@@ -7,7 +7,6 @@ import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.net.MalformedURLException;
 import java.net.URL;
-import java.nio.file.Path;
 import java.util.Base64;
 import java.util.HashSet;
 import java.util.Set;
@@ -26,7 +25,6 @@ import hudson.FilePath;
 import hudson.Launcher;
 import hudson.model.AbstractBuild;
 import hudson.model.TaskListener;
-import jenkins.model.Jenkins;
 
 public class KiuwanUtils {
 
@@ -105,13 +103,6 @@ public class KiuwanUtils {
 	 */
 	public static File getOutputFile(AbstractBuild<?, ?> build) {
 		return new File(build.getRootDir(), "kiuwan/output.json");
-	}
-	
-	public static String getOutputRelativePath(AbstractBuild<?, ?> build) {
-		File outputFile = getOutputFile(build);
-		Path outputPath = outputFile.toPath();
-		Path outputPathRelative = outputPath.relativize(Jenkins.getInstance().getRootDir().toPath());
-		return outputPathRelative.toUri().getPath();
 	}
 	
 	public static double roundDouble(Double value) {
