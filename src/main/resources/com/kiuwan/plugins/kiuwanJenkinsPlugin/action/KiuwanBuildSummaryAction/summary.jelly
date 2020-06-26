@@ -1,221 +1,223 @@
 <?jelly escape-by-default='true'?>
 <j:jelly xmlns:j="jelly:core" xmlns:st="jelly:stapler" xmlns:d="jelly:define" xmlns:l="/lib/layout" xmlns:t="/lib/hudson" xmlns:f="/lib/form">
-  
+
 	<link rel="stylesheet" type="text/css" href="${resURL}/plugin/kiuwanJenkinsPlugin/kiuwan.css"/>
 	<j:set var="sv" value="${it.summaryView}"/>
 	
 	<j:if test="${sv.available}">
 		<t:summary icon="${it.icon}">
-  			<p><span>Kiuwan analysis summary</span></p>
+			<p><span>Kiuwan analysis summary</span></p>
 
-  			<div class="kwn-summary">
-	  	
-		  		<!-- (1) Baseline + wait for results -->
-		  		<j:if test="${sv.baseline}">
-				  	
-				  	<!-- Security summary -->
-				  	<j:if test="${sv.hasSecurity()}">
-				  		<h3>Security summary</h3>
-				  		<p>
-				  			<b>${sv.getSecurityVulnerabilitiesTotal()}</b> vulnerabilities found in 
-				  			<b>${sv.getLinesOfCode()}</b> lines of code
-				  		</p>
-					  	
-					  	<table class="kwn-table">
-					  		<col style="width: 30px"></col>
-					  		<col></col>
-					  		<col style="width: 12px"></col>
-					  		<col></col>
-					  		<tbody>
-						  		<tr>
-						  			<td></td>
-						  			<td>Security Rating</td>
-						  			<td></td>
-						  			<td>
-							  			<div class="kwn-star ${sv.hasSecurityRating(1) ? 'kwn-star-yes' : 'kwn-star-no'}"></div>
-							  			<div class="kwn-star ${sv.hasSecurityRating(2) ? 'kwn-star-yes' : 'kwn-star-no'}"></div>
-							  			<div class="kwn-star ${sv.hasSecurityRating(3) ? 'kwn-star-yes' : 'kwn-star-no'}"></div>
-							  			<div class="kwn-star ${sv.hasSecurityRating(4) ? 'kwn-star-yes' : 'kwn-star-no'}"></div>
-							  			<div class="kwn-star ${sv.hasSecurityRating(5) ? 'kwn-star-yes' : 'kwn-star-no'}"></div>
-						  			</td>
-						  		</tr>
-						  		<tr>
-						  			<td></td>
-						  			<td>Vulnerabilities</td>
-						  			<td></td>
-						  			<td>
-						  				<table class="kwn-scores">
-						  					<tr>
-						  						<td class="kwn-vh"><b>${sv.getSecurityVulnerabilitiesVeryHigh()}</b> VERY HIGH</td>
-						  						<td class="kwn-h"><b>${sv.getSecurityVulnerabilitiesHigh()}</b> HIGH</td>
-						  						<td class="kwn-n"><b>${sv.getSecurityVulnerabilitiesNormal()}</b> NORMAL</td>
-						  						<td class="kwn-l"><b>${sv.getSecurityVulnerabilitiesLow()}</b> LOW</td>
-						  					</tr>
-						  				</table>
-						  			</td>
-						  		</tr>
-							</tbody>			  	
-					  	</table>
-				  	</j:if>
-				  	
-				  	<!-- Quality summary -->
-				  	<j:if test="${sv.hasQuality()}">
-				  		<h3>Quality summary</h3>
-				  		<p>
-				  			<b>${sv.getTotalDefects()}</b> defects found in 
-				  			<b>${sv.getLinesOfCode()}</b> lines of code
-				  		</p>
-				  		
-				  		<div>
-				  			<!-- Risk index -->
-					  		<table class="kwn-table">
-						  		<col style="width: 30px"></col>
-						  		<col></col>
-						  		<col style="width: 12px"></col>
-						  		<col></col>
-						  		<tbody>
-							  		<tr>
-							  			<td></td>
-							  			<td>Risk index</td>
-							  			<td></td>
-							  			<td class="kwn-risk"><b>${sv.getRiskIndex()}</b></td>
-							  		</tr>
-							  		<tr>
-							  			<td></td>
-							  			<td></td>
-							  			<td></td>
-							  			<td class="kwn-risk-bg"></td>
-							  		</tr>
-								</tbody>
-						  	</table>
-						  	
-						  	<!-- Quality indicator -->
-					  		<table class="kwn-table">
-						  		<col style="width: 30px"></col>
-						  		<col></col>
-						  		<col style="width: 12px"></col>
-						  		<col></col>
-						  		<tbody>
-							  		<tr>
-							  			<td></td>
-							  			<td>Quality indicator</td>
-							  			<td></td>
-							  			<td class="kwn-quality-indicator"><b>${sv.getQualityIndicator()}</b></td>
-							  		</tr>
-							  		<tr>
-							  			<td></td>
-							  			<td></td>
-							  			<td></td>
-							  			<td class="kwn-quality-indicator-bg"></td>
-							  		</tr>
-								</tbody>
-						  	</table>
-						  	
-						  	<!-- Effort to target -->
-						  	<table class="kwn-table">
-						  		<col style="width: 30px"></col>
-						  		<col></col>
-						  		<col style="width: 12px"></col>
-						  		<col></col>
-						  		<tbody>
-							  		<tr>
-							  			<td></td>
-							  			<td>Effort to target</td>
-							  			<td></td>
-							  			<td class="kwn-effort-to-target"><b>${sv.getEffortToTarget()}</b></td>
-							  		</tr>
-							  		<tr>
-							  			<td></td>
-							  			<td></td>
-							  			<td></td>
-							  			<td class="kwn-effort-to-target-bg"></td>
-							  		</tr>
-								</tbody>
-						  	</table>
-					  	</div>
-					  	
-					  	<p>Global indicator distribution:
-				  			Efficiency <span class="kwn-global-indicator">${sv.efficiency}</span> |
-				  			Maintainability <span class="kwn-global-indicator">${sv.maintainability}</span> |
-				  			Portability <span class="kwn-global-indicator">${sv.portability}</span> |
-				  			Reliability <span class="kwn-global-indicator">${sv.reliability}</span> |
-				  			Security <span class="kwn-global-indicator">${sv.security}</span> 
-				  		</p>
-				  	</j:if>
-				  	
-				  	<!-- Insights summary -->
-				  	<j:if test="${sv.hasInsights()}">
-				  		<h3>Insights summary</h3>
-				  		<p><b>${sv.getTotalComponents()}</b> components found</p> 
-				  		<p>
-				  			<b>${sv.getInsightVulnerabilityRiskHigh()}</b> components have high security risk,
-				  			<b>${sv.getDuplicatedComponents()}</b> components are duplicated
-				  		</p>
-				  		
-				  		<!-- Insights risks distributions -->
-				  		<table class="kwn-table">
-					  		<col style="width: 30px"></col>
-					  		<col></col>
-					  		<col style="width: 12px"></col>
-					  		<col></col>
-					  		<tbody>
-						  		<tr>
-						  			<td></td>
-						  			<td>Security risk distribution</td>
-						  			<td></td>
-						  			<td>
-						  				<table class="kwn-scores">
-						  					<tr>
-						  						<td class="kwn-ins-h"><b>${sv.getInsightVulnerabilityRiskHigh()}</b> HIGH</td>
-						  						<td class="kwn-ins-m"><b>${sv.getInsightVulnerabilityRiskMedium()}</b> MEDIUM</td>
-						  						<td class="kwn-ins-l"><b>${sv.getInsightVulnerabilityRiskLow()}</b> LOW</td>
-						  						<td class="kwn-ins-n"><b>${sv.getInsightVulnerabilityRiskNone()}</b> NONE</td>
-						  					</tr>
-						  				</table>
-						  			</td>
-						  		</tr>
-						  		<tr>
-						  			<td></td>
-						  			<td>Obsolescence risk distribution</td>
-						  			<td></td>
-						  			<td>
-						  				<table class="kwn-scores">
-						  					<tr>
-						  						<td class="kwn-ins-h"><b>${sv.getInsightObsolescenceRiskHigh()}</b> HIGH</td>
-						  						<td class="kwn-ins-m"><b>${sv.getInsightObsolescenceRiskMedium()}</b> MEDIUM</td>
-						  						<td class="kwn-ins-l"><b>${sv.getInsightObsolescenceRiskLow()}</b> LOW</td>
-						  						<td class="kwn-ins-n"><b>${sv.getInsightObsolescenceRiskNone()}</b> NONE</td>
-						  					</tr>
-						  				</table>
-						  			</td>
-						  		</tr>
-						  		<tr>
-						  			<td></td>
-						  			<td>License risk distribution</td>
-						  			<td></td>
+			<div class="kwn-summary">
+		
+				<!-- (1) Baseline + wait for results -->
+				<j:if test="${sv.baseline}">
+					
+					<!-- Security summary -->
+					<j:if test="${sv.hasSecurity()}">
+						<h3>Security summary</h3>
+						<p>
+							<b>${sv.securityVulnerabilitiesTotal}</b> vulnerabilities found in 
+							<b>${sv.linesOfCode}</b> lines of code
+						</p>
+						
+						<table class="kwn-table">
+							<col style="width: 30px"></col>
+							<col></col>
+							<col style="width: 12px"></col>
+							<col></col>
+							<tbody>
+								<tr>
+									<td></td>
+									<td>Security Rating</td>
+									<td></td>
 									<td>
-						  				<table class="kwn-scores" width="100%">
-						  					<tr>
-						  						<td class="kwn-ins-h"><b>${sv.insightLicenseRiskHigh}</b> HIGH</td>
-						  						<td class="kwn-ins-l"><b>${sv.insightLicenseRiskNone}</b> NONE</td>
-						  						<td class="kwn-ins-n"><b>${sv.insightLicenseRiskUnknown}</b> UNKNOWN</td>
-						  					</tr>
-						  				</table>
-						  			</td>
-						  		</tr>
+										<div class="kwn-star ${sv.hasSecurityRating(1) ? 'kwn-star-yes' : 'kwn-star-no'}"></div>
+										<div class="kwn-star ${sv.hasSecurityRating(2) ? 'kwn-star-yes' : 'kwn-star-no'}"></div>
+										<div class="kwn-star ${sv.hasSecurityRating(3) ? 'kwn-star-yes' : 'kwn-star-no'}"></div>
+										<div class="kwn-star ${sv.hasSecurityRating(4) ? 'kwn-star-yes' : 'kwn-star-no'}"></div>
+										<div class="kwn-star ${sv.hasSecurityRating(5) ? 'kwn-star-yes' : 'kwn-star-no'}"></div>
+									</td>
+								</tr>
+								<tr>
+									<td></td>
+									<td>Vulnerabilities</td>
+									<td></td>
+									<td>
+										<table class="kwn-vuln-scores">
+											<tr>
+												<td class="kwn-vh"><b>${sv.securityVulnerabilitiesVeryHigh}</b> VERY HIGH</td>
+												<td class="kwn-h"><b>${sv.securityVulnerabilitiesHigh}</b> HIGH</td>
+												<td class="kwn-n"><b>${sv.securityVulnerabilitiesNormal}</b> NORMAL</td>
+												<td class="kwn-l"><b>${sv.securityVulnerabilitiesLow}</b> LOW</td>
+											</tr>
+										</table>
+									</td>
+								</tr>
+							</tbody>				
+						</table>
+					</j:if>
+					
+					<!-- Quality summary -->
+					<j:if test="${sv.hasQuality()}">
+						<h3>Quality summary</h3>
+						<p>
+							<b>${sv.totalDefects}</b> defects found in 
+							<b>${sv.linesOfCode}</b> lines of code
+						</p>
+						
+						<div>
+							<!-- Risk index -->
+							<table class="kwn-table">
+								<col style="width: 30px"></col>
+								<col></col>
+								<col style="width: 12px"></col>
+								<col></col>
+								<tbody>
+									<tr>
+										<td></td>
+										<td>Risk index</td>
+										<td></td>
+										<td class="kwn-risk"><b>${sv.riskIndex}</b></td>
+									</tr>
+									<tr>
+										<td></td>
+										<td></td>
+										<td></td>
+										<td class="kwn-risk-bg"></td>
+									</tr>
+								</tbody>
+							</table>
+							
+							<!-- Quality indicator -->
+							<table class="kwn-table">
+								<col style="width: 30px"></col>
+								<col></col>
+								<col style="width: 12px"></col>
+								<col></col>
+								<tbody>
+									<tr>
+										<td></td>
+										<td>Quality indicator</td>
+										<td></td>
+										<td class="kwn-quality-indicator"><b>${sv.qualityIndicator}</b></td>
+									</tr>
+									<tr>
+										<td></td>
+										<td></td>
+										<td></td>
+										<td class="kwn-quality-indicator-bg"></td>
+									</tr>
+								</tbody>
+							</table>
+							
+							<!-- Effort to target -->
+							<table class="kwn-table">
+								<col style="width: 30px"></col>
+								<col></col>
+								<col style="width: 12px"></col>
+								<col></col>
+								<tbody>
+									<tr>
+										<td></td>
+										<td>Effort to target</td>
+										<td></td>
+										<td class="kwn-effort-to-target"><b>${sv.effortToTarget}</b></td>
+									</tr>
+									<tr>
+										<td></td>
+										<td></td>
+										<td></td>
+										<td class="kwn-effort-to-target-bg"></td>
+									</tr>
+								</tbody>
+							</table>
+						</div>
+						
+						<p>Global indicator distribution:
+							Efficiency <span class="kwn-global-indicator">${sv.efficiency}</span> |
+							Maintainability <span class="kwn-global-indicator">${sv.maintainability}</span> |
+							Portability <span class="kwn-global-indicator">${sv.portability}</span> |
+							Reliability <span class="kwn-global-indicator">${sv.reliability}</span> |
+							Security <span class="kwn-global-indicator">${sv.security}</span> 
+						</p>
+					</j:if>
+					
+					<!-- Insights summary -->
+					<j:if test="${sv.hasInsights()}">
+						<h3>Insights summary</h3>
+						<p><b>${sv.totalComponents}</b> components found</p> 
+						<p>
+							<b>${sv.insightVulnerabilityRiskHigh}</b> components have high security risk,
+							<b>${sv.duplicatedComponents}</b> components are duplicated
+						</p>
+						
+						<!-- Insights risks distributions -->
+						<table class="kwn-table">
+							<col style="width: 30px"></col>
+							<col></col>
+							<col style="width: 12px"></col>
+							<col></col>
+							<tbody>
+								<tr>
+									<td></td>
+									<td>Security risk distribution</td>
+									<td></td>
+									<td>
+										<table class="kwn-ins-scores">
+											<tr>
+												<td class="kwn-ins-h"><b>${sv.insightVulnerabilityRiskHigh}</b> HIGH</td>
+												<td class="kwn-ins-m"><b>${sv.insightVulnerabilityRiskMedium}</b> MEDIUM</td>
+												<td class="kwn-ins-l"><b>${sv.insightVulnerabilityRiskLow}</b> LOW</td>
+												<td class="kwn-ins-n"><b>${sv.insightVulnerabilityRiskNone}</b> NONE</td>
+											</tr>
+										</table>
+									</td>
+								</tr>
+								<tr class="kwn-separator-v"></tr>
+								<tr>
+									<td></td>
+									<td>Obsolescence risk distribution</td>
+									<td></td>
+									<td>
+										<table class="kwn-ins-scores">
+											<tr>
+												<td class="kwn-ins-h"><b>${sv.insightObsolescenceRiskHigh}</b> HIGH</td>
+												<td class="kwn-ins-m"><b>${sv.insightObsolescenceRiskMedium}</b> MEDIUM</td>
+												<td class="kwn-ins-l"><b>${sv.insightObsolescenceRiskLow}</b> LOW</td>
+												<td class="kwn-ins-n"><b>${sv.insightObsolescenceRiskNone}</b> NONE</td>
+											</tr>
+										</table>
+									</td>
+								</tr>
+								<tr class="kwn-separator-v"></tr>
+								<tr>
+									<td></td>
+									<td>License risk distribution</td>
+									<td></td>
+									<td>
+										<table class="kwn-ins-scores" width="100%">
+											<tr>
+												<td class="kwn-ins-h"><b>${sv.insightLicenseRiskHigh}</b> HIGH</td>
+												<td class="kwn-ins-n"><b>${sv.insightLicenseRiskNone}</b> NONE</td>
+												<td class="kwn-ins-u"><b>${sv.insightLicenseRiskUnknown}</b> UNKNOWN</td>
+											</tr>
+										</table>
+									</td>
+								</tr>
 							</tbody>
-					  	</table>
-				  		
-				  	</j:if>
-		  		</j:if>
-		  	
-		  		<!-- (2) Delivery + wait for results -->
-		  		<j:if test="${sv.delivery}">
-		  		
-		  		</j:if>
-	  	
-			  	<p><a href="${sv.url}" target="_blank">See the details in kiuwan</a></p>
-			  </div>
+						</table>
+						
+					</j:if>
+				</j:if>
+			
+				<!-- (2) Delivery + wait for results -->
+				<j:if test="${sv.delivery}">
+				
+				</j:if>
+		
+				<p><a href="${sv.url}" target="_blank">See the details in Kiuwan</a></p>
+			</div>
 		</t:summary>
 	</j:if>
     

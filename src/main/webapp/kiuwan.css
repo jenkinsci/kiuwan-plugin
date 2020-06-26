@@ -12,11 +12,18 @@
 	vertical-align: middle;
 }
 
-.kwn-scores {
+.kwn-vuln-scores {
 	border-collapse: collapse;
+	max-width: 640px;
 }
 
-.kwn-scores td,
+.kwn-ins-scores {
+	border-collapse: collapse;
+	max-width: 520px;
+}
+
+.kwn-vuln-scores td,
+.kwn-ins-scores td,
 .kwn-risk,
 .kwn-quality-indicator,
 .kwn-effort-to-target {
@@ -24,6 +31,10 @@
 	padding: 6px 12px;
 	text-align: center;
 	width: 160px;
+}
+
+.kwn-ins-scores td {
+	border-right: 1px solid white;
 }
 	
 .kwn-vh { background-color: #c21b2c; }
@@ -65,5 +76,10 @@
 
 .kwn-ins-h { background-color: #c21b2c; }
 .kwn-ins-m { background-color: #faa61a; }
-.kwn-ins-l { background-color: #add58a; }
-.kwn-ins-n { background-color: #cccccc; }
+.kwn-ins-l { background-color: #d4e658; }
+.kwn-ins-n { background-color: #d4e658; }
+.kwn-ins-u { background-color: #d0d0d0; }
+
+.kwn-separator-v {
+	height: 12px;
+}

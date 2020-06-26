@@ -10,6 +10,11 @@ import com.kiuwan.plugins.kiuwanJenkinsPlugin.model.results.AnalysisResult;
 import com.kiuwan.plugins.kiuwanJenkinsPlugin.model.results.InsightsData;
 import com.kiuwan.plugins.kiuwanJenkinsPlugin.model.results.MetricValue;
 
+/**
+ * This class deals with the particularities of a kiuwan analysis result data structure
+ * and eases using those results in a jelly page
+ * @author gsimmross
+ */
 public class KiuwanBuildSummaryView {
 
 	private AnalysisResult analysisResult;
@@ -98,8 +103,10 @@ public class KiuwanBuildSummaryView {
 		return null;
 	}
 	
-	public Map<String, Integer> getInsightRiskMap(String key) {
-		return analysisResult.getInsightsData().getRiskMap(key);
+	public Integer getInsightRiskMap(String key, String entryKey) {
+		Map<String, Integer> riskMap = analysisResult.getInsightsData().getRiskMap(key);
+		Integer value = riskMap.get(entryKey);
+		return value != null ? value : 0;
 	}
 	
 	public Integer getSecurityVulnerabilitiesTotal() {
@@ -168,47 +175,47 @@ public class KiuwanBuildSummaryView {
 	}
 	
 	public Integer getInsightVulnerabilityRiskHigh() {
-		return getInsightRiskMap(VULNERABILITY_RISK).get("HIGH");
+		return getInsightRiskMap(VULNERABILITY_RISK, "HIGH");
 	}
 	
 	public Integer getInsightVulnerabilityRiskMedium() {
-		return getInsightRiskMap(VULNERABILITY_RISK).get("MEDIUM");
+		return getInsightRiskMap(VULNERABILITY_RISK, "MEDIUM");
 	}
 	
 	public Integer getInsightVulnerabilityRiskLow() {
-		return getInsightRiskMap(VULNERABILITY_RISK).get("LOW");
+		return getInsightRiskMap(VULNERABILITY_RISK, "LOW");
 	}
 	
 	public Integer getInsightVulnerabilityRiskNone() {
-		return getInsightRiskMap(VULNERABILITY_RISK).get("NONE");
+		return getInsightRiskMap(VULNERABILITY_RISK, "NONE");
 	}
 	
 	public Integer getInsightObsolescenceRiskHigh() {
-		return getInsightRiskMap(OBSOLESCENCE_RISK).get("HIGH");
+		return getInsightRiskMap(OBSOLESCENCE_RISK, "HIGH");
 	}
 	
 	public Integer getInsightObsolescenceRiskMedium() {
-		return getInsightRiskMap(OBSOLESCENCE_RISK).get("MEDIUM");
+		return getInsightRiskMap(OBSOLESCENCE_RISK, "MEDIUM");
 	}
 	
 	public Integer getInsightObsolescenceRiskLow() {
-		return getInsightRiskMap(OBSOLESCENCE_RISK).get("LOW");
+		return getInsightRiskMap(OBSOLESCENCE_RISK, "LOW");
 	}
 	
 	public Integer getInsightObsolescenceRiskNone() {
-		return getInsightRiskMap(OBSOLESCENCE_RISK).get("NONE");
+		return getInsightRiskMap(OBSOLESCENCE_RISK, "NONE");
 	}
 	
 	public Integer getInsightLicenseRiskHigh() {
-		return getInsightRiskMap(InsightsData.LICENSE_RISK).get("HIGH");
+		return getInsightRiskMap(InsightsData.LICENSE_RISK, "HIGH");
 	}
 	
 	public Integer getInsightLicenseRiskNone() {
-		return getInsightRiskMap(InsightsData.LICENSE_RISK).get("NONE");
+		return getInsightRiskMap(InsightsData.LICENSE_RISK, "NONE");
 	}
 	
 	public Integer getInsightLicenseRiskUnknown() {
-		return getInsightRiskMap(InsightsData.LICENSE_RISK).get("UNKNOWN");
+		return getInsightRiskMap(InsightsData.LICENSE_RISK, "UNKNOWN");
 	}
 	
 	public String getUrl() {
