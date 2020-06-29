@@ -7,6 +7,9 @@ import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 @JsonIgnoreProperties(ignoreUnknown = true)
 public class CheckpointResult {
 
+	public static final String CHECKPOINT_RESULT_OK = "OK";
+	public static final String CHECKPOINT_RESULT_FAIL = "FAIL";
+	
 	private String result;
 	private String name;
 	private String description;
@@ -14,7 +17,7 @@ public class CheckpointResult {
 	private boolean mandatory;
 	private String type;
 	private Double score;
-	private List<ViolatedRule> violatedRule;
+	private List<ViolatedRule> violatedRules;
 	
 	public String getResult() { return result; }
 	public void setResult(String result) { this.result = result; }
@@ -37,7 +40,7 @@ public class CheckpointResult {
 	public Double getScore() { return score; }
 	public void setScore(Double score) { this.score = score; }
 	
-	public List<ViolatedRule> getViolatedRule() { return violatedRule; }
-	public void setViolatedRule(List<ViolatedRule> violatedRule) { this.violatedRule = violatedRule; }
+	public List<ViolatedRule> getViolatedRules() { return violatedRules; }
+	public void setViolatedRules(List<ViolatedRule> violatedRules) { this.violatedRules = violatedRules; }
 	
 }

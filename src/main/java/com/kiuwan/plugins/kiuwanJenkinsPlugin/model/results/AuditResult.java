@@ -7,6 +7,9 @@ import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 @JsonIgnoreProperties(ignoreUnknown = true)
 public class AuditResult {
 
+	public static final String OVERALL_RESULT_OK = "OK";
+	public static final String OVERALL_RESULT_FAIL = "FAIL";
+	
 	private String auditName;
 	private String description;
 	private Double approvalThreshold;

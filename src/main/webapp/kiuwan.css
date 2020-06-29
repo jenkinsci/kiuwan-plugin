@@ -1,6 +1,6 @@
 .kwn-summary {
-	padding: 0 12px;
-	border: 1px solid #dedede;
+	padding: 0 12px 0 24px;
+	border-left: 3px solid #dedede;
 }
 
 .kwn-table {
@@ -82,4 +82,58 @@
 
 .kwn-separator-v {
 	height: 12px;
+}
+
+.kwn-result-pill-ok,
+.kwn-result-pill-ko {
+	padding: 0px 6px;
+	border-radius: 12px;
+	text-transform: uppercase;
+	font-weight: bold;
+	font-size: smaller;	
+}
+
+.kwn-result-pill-ok {
+	color: #6c6;
+}
+
+.kwn-result-pill-ko {
+	color: white;
+	background: #e04822;
+}
+
+.kwn-result-ok {
+	color: #6c6;
+}
+
+.kwn-result-ko {
+	color: #e04822;
+}
+
+.kwn-audit-result img {
+	vertical-align: bottom;
+}
+
+.kwn-audit-result div {
+	display: inline-block;
+	vertical-align: baseline;
+}
+
+.kwn-audit-result-h1 {
+	font-size: 36px;
+	padding-left: 12px;
+}
+
+.kwn-audit-result-h2 {
+	font-size: 30px;
+	padding-left: 12px;
+}
+
+.kwn-audit-result-h3 {
+	font-size: 18px;
+	padding-left: 36px;
+}
+
+.kwn-audit-subtitle {
+	font-size: 18px;
 }

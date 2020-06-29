@@ -16,7 +16,24 @@ public class AnalysisResult {
 	public static final String ANALYSIS_STATUS_EXECUTING = "EXECUTING";
 	public static final String ANALYSIS_STATUS_FINISHED = "FINISHED";
 	public static final String ANALYSIS_STATUS_FINISHED_WITH_ERROR = "FINISHED_WITH_ERROR";
+	
 	public static final String MAIN_METRICS_AUDIT_RESULT = "Audit result";
+	public static final String MAIN_METRICS_LOC = "Lines of code";
+	public static final String MAIN_METRICS_TOTAL_DEFECTS = "Total defects";
+	
+	public static final String QUALITY_INDICATOR_EFFICIENCY = "Efficiency";
+	public static final String QUALITY_INDICATOR_MAINTAINABILITY = "Maintainability";
+	public static final String QUALITY_INDICATOR_PORTABILITY = "Portability";
+	public static final String QUALITY_INDICATOR_RELIABILITY = "Reliability";
+	public static final String QUALITY_INDICATOR_SECURITY = "Security";
+	
+	public static final String SECURITY_METRICS_RATING = "Rating";
+	public static final String SECURITY_METRICS_VULNERABILITIES = "Vulnerabilities";
+	public static final String SECURITY_METRICS_VULNERABILITIES_TOTAL = "Total";
+	public static final String SECURITY_METRICS_VULNERABILITIES_VERY_HIGH = "VeryHigh";
+	public static final String SECURITY_METRICS_VULNERABILITIES_HIGH = "High";
+	public static final String SECURITY_METRICS_VULNERABILITIES_NORMAL = "Normal";
+	public static final String SECURITY_METRICS_VULNERABILITIES_LOW = "Low";
 	
 	public static final String ANALYSIS_SCOPE_BASELINE = "Baseline";
 	public static final String ANALYSIS_SCOPE_COMPLETE_DELIVERY = "Complete delivery";
@@ -47,14 +64,14 @@ public class AnalysisResult {
 	private MetricValue riskIndex;
 	private MetricValue qualityIndicator;
 	private MetricValue effortToTarget;
+	
 	private Map<String, Object> securityMetrics;
 	private InsightsData insightsData;
 	
-	// Audit Result
 	private String changeRequest;
 	private String changeRequestStatus;
-	private String branchName;	
-	private String baselineAnalysisCode;	
+	private String branchName;
+	private String baselineAnalysisCode;
 	private DeliveryFiles deliveryFiles;
 	private DeliveryDefects deliveryDefects;
 	private AuditResult auditResult;

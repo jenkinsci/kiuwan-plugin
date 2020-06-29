@@ -106,7 +106,7 @@ public class KiuwanAnalyzerCommandBuilder {
 		args.add("-s");
 		args.add(buildArgument(launcher, getRemoteFileAbsolutePath(srcFolder, listener)));
 		
-		// TODO: check if this automatically points to master (not being FilePath object should mean so?)
+		// Output will always be saved on the master node
 		args.add("-o");
 		args.add(buildArgument(launcher, getOutputFile(build).getAbsolutePath()));
 
@@ -138,6 +138,7 @@ public class KiuwanAnalyzerCommandBuilder {
 			args.add(buildArgument(launcher, name));
 			args.add("-l");
 			args.add(buildArgument(launcher, analysisLabel));
+			args.add("-c");
 			args.add("-cr");
 			args.add(buildArgument(launcher, recorder.getChangeRequest_dm()));
 			args.add("-as");

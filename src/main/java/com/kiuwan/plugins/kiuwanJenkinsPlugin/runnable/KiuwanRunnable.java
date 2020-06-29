@@ -316,27 +316,21 @@ public class KiuwanRunnable implements Runnable {
 	
 	private void onAnalysisFinishedStandardMode(int klaReturnCode, AnalysisResult analysisResult) {
 		if (klaReturnCode != 0) {
-			loggerPrintStream.println("Kiuwan Analyzer not finalized with success.");
+			loggerPrintStream.println("Kiuwan Local Analyzer has returned a failure status.");
 			resultReference.set(Result.NOT_BUILT);
 		
-		} else {
-			// String analysisUrl = null;
-			double qualityIndicator = -1d;
-			double effortToTarget = -1d;
-			double riskIndex = -1d;
-
+		} else if (!Measure.NONE.name().equals(recorder.getMeasure())) {
 			String analysisStatus = analysisResult != null ? analysisResult.getAnalysisStatus() : null;
+			
 			if (ANALYSIS_STATUS_FINISHED.equalsIgnoreCase(analysisStatus)) {
-				
-				qualityIndicator = roundDouble(analysisResult.getQualityIndicator().getValue());
-				effortToTarget = roundDouble(analysisResult.getEffortToTarget().getValue());
-				riskIndex = roundDouble(analysisResult.getRiskIndex().getValue());
+				double qualityIndicator = roundDouble(analysisResult.getQualityIndicator().getValue());
+				double effortToTarget = roundDouble(analysisResult.getEffortToTarget().getValue());
+				double riskIndex = roundDouble(analysisResult.getRiskIndex().getValue());
 				
 				// TODO: is this still needed?
 				printStandardModeConsoleSummary(qualityIndicator, effortToTarget, riskIndex);
 				
 				checkThresholds(qualityIndicator, effortToTarget, riskIndex);
-				// addLink(analysisUrl);
 
 			} else {
 				loggerPrintStream.println("Build failed in Kiuwan");

@@ -3,6 +3,7 @@
 
 	<link rel="stylesheet" type="text/css" href="${resURL}/plugin/kiuwanJenkinsPlugin/kiuwan.css"/>
 	<j:set var="sv" value="${it.summaryView}"/>
+	<j:set var="imagesDir" value="${resURL}/plugin/kiuwanJenkinsPlugin/images"/>
 	
 	<j:if test="${sv.available}">
 		<t:summary icon="${it.icon}">
@@ -209,14 +210,68 @@
 						</table>
 						
 					</j:if>
+					
+					<p><a href="${sv.url}" target="_blank">See the details in Kiuwan</a></p>
 				</j:if>
 			
 				<!-- (2) Delivery + wait for results -->
 				<j:if test="${sv.delivery}">
-				
+					
+					<!-- Audit results -->
+					<j:if test="${sv.hasAuditResults()}">
+						<h3>Kiuwan audit result</h3>
+						
+						<j:set var="auditPassed" value="${sv.auditPassed()}"/>
+						
+						<!-- Thumbs up / down -->
+						<div class="kwn-audit-result">
+							<j:if test="${auditPassed}"><img src="${imagesDir}/ball-green.png"></img></j:if>
+							<j:if test="${!auditPassed}"><img src="${imagesDir}/ball-red.png"></img></j:if>
+						
+							<div>
+								<j:if test="${auditPassed}"><span class="kwn-audit-result-h1 kwn-result-ok">OK</span></j:if>
+								<j:if test="${!auditPassed}"><span class="kwn-audit-result-h1 kwn-result-ko">FAILED</span></j:if>
+							</div>
+							
+							<div class="kwn-audit-result-h3">SCORE:</div>
+							<div class="kwn-audit-result-h2">
+								<j:if test="${auditPassed}"><span class="kwn-result-ok">${sv.auditScore}</span></j:if>
+								<j:if test="${!auditPassed}"><span class="kwn-result-ko">${sv.auditScore}</span></j:if>
+							</div>
+						</div>
+						
+						<p class="kwn-audit-subtitle">${sv.failedCheckpointsCount} out of ${sv.totalCheckpointsCount} checkpoints failed</p>
+						
+						<!-- Checkpoint details -->
+						<table class="kwn-table">
+							<col style="width: 30px"></col>
+							<col></col>
+							<col></col>
+							<tbody>
+								<j:forEach var="cr" items="${sv.checkpointResults}" varStatus="loop">
+									<tr>
+										<td></td>
+										<td>${loop.count}:</td>
+										<td>${cr.name}
+											<j:set var="crOK" value='${sv.isCheckpointResultOK(cr)}'/>
+											<j:if test="${crOK}"><span class="kwn-result-pill-ok">Passed</span></j:if>
+											<j:if test="${!crOK}"><span class="kwn-result-pill-ko">Failed</span></j:if>
+										</td>
+									</tr>
+								</j:forEach>
+							</tbody>
+						</table>
+						
+						<p>
+							You have ${sv.auditFixTotalDefectsCount} defects in ${sv.auditFixTotalFilesCount} files to fix
+							<br></br>
+							Total effort to fix the failed checkpoints: <b>${sv.auditEffort}</b>
+						</p>
+					</j:if>
+					
+					<p><a href="${sv.url}" target="_blank">See the audit results in Kiuwan</a></p>
 				</j:if>
-		
-				<p><a href="${sv.url}" target="_blank">See the details in Kiuwan</a></p>
+				
 			</div>
 		</t:summary>
 	</j:if>
