@@ -34,7 +34,6 @@ import com.kiuwan.plugins.kiuwanJenkinsPlugin.model.Measure;
 import com.kiuwan.plugins.kiuwanJenkinsPlugin.model.Mode;
 import com.kiuwan.plugins.kiuwanJenkinsPlugin.model.results.AnalysisResult;
 import com.kiuwan.plugins.kiuwanJenkinsPlugin.util.KiuwanAnalyzerCommandBuilder;
-import com.kiuwan.plugins.kiuwanJenkinsPlugin.util.KiuwanException;
 import com.kiuwan.plugins.kiuwanJenkinsPlugin.util.KiuwanUtils;
 
 import hudson.EnvVars;
@@ -105,20 +104,6 @@ public class KiuwanRunnable implements Runnable {
 				resultReference.set(Result.NOT_BUILT);
 			}
 		
-		} catch (KiuwanException e) {
-			loggerPrintStream.println(e.getMessage());
-			listener.fatalError(e.getMessage());
-			// TODO: check this
-			/*
-			StringWriter sw = new StringWriter();
-			PrintWriter pw = new PrintWriter(sw);
-			e.printStackTrace(pw);
-			loggerPrintStream.println(sw.toString());
-			 */
-			e.printStackTrace(loggerPrintStream);
-			resultReference.set(Result.NOT_BUILT);
-			exceptionReference.set(e);
-			
 		} catch (IOException e) {
 			loggerPrintStream.println(e.toString());
 			exceptionReference.set(e);
@@ -135,8 +120,7 @@ public class KiuwanRunnable implements Runnable {
 		}
 	}
 	
-	private void performAnalysis() throws KiuwanException, IOException, InterruptedException {
-		
+	private void performAnalysis() throws IOException, InterruptedException {
 		// 1 - Install Local Analyzer if not already installed
 		FilePath localAnalyzerHome = installLocalAnalyzer();
 		
@@ -156,23 +140,15 @@ public class KiuwanRunnable implements Runnable {
 		AnalysisResult analysisResult = loadAnalysisResults();
 		
 		// 7 - Process results
-		String analysisCode = analysisResult != null ? analysisResult.getAnalysisCode() : null;
-		if (analysisCode == null) {
-			onNoCodeAnalysisFinished();
-			
-		} else if (Mode.STANDARD_MODE.equals(recorder.getSelectedMode())) {
+		if (Mode.STANDARD_MODE.equals(recorder.getSelectedMode())) {
 			onAnalysisFinishedStandardMode(klaReturnCode, analysisResult);
 		
 		} else if (Mode.DELIVERY_MODE.equals(recorder.getSelectedMode())) {
-			onAnalysisFinishedDeliveryMode(klaReturnCode, analysisResult);
+			onAnalysisFinishedDeliveryMode(klaReturnCode);
 			
 		} else if (Mode.EXPERT_MODE.equals(recorder.getSelectedMode())) {
-			onAnalysisFinishedExpertMode(klaReturnCode, analysisResult);
-			
+			onAnalysisFinishedExpertMode(klaReturnCode);
 		} 
-		/* else {
-			onAnalysisFinishedFallback();
-		} */
 		
 		KiuwanBuildSummaryView summaryView = new KiuwanBuildSummaryView(analysisResult);
 		KiuwanBuildSummaryAction resultsSummaryAction = new KiuwanBuildSummaryAction(summaryView);
@@ -309,11 +285,6 @@ public class KiuwanRunnable implements Runnable {
 		return analysisResults;
 	}
 	
-	private void onNoCodeAnalysisFinished() {
-		loggerPrintStream.println("Could not retrieve analysis code.");
-		resultReference.set(Result.NOT_BUILT);
-	}
-	
 	private void onAnalysisFinishedStandardMode(int klaReturnCode, AnalysisResult analysisResult) {
 		if (klaReturnCode != 0) {
 			loggerPrintStream.println("Kiuwan Local Analyzer has returned a failure status.");
@@ -332,6 +303,10 @@ public class KiuwanRunnable implements Runnable {
 				
 				checkThresholds(qualityIndicator, effortToTarget, riskIndex);
 
+			// In any other case, an error happened when processing the results in Kiuwan
+			// (note that in case of timeout the parent thread would kill this one, and
+			// in case of being the KLA the one that returns an error, the previous branch of
+			// the if statement would have been followed.
 			} else {
 				loggerPrintStream.println("Build failed in Kiuwan");
 				resultReference.set(Result.NOT_BUILT);
@@ -339,7 +314,7 @@ public class KiuwanRunnable implements Runnable {
 		}
 	}
 	
-	private void onAnalysisFinishedDeliveryMode(int klaReturnCode, AnalysisResult analysisResult) {
+	private void onAnalysisFinishedDeliveryMode(int klaReturnCode) {
 		if (recorder.getWaitForAuditResults_dm()) {
 			if (klaReturnCode == KLA_RETURN_CODE_AUDIT_FAILED) {
 				String markBuildWhenNoPass = recorder.getMarkBuildWhenNoPass_dm();
@@ -347,16 +322,9 @@ public class KiuwanRunnable implements Runnable {
 				resultReference.set(Result.fromString(markBuildWhenNoPass));
 			}
 		}
-
-		/*
-		String auditResultURL = analysisResult != null ? analysisResult.getAuditResultURL() : null;
-		if (auditResultURL != null) {
-			addLink(auditResultURL);
-		}
-		*/
 	}
 	
-	private void onAnalysisFinishedExpertMode(int klaReturnCode, AnalysisResult analysisResult) {
+	private void onAnalysisFinishedExpertMode(int klaReturnCode) {
 		Set<Integer> successCodes = parseErrorCodes(recorder.getSuccessResultCodes_em());
 		Set<Integer> failureCodes = parseErrorCodes(recorder.getFailureResultCodes_em());
 		Set<Integer> unstableCodes = parseErrorCodes(recorder.getUnstableResultCodes_em());
@@ -384,30 +352,7 @@ public class KiuwanRunnable implements Runnable {
 				klaReturnCode + ". Marking build as " + markAsInOtherCases + ".");
 			resultReference.set(Result.fromString(markAsInOtherCases));
 		}
-
-		/*
-		String auditResultURL = analysisResult != null ? analysisResult.getAuditResultURL() : null;
-		
-		if (auditResultURL != null) {
-			addLink(auditResultURL);
-			
-		} else {
-			String analysisURL = analysisResult != null ? analysisResult.getAnalysisURL() : null;
-			if (analysisURL != null) {
-				addLink(analysisURL);
-
-			} else {
-				addLink(buildKiuwanResultUrl(name, analysisLabel));
-			}
-		}
-		*/
 	}
-	
-	/*
-	private void onAnalysisFinishedFallback() {
-		addLink(buildKiuwanResultUrl(name, analysisLabel));
-	}
-	*/
 	
 	private void printStandardModeConsoleSummary(double qualityIndicator, double effortToTarget, double riskIndex) {
 		loggerPrintStream.println("==========================================================================");
@@ -419,17 +364,6 @@ public class KiuwanRunnable implements Runnable {
 		loggerPrintStream.println();
 	}
 
-	/*
-	private void addLink(String url) {
-		KiuwanBuildSummaryAction link = new KiuwanBuildSummaryAction(url);
-		build.addAction(link);
-	}
-
-	private String buildKiuwanResultUrl(String applicationName, String analysisLabel) {
-		return descriptor.getKiuwanURL() + "/application?app=" + applicationName + "&label=" + analysisLabel;
-	}
-	*/
-	
 	private void checkThresholds(double qualityIndicator, double effortToTarget, double riskIndex) {
 		String measure = recorder.getMeasure();
 

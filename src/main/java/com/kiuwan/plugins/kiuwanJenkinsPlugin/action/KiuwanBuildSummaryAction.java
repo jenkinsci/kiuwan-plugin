@@ -23,15 +23,15 @@ public class KiuwanBuildSummaryAction implements Action {
 	@Exported public String getIcon() { return icon; }
 
 	public String getIconFileName() {
-		return "/plugin/kiuwanJenkinsPlugin/images/kiuwan-sign.png";
+		return summaryView.isAvailable() ? "/plugin/kiuwanJenkinsPlugin/images/kiuwan-sign.png" : "";
 	}
 
 	public String getDisplayName() {
-		return "Kiuwan Analysis Results";
+		return summaryView.isAvailable() ? "Kiuwan Analysis Results" : "";
 	}
 
 	public String getUrlName() {
-		return summaryView.getUrl();
+		return summaryView.isAvailable() ? "kiuwan" : "";
 	}
 
 }
