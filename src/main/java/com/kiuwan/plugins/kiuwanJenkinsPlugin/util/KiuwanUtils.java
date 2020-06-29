@@ -133,33 +133,37 @@ public class KiuwanUtils {
 	}
 	
 	public static String escapeArg(boolean isUnix, String arg) {
-		if (isUnix) return arg;
-		
-		if (arg.contains(" ") || 
-			arg.contains("\"") || 
-			arg.contains("^") || 
-			arg.contains("&") || 
-			arg.contains("|") ||
-			arg.contains("<") ||
-			arg.contains(">")) {
-		
-			// Replace all \ that precede a " with \\
-			StringBuilder sb = new StringBuilder();
-			boolean quoteFound = false;
-			for (int i = arg.length() - 1; i >= 0; i--) {
-				char c = arg.charAt(i);
-				if (c != '\\') quoteFound = false;
-				if (c == '"') quoteFound = true;
-				sb.insert(0, quoteFound && c == '\\' ? "\\\\" : c);
+		if (!isUnix) {
+			if (arg.contains(" ") || 
+				arg.contains("\"") || 
+				arg.contains("^") || 
+				arg.contains("&") || 
+				arg.contains("|") ||
+				arg.contains("<") ||
+				arg.contains(">")) {
+			
+				// Replace all \ that precede a " with \\
+				StringBuilder sb = new StringBuilder();
+				boolean quoteFound = false;
+				for (int i = arg.length() - 1; i >= 0; i--) {
+					char c = arg.charAt(i);
+					if (c != '\\') quoteFound = false;
+					if (c == '"') quoteFound = true;
+					sb.insert(0, quoteFound && c == '\\' ? "\\\\" : c);
+				}
+				
+				arg = sb.toString();
+				
+				// Replace " with ""
+				arg = arg.replace("\"", "\"\"");
+				
+				// Quote
+				arg = "\"" + arg + "\"";
 			}
-			
-			arg = sb.toString();
-			
-			// Replace " with ""
-			arg = arg.replace("\"", "\"\"");
-			
-			// Quote
-			arg = "\"" + arg + "\"";
+		}
+		
+		if (arg == null || arg.isEmpty()) {
+			arg = "\"\"";
 		}
 		
 		return arg;
