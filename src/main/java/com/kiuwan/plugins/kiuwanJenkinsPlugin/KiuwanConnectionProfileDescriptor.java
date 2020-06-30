@@ -8,10 +8,14 @@ import static com.kiuwan.plugins.kiuwanJenkinsPlugin.KiuwanConnectionProfile.PRO
 
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.util.logging.Level;
 
 import org.kohsuke.stapler.QueryParameter;
 
 import com.kiuwan.plugins.kiuwanJenkinsPlugin.util.KiuwanUtils;
+import com.kiuwan.rest.client.ApiClient;
+import com.kiuwan.rest.client.ApiException;
+import com.kiuwan.rest.client.api.InformationApi;
 
 import hudson.Extension;
 import hudson.model.Descriptor;
@@ -126,7 +130,22 @@ public class KiuwanConnectionProfileDescriptor extends Descriptor<KiuwanConnecti
 		connectionProfile.setProxyUsername(proxyUsername);
 		connectionProfile.setProxyPassword(proxyPassword);
 		
-		FormValidation formValidation = KiuwanUtils.testConnection(connectionProfile);
+		FormValidation formValidation = null;
+		try {
+			ApiClient client = KiuwanUtils.instantiateClient(connectionProfile);
+			InformationApi api = new InformationApi(client);
+			api.getInformation();
+			formValidation = FormValidation.ok("Authentication completed successfully!");
+		
+		} catch (ApiException e) {
+			KiuwanUtils.logger().log(Level.WARNING, e.getLocalizedMessage());
+			formValidation = FormValidation.error("Authentication failed: " + e.getMessage());
+		
+		} catch (Throwable t) {
+			KiuwanUtils.logger().log(Level.SEVERE, t.getLocalizedMessage());
+			formValidation = FormValidation.warning("Could not initiate the authentication process. Reason: " + t.getLocalizedMessage());
+		}
+		
 		return formValidation;
 	}
 	

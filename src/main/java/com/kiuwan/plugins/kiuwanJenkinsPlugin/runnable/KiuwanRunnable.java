@@ -29,12 +29,11 @@ import com.kiuwan.plugins.kiuwanJenkinsPlugin.KiuwanRecorder;
 import com.kiuwan.plugins.kiuwanJenkinsPlugin.action.KiuwanBuildSummaryAction;
 import com.kiuwan.plugins.kiuwanJenkinsPlugin.action.KiuwanBuildSummaryView;
 import com.kiuwan.plugins.kiuwanJenkinsPlugin.filecallable.KiuwanRemoteEnvironment;
-import com.kiuwan.plugins.kiuwanJenkinsPlugin.filecallable.KiuwanRemoteFilePath;
 import com.kiuwan.plugins.kiuwanJenkinsPlugin.model.Measure;
 import com.kiuwan.plugins.kiuwanJenkinsPlugin.model.Mode;
 import com.kiuwan.plugins.kiuwanJenkinsPlugin.model.results.AnalysisResult;
 import com.kiuwan.plugins.kiuwanJenkinsPlugin.util.KiuwanAnalyzerCommandBuilder;
-import com.kiuwan.plugins.kiuwanJenkinsPlugin.util.KiuwanUtils;
+import com.kiuwan.plugins.kiuwanJenkinsPlugin.util.KiuwanAnalyzerInstaller;
 
 import hudson.EnvVars;
 import hudson.FilePath;
@@ -45,13 +44,8 @@ import hudson.model.AbstractBuild;
 import hudson.model.BuildListener;
 import hudson.model.Node;
 import hudson.model.Result;
-import hudson.util.FormValidation;
-import hudson.util.FormValidation.Kind;
 
 public class KiuwanRunnable implements Runnable {
-	
-	public static final String LOCAL_ANALYZER_PARENT_DIRECTORY = "tools/kiuwan";
-    public static final String LOCAL_ANALYZER_DIRECTORY = "KiuwanLocalAnalyzer";
     
     private static final int KLA_RETURN_CODE_AUDIT_FAILED = 10;
 	
@@ -87,27 +81,19 @@ public class KiuwanRunnable implements Runnable {
 	}
 
 	public void run() {
+		
+		// There is no need to check connection here, we will handle any error that comes from kla,
+		// included connection errors
 		try {
 			if (connectionProfile == null) {
-				listener.getLogger().print("Could not find the specified connection profile (" + 
-					recorder.getConnectionProfileUuid() + "). Verify your ");
+				String uuid = recorder.getConnectionProfileUuid();
+				loggerPrintStream.print("Could not find the specified connection profile (" + uuid + "). Verify your ");
 				listener.hyperlink("/configure", "Kiuwan Global Settings");
-				listener.getLogger().println(".");
+				loggerPrintStream.println(".");
 				resultReference.set(Result.NOT_BUILT);
-				
+			
 			} else {
-				FormValidation connectionTestResult = KiuwanUtils.testConnection(connectionProfile);
-	
-				if (Kind.OK.equals(connectionTestResult.kind)) {
-					performAnalysis();
-					
-				} else {
-					listener.getLogger().print("Could not get authorization from configured Kiuwan URL. Verify your ");
-					listener.hyperlink("/configure", "Kiuwan Global Settings");
-					listener.getLogger().println(".");
-					listener.getLogger().println(connectionTestResult.getMessage());
-					resultReference.set(Result.NOT_BUILT);
-				}
+				performAnalysis();
 			}
 		
 		} catch (IOException e) {
@@ -127,6 +113,7 @@ public class KiuwanRunnable implements Runnable {
 	}
 	
 	private void performAnalysis() throws IOException, InterruptedException {
+		
 		// 1 - Install Local Analyzer if not already installed
 		FilePath localAnalyzerHome = installLocalAnalyzer();
 		
@@ -172,25 +159,7 @@ public class KiuwanRunnable implements Runnable {
 			jenkinsRootDir = new FilePath(new File(rootPath.getRemote()));
 		}
 		
-		String agentDirectory = KiuwanUtils.getPathFromConfiguredKiuwanURL(LOCAL_ANALYZER_PARENT_DIRECTORY, descriptor);
-		FilePath installDir = jenkinsRootDir.child(agentDirectory);
-		FilePath agentHome = installDir.child(LOCAL_ANALYZER_DIRECTORY);
-		
-		// If installDir does not exist, install KLA
-		if (agentHome.act(new KiuwanRemoteFilePath()) == null) {
-			KiuwanDownloadable kiuwanDownloadable = new KiuwanDownloadable();
-			loggerPrintStream.println("Installing KiuwanLocalAnalyzer in " + installDir);
-			File zip = kiuwanDownloadable.resolve(listener, descriptor);
-			installDir.mkdirs();
-			new FilePath(zip).unzip(installDir);
-			
-			FilePath agentBinDir = agentHome.child("bin");
-			if (launcher.isUnix()) {
-				loggerPrintStream.println("Changing agent.sh permission");
-				agentBinDir.child("agent.sh").chmod(0755);
-			}
-		}
-		
+		FilePath agentHome = KiuwanAnalyzerInstaller.installKiuwanLocalAnalyzer(jenkinsRootDir, listener, connectionProfile);
 		return agentHome;
 	}
 	
@@ -264,7 +233,6 @@ public class KiuwanRunnable implements Runnable {
 		FilePath localAnalyzerBinDir = getAgentBinDir(localAnalyzerHome);
 		boolean[] masks = getMasks(args);
 		
-		String agentDirectory = KiuwanUtils.getPathFromConfiguredKiuwanURL(AGENT_DIRECTORY, connectionProfile);
 		ProcStarter procStarter = launcher.launch()
 			.cmds(args)
 			.masks(masks)
