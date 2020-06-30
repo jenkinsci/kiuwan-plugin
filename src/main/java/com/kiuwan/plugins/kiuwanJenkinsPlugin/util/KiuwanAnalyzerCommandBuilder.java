@@ -19,7 +19,8 @@ import java.util.regex.Pattern;
 
 import org.apache.commons.lang.StringUtils;
 
-import com.kiuwan.plugins.kiuwanJenkinsPlugin.KiuwanDescriptor;
+import com.kiuwan.plugins.kiuwanJenkinsPlugin.KiuwanConnectionProfile;
+import com.kiuwan.plugins.kiuwanJenkinsPlugin.KiuwanGlobalConfigDescriptor;
 import com.kiuwan.plugins.kiuwanJenkinsPlugin.KiuwanRecorder;
 import com.kiuwan.plugins.kiuwanJenkinsPlugin.model.ChangeRequestStatusType;
 import com.kiuwan.plugins.kiuwanJenkinsPlugin.model.DeliveryType;
@@ -54,15 +55,18 @@ public class KiuwanAnalyzerCommandBuilder {
 	private final static String kiuwanJenkinsPluginHeaderSuffix = " ###";
 	private final static String kiuwanJenkinsPluginHeaderPattern = kiuwanJenkinsPluginHeaderPrefix + "(.*)" + kiuwanJenkinsPluginHeaderSuffix;
 	
-	private KiuwanDescriptor descriptor;
+	private KiuwanGlobalConfigDescriptor descriptor;
 	private KiuwanRecorder recorder;
+	private KiuwanConnectionProfile connectionProfile;
 	private AbstractBuild<?, ?> build;
 	
-	public KiuwanAnalyzerCommandBuilder(KiuwanDescriptor descriptor, KiuwanRecorder recorder, AbstractBuild<?, ?> build) {
+	public KiuwanAnalyzerCommandBuilder(KiuwanGlobalConfigDescriptor descriptor, KiuwanRecorder recorder, AbstractBuild<?, ?> build) {
 		super();
 		this.descriptor = descriptor;
 		this.recorder = recorder;
 		this.build = build;
+		String connectionProfileUuid = recorder.getConnectionProfileUuid();
+		this.connectionProfile = descriptor.getConnectionProfile(connectionProfileUuid);
 	}
 
 	public List<String> buildLocalAnalyzerCommand(Launcher launcher, TaskListener listener, FilePath agentHome, 
@@ -111,11 +115,11 @@ public class KiuwanAnalyzerCommandBuilder {
 		args.add(buildArgument(launcher, getOutputFile(build).getAbsolutePath()));
 
 		args.add("--user");
-		args.add(buildArgument(launcher, descriptor.getUsername()));
+		args.add(buildArgument(launcher, connectionProfile.getUsername()));
 		args.add("--pass");
-		args.add(buildArgument(launcher, descriptor.getPassword()));
+		args.add(buildArgument(launcher, connectionProfile.getPassword()));
 		
-		String domain = descriptor.getDomain();
+		String domain = connectionProfile.getDomain();
 		if(StringUtils.isNotBlank(domain)) {
 			args.add("--domain-id");
 			args.add(buildArgument(launcher, domain));
@@ -197,20 +201,20 @@ public class KiuwanAnalyzerCommandBuilder {
 			}
 		}
 		
-		String proxyHost = descriptor.getProxyHost();
-		String proxyPort = Integer.toString(descriptor.getProxyPort());
-		String proxyProtocol = descriptor.getProxyProtocol();
-		String proxyAuthentication = KiuwanDescriptor.PROXY_AUTHENTICATION_BASIC;
-		String proxyUsername = descriptor.getProxyUsername();
-		String proxyPassword = descriptor.getProxyPassword();
-		String configSaveStamp = descriptor.getConfigSaveStamp();
+		String proxyHost = connectionProfile.getProxyHost();
+		String proxyPort = Integer.toString(connectionProfile.getProxyPort());
+		String proxyProtocol = connectionProfile.getProxyProtocol();
+		String proxyAuthentication = KiuwanConnectionProfile.PROXY_AUTHENTICATION_BASIC;
+		String proxyUsername = connectionProfile.getProxyUsername();
+		String proxyPassword = connectionProfile.getProxyPassword();
+		String configSaveStamp = descriptor.getConfigSaveTimestamp();
 				
-		if (!descriptor.isConfigureProxy()) {
+		if (!connectionProfile.isConfigureProxy()) {
 			proxyHost = "";
-			proxyAuthentication = KiuwanDescriptor.PROXY_AUTHENTICATION_NONE;
+			proxyAuthentication = KiuwanConnectionProfile.PROXY_AUTHENTICATION_NONE;
 		
-		} else if (!KiuwanDescriptor.PROXY_AUTHENTICATION_BASIC.equals(descriptor.getProxyAuthentication())) {
-			proxyAuthentication = KiuwanDescriptor.PROXY_AUTHENTICATION_NONE;
+		} else if (!KiuwanConnectionProfile.PROXY_AUTHENTICATION_BASIC.equals(connectionProfile.getProxyAuthentication())) {
+			proxyAuthentication = KiuwanConnectionProfile.PROXY_AUTHENTICATION_NONE;
 			proxyUsername = "";
 			proxyPassword = "";
 		}

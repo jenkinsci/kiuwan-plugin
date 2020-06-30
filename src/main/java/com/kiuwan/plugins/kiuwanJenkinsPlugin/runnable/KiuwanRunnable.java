@@ -23,8 +23,8 @@ import java.util.concurrent.atomic.AtomicReference;
 import org.apache.commons.lang.StringUtils;
 import org.apache.commons.lang.exception.ExceptionUtils;
 
-import com.kiuwan.plugins.kiuwanJenkinsPlugin.KiuwanDescriptor;
-import com.kiuwan.plugins.kiuwanJenkinsPlugin.KiuwanDownloadable;
+import com.kiuwan.plugins.kiuwanJenkinsPlugin.KiuwanConnectionProfile;
+import com.kiuwan.plugins.kiuwanJenkinsPlugin.KiuwanGlobalConfigDescriptor;
 import com.kiuwan.plugins.kiuwanJenkinsPlugin.KiuwanRecorder;
 import com.kiuwan.plugins.kiuwanJenkinsPlugin.action.KiuwanBuildSummaryAction;
 import com.kiuwan.plugins.kiuwanJenkinsPlugin.action.KiuwanBuildSummaryView;
@@ -55,8 +55,9 @@ public class KiuwanRunnable implements Runnable {
     
     private static final int KLA_RETURN_CODE_AUDIT_FAILED = 10;
 	
-	private KiuwanDescriptor descriptor;
 	private KiuwanRecorder recorder;
+	private KiuwanConnectionProfile connectionProfile;
+	
 	private Node node;
 	private AbstractBuild<?, ?> build;
 	private Launcher launcher;
@@ -66,12 +67,11 @@ public class KiuwanRunnable implements Runnable {
 	private KiuwanAnalyzerCommandBuilder commandBuilder;
 	private PrintStream loggerPrintStream;
 	
-	public KiuwanRunnable(KiuwanDescriptor descriptor, KiuwanRecorder recorder, 
+	public KiuwanRunnable(KiuwanGlobalConfigDescriptor descriptor, KiuwanRecorder recorder, 
 			Node node, AbstractBuild<?, ?> build, Launcher launcher, BuildListener listener,
 			AtomicReference<Result> resultReference, AtomicReference<Throwable> exceptionReference) {
 		super();
 		
-		this.descriptor = descriptor;
 		this.recorder = recorder;
 		this.node = node;
 		this.build = build;
@@ -81,27 +81,33 @@ public class KiuwanRunnable implements Runnable {
 		this.exceptionReference = exceptionReference;
 		this.commandBuilder = new KiuwanAnalyzerCommandBuilder(descriptor, recorder, build);
 		this.loggerPrintStream = listener.getLogger();
+		
+		String connectionProfileUuid = recorder.getConnectionProfileUuid();
+		this.connectionProfile = descriptor.getConnectionProfile(connectionProfileUuid);
 	}
 
 	public void run() {
 		try {
-			FormValidation connectionTestResult = descriptor.doTestConnection(
-				descriptor.getUsername(), descriptor.getPassword(), descriptor.getDomain(), 
-				descriptor.isConfigureKiuwanURL(), descriptor.getKiuwanURL(),
-				descriptor.isConfigureProxy(), descriptor.getProxyHost(),
-				descriptor.getProxyPort(), descriptor.getProxyProtocol(),
-				descriptor.getProxyAuthentication(), descriptor.getProxyUsername(),
-				descriptor.getProxyPassword());
-
-			if (Kind.OK.equals(connectionTestResult.kind)) {
-				performAnalysis();
+			if (connectionProfile == null) {
+				listener.getLogger().print("Could not find the specified connection profile (" + 
+					recorder.getConnectionProfileUuid() + "). Verify your ");
+				listener.hyperlink("/configure", "Kiuwan Global Settings");
+				listener.getLogger().println(".");
+				resultReference.set(Result.NOT_BUILT);
 				
 			} else {
-				loggerPrintStream.print("Could not get authorization from Kiuwan. Verify your ");
-				listener.hyperlink("/configure", "Kiuwan account settings");
-				loggerPrintStream.println(".");
-				loggerPrintStream.println(connectionTestResult.getMessage());
-				resultReference.set(Result.NOT_BUILT);
+				FormValidation connectionTestResult = KiuwanUtils.testConnection(connectionProfile);
+	
+				if (Kind.OK.equals(connectionTestResult.kind)) {
+					performAnalysis();
+					
+				} else {
+					listener.getLogger().print("Could not get authorization from configured Kiuwan URL. Verify your ");
+					listener.hyperlink("/configure", "Kiuwan Global Settings");
+					listener.getLogger().println(".");
+					listener.getLogger().println(connectionTestResult.getMessage());
+					resultReference.set(Result.NOT_BUILT);
+				}
 			}
 		
 		} catch (IOException e) {
@@ -258,6 +264,7 @@ public class KiuwanRunnable implements Runnable {
 		FilePath localAnalyzerBinDir = getAgentBinDir(localAnalyzerHome);
 		boolean[] masks = getMasks(args);
 		
+		String agentDirectory = KiuwanUtils.getPathFromConfiguredKiuwanURL(AGENT_DIRECTORY, connectionProfile);
 		ProcStarter procStarter = launcher.launch()
 			.cmds(args)
 			.masks(masks)

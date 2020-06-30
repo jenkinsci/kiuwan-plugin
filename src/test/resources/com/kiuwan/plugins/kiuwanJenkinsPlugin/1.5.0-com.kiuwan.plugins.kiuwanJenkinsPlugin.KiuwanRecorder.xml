@@ -1,0 +1,15 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<com.kiuwan.plugins.kiuwanJenkinsPlugin.KiuwanDescriptor plugin="kiuwanJenkinsPlugin@1.4.7">
+  <username>username@company.com</username>
+  <password>base64passwordsecret</password>
+  <configureKiuwanURL>true</configureKiuwanURL>
+  <kiuwanURL>https://mykiuwanurl.company.com/saas</kiuwanURL>
+  <configureProxy>true</configureProxy>
+  <proxyHost>proxyhost</proxyHost>
+  <proxyPort>3130</proxyPort>
+  <proxyProtocol>http</proxyProtocol>
+  <proxyAuthentication>Basic</proxyAuthentication>
+  <proxyUsername>proxyusername</proxyUsername>
+  <proxyPassword>base64proxypasswordsecret</proxyPassword>
+  <configSaveStamp>166ab78d140</configSaveStamp>
+</com.kiuwan.plugins.kiuwanJenkinsPlugin.KiuwanDescriptor>

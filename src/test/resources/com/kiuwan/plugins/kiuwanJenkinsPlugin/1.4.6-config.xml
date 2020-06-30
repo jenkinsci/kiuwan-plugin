@@ -1,0 +1,55 @@
+<?xml version='1.1' encoding='UTF-8'?>
+<project>
+  <actions/>
+  <description></description>
+  <keepDependencies>false</keepDependencies>
+  <properties />
+  <scm class="hudson.scm.NullSCM"/>
+  <canRoam>true</canRoam>
+  <disabled>false</disabled>
+  <blockBuildWhenDownstreamBuilding>false</blockBuildWhenDownstreamBuilding>
+  <blockBuildWhenUpstreamBuilding>false</blockBuildWhenUpstreamBuilding>
+  <triggers/>
+  <concurrentBuild>false</concurrentBuild>
+  <builders/>
+  <publishers>
+    <com.kiuwan.plugins.kiuwanJenkinsPlugin.KiuwanRecorder plugin="kiuwanJenkinsPlugin@1.4.6">
+      <selectedMode>STANDARD_MODE</selectedMode>
+      <applicationName>${JOB_BASE_NAME}</applicationName>
+      <applicationName__dm>${JOB_NAME}</applicationName__dm>
+      <label>#${BUILD_NUMBER}</label>
+      <label__dm>#${BUILD_NUMBER}</label__dm>
+      <encoding>UTF-8</encoding>
+      <encoding__dm>UTF-8</encoding__dm>
+      <includes>webapp/**,installer/**</includes>
+      <includes__dm></includes__dm>
+      <excludes>**/target/**,**/src/test/**,**/*.sql</excludes>
+      <excludes__dm>**/src/test/**,**/__MACOSX/**,**/*.min.js,**/*.Designer.vb,**/*Reference.vb,**/*Service.vb,**/*Silverlight.vb,**/*.Designer.cs,**/*Reference.cs,**/*Service.cs,**/*Silverlight.cs,**/.*,**/Pods/BuildHeaders/**/*.h,**/Pods/Headers/**/*.h</excludes__dm>
+      <timeout>120</timeout>
+      <timeout__dm>60</timeout__dm>
+      <timeout__em>60</timeout__em>
+      <indicateLanguages>false</indicateLanguages>
+      <measure>QUALITY_INDICATOR</measure>
+      <languages>abap,actionscript,aspnet,c,cobol,cpp,csharp,groovy,html,informix,java,javascript,jcl,jsp,natural,objectivec,oracleforms,perl,php,plsql,powerscript,python,rpg4,ruby,sqlscript,swift,transactsql,vb6,vbnet,xml</languages>
+      <indicateLanguages__dm>false</indicateLanguages__dm>
+      <languages__dm>abap,aspnet,c,cobol,cpp,csharp,html,informix,java,javascript,jcl,jsp,natural,objectivec,oracleforms,php,plsql,powerscript,rpg4,ruby,transactsql,vb6,vbnet</languages__dm>
+      <unstableThreshold>50.0</unstableThreshold>
+      <failureThreshold>40.0</failureThreshold>
+      <changeRequest__dm></changeRequest__dm>
+      <analysisScope__dm>COMPLETE_DELIVERY</analysisScope__dm>
+      <waitForAuditResults__dm>false</waitForAuditResults__dm>
+      <branch__dm></branch__dm>
+      <changeRequestStatus__dm>RESOLVED</changeRequestStatus__dm>
+      <commandArgs__em>-c -n &quot;${JOB_NAME}&quot; -l &quot;#${BUILD_NUMBER}&quot;</commandArgs__em>
+      <extraParameters__em>encoding=&quot;UTF-8&quot; supported.technologies=&quot;abap,aspnet,c,cobol,cpp,csharp,html,informix,java,javascript,jcl,jsp,natural,objectivec,oracleforms,php,plsql,powerscript,rpg4,ruby,transactsql,vb6,vbnet&quot; exclude.patterns=&quot;**/src/test/**,**/__MACOSX/**,**/*.min.js,**/*.Designer.vb,**/*Reference.vb,**/*Service.vb,**/*Silverlight.vb,**/*.Designer.cs,**/*Reference.cs,**/*Service.cs,**/*Silverlight.cs,**/.*,**/Pods/BuildHeaders/**/*.h,**/Pods/Headers/**/*.h&quot;</extraParameters__em>
+      <markBuildWhenNoPass__dm>UNSTABLE</markBuildWhenNoPass__dm>
+      <successResultCodes__em>0</successResultCodes__em>
+      <unstableResultCodes__em>10, 13</unstableResultCodes__em>
+      <failureResultCodes__em>1, 11, 12, 14</failureResultCodes__em>
+      <notBuiltResultCodes__em></notBuiltResultCodes__em>
+      <abortedResultCodes__em></abortedResultCodes__em>
+      <markAsInOtherCases__em>FAILURE</markAsInOtherCases__em>
+    </com.kiuwan.plugins.kiuwanJenkinsPlugin.KiuwanRecorder>
+  </publishers>
+  <buildWrappers/>
+</project>

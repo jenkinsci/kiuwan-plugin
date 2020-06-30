@@ -1,0 +1,13 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<com.kiuwan.plugins.kiuwanJenkinsPlugin.KiuwanRecorder_-DescriptorImpl plugin="kiuwanJenkinsPlugin@1.4.6">
+  <username>puzzle307@gmail.com</username>
+  <password>Z3p6jU3AbvHrol038BncinZSxLkNMO4YcNoD81WcZZ0=</password>
+  <configureProxy>true</configureProxy>
+  <proxyHost>192.168.1.99</proxyHost>
+  <proxyPort>3128</proxyPort>
+  <proxyProtocol>http</proxyProtocol>
+  <proxyAuthentication>Basic</proxyAuthentication>
+  <proxyUsername>usuario</proxyUsername>
+  <proxyPassword>+aiBxxv8ZiGHvJbshIowvG4u+YYAUSYbEe0Ztzm398k=</proxyPassword>
+  <configSaveStamp>172b7966bd0</configSaveStamp>
+</com.kiuwan.plugins.kiuwanJenkinsPlugin.KiuwanRecorder_-DescriptorImpl>
