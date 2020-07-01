@@ -23,7 +23,7 @@ public class KiuwanBuildSummaryAction implements Action {
 	@Exported public String getIcon() { return icon; }
 
 	public String getIconFileName() {
-		return summaryView.isAvailable() ? "/plugin/kiuwanJenkinsPlugin/images/kiuwan-sign.png" : "";
+		return summaryView.isAvailable() ? "/plugin/kiuwanJenkinsPlugin/images/kiuwan-sign.png" : null;
 	}
 
 	public String getDisplayName() {
@@ -31,7 +31,7 @@ public class KiuwanBuildSummaryAction implements Action {
 	}
 
 	public String getUrlName() {
-		return summaryView.isAvailable() ? "kiuwan" : "";
+		return summaryView.isAvailable() ? "kiuwan" : null;
 	}
 
 }

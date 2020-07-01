@@ -39,8 +39,9 @@ public class KiuwanComputerListener extends ComputerListener {
 					KiuwanAnalyzerInstaller.installKiuwanLocalAnalyzer(root, listener, connectionProfile);
 					
 				} catch (IOException e) {
-					KiuwanUtils.logger().log(Level.SEVERE, e.getLocalizedMessage());
-					listener.error("Failed to install KiuwanAnalyzer: " + e);
+					String error = "Failed to install KiuwanAnalyzer: " + e;
+					KiuwanUtils.logger().log(Level.SEVERE, error);
+					listener.error(error);
 				}
 			}
 		}

@@ -84,7 +84,6 @@ public class KiuwanConnectionProfile implements Describable<KiuwanConnectionProf
 			profileHost = "www.kiuwan.com";
 		}
 		
-		
 		return profileName + " - " + profileUsername + "@" + profileHost + " (" + this.uuid + ")";
 	}
 	

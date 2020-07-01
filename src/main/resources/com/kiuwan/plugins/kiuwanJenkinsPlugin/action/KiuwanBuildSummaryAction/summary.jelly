@@ -230,7 +230,7 @@
 						
 							<div>
 								<j:if test="${auditPassed}"><span class="kwn-audit-result-h1 kwn-result-ok">OK</span></j:if>
-								<j:if test="${!auditPassed}"><span class="kwn-audit-result-h1 kwn-result-ko">FAILED</span></j:if>
+								<j:if test="${!auditPassed}"><span class="kwn-audit-result-h1 kwn-result-ko">FAIL</span></j:if>
 							</div>
 							
 							<div class="kwn-audit-result-h3">SCORE:</div>
@@ -247,25 +247,29 @@
 							<col style="width: 30px"></col>
 							<col></col>
 							<col></col>
+							<col></col>
 							<tbody>
 								<j:forEach var="cr" items="${sv.checkpointResults}" varStatus="loop">
 									<tr>
 										<td></td>
-										<td>${loop.count}:</td>
-										<td>${cr.name}
+										<td>${loop.count}</td>
+										<td class="kwn-result-pill">
 											<j:set var="crOK" value='${sv.isCheckpointResultOK(cr)}'/>
-											<j:if test="${crOK}"><span class="kwn-result-pill-ok">Passed</span></j:if>
-											<j:if test="${!crOK}"><span class="kwn-result-pill-ko">Failed</span></j:if>
+											<j:if test="${crOK}"><span class="kwn-result-pill-ok">OK</span></j:if>
+											<j:if test="${!crOK}"><span class="kwn-result-pill-ko">FAIL</span></j:if>
 										</td>
+										<td>${cr.name}</td>
 									</tr>
 								</j:forEach>
 							</tbody>
 						</table>
 						
 						<p>
-							You have ${sv.auditFixTotalDefectsCount} defects in ${sv.auditFixTotalFilesCount} files to fix
+							Number of files analyzed: <b>${sv.deliveryTotalFilesCount}</b>
 							<br></br>
-							Total effort to fix the failed checkpoints: <b>${sv.auditEffort}</b>
+							Number of defects to fix: <b>${sv.auditFixTotalDefectsCount}</b>
+							<br></br>
+							Total effort needed to fix the failed checkpoints: <b>${sv.auditEffort}</b>
 						</p>
 					</j:if>
 					

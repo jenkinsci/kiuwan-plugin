@@ -179,6 +179,7 @@ public class KiuwanRunnable implements Runnable {
 	private void printExecutionConfiguration(FilePath agentHome) throws IOException, InterruptedException {
 		FilePath script = getLocalAnalyzerCommandFilePath(launcher, agentHome);
 		loggerPrintStream.println("Script: " + getRemoteFileAbsolutePath(script, listener));
+		loggerPrintStream.println("Connection profile: " + connectionProfile.getDisplayName());
 		
 		if (Mode.STANDARD_MODE.equals(recorder.getSelectedMode())) {
 			loggerPrintStream.println("Threshold measure: " + recorder.getMeasure());
@@ -290,12 +291,14 @@ public class KiuwanRunnable implements Runnable {
 	}
 	
 	private void onAnalysisFinishedDeliveryMode(int klaReturnCode) {
-		if (recorder.getWaitForAuditResults_dm()) {
-			if (klaReturnCode == KLA_RETURN_CODE_AUDIT_FAILED) {
-				String markBuildWhenNoPass = recorder.getMarkBuildWhenNoPass_dm();
-				loggerPrintStream.println("Audit not passed. Marking build as " + markBuildWhenNoPass);
-				resultReference.set(Result.fromString(markBuildWhenNoPass));
-			}
+		if (recorder.getWaitForAuditResults_dm() && klaReturnCode == KLA_RETURN_CODE_AUDIT_FAILED) {
+			String markBuildWhenNoPass = recorder.getMarkBuildWhenNoPass_dm();
+			loggerPrintStream.println("Audit not passed. Marking build as " + markBuildWhenNoPass);
+			resultReference.set(Result.fromString(markBuildWhenNoPass));
+		
+		} else if (klaReturnCode != 0) {
+			loggerPrintStream.println("Kiuwan Local Analyzer has returned a failure status.");
+			resultReference.set(Result.NOT_BUILT);
 		}
 	}
 	

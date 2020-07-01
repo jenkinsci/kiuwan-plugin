@@ -260,8 +260,8 @@ public class KiuwanBuildSummaryView {
 		return getAuditFixStatistics().getDefects();
 	}
 	
-	public int getAuditFixTotalFilesCount() {
-		return getAuditFixStatistics().getFiles();
+	public int getDeliveryTotalFilesCount() {
+		return analysisResult.getDeliveryFiles().getCount();
 	}
 	
 	public String getAuditEffort() {
@@ -270,8 +270,14 @@ public class KiuwanBuildSummaryView {
 		int effortH = getAuditFixStatistics().getEffortHours();
 		int effortM = getAuditFixStatistics().getEffortMinutes();
 		
+		effortH += (effortM / 60);
+		effortM = (effortM % 60);
+		
 		sb.append(effortH + " hours ");
-		sb.append(effortM + " minutes");
+		
+		if (effortH <= 100) {
+			sb.append(effortM + " minutes");
+		}
 		
 		return sb.toString();
 	}
@@ -297,28 +303,31 @@ public class KiuwanBuildSummaryView {
 		private int totalCheckpointsCount = 0;
 		private int failedCheckpointsCount = 0;
 		private int defects = 0;
-		private int files = 0;
 		private int effortHours = 0;
 		private int effortMinutes = 0;
 		
 		private AuditFixStatistics(AnalysisResult analysisResult) {
-			if (analysisResult.getAuditResult() != null) {
-				List<CheckpointResult> checkpointResults = analysisResult.getAuditResult().getCheckpointResults();
-				if (checkpointResults != null) {
-					totalCheckpointsCount = checkpointResults.size();
-					for (CheckpointResult cr : checkpointResults) {
-						if (!CheckpointResult.CHECKPOINT_RESULT_OK.equals(cr.getResult())) {
-							failedCheckpointsCount++;
-							if (cr.getViolatedRules() != null) {
-								for (ViolatedRule vr : cr.getViolatedRules()) {
-									defects += vr.getDefectsCount();
-									files += vr.getFilesCount();
-									String effortStr = vr.getEffort();
-									int[] parsedEffort = parseEffort(effortStr);
-									effortHours += parsedEffort[0];
-									effortMinutes += parsedEffort[1];
-								}
-							}
+			if (analysisResult.getAuditResult() == null) {
+				return;
+			}
+			
+			List<CheckpointResult> checkpointResults = analysisResult.getAuditResult().getCheckpointResults();
+			if (checkpointResults == null) {
+				return;
+			}
+
+			totalCheckpointsCount = checkpointResults.size();
+			
+			for (CheckpointResult cr : checkpointResults) {
+				if (!CheckpointResult.CHECKPOINT_RESULT_OK.equals(cr.getResult())) {
+					failedCheckpointsCount++;
+					if (cr.getViolatedRules() != null) {
+						for (ViolatedRule vr : cr.getViolatedRules()) {
+							defects += vr.getDefectsCount();
+							String effortStr = vr.getEffort();
+							int[] parsedEffort = parseEffort(effortStr);
+							effortHours += parsedEffort[0];
+							effortMinutes += parsedEffort[1];
 						}
 					}
 				}
@@ -328,30 +337,38 @@ public class KiuwanBuildSummaryView {
 		public int getTotalCheckpointsCount() { return totalCheckpointsCount; }
 		public int getFailedCheckpointsCount() { return failedCheckpointsCount; }
 		public int getDefects() { return defects; }
-		public int getFiles() { return files; }
 		public int getEffortHours() { return effortHours; }
 		public int getEffortMinutes() { return effortMinutes; }
 		
-		/** Kiuwan returns things like "19h 18" or "30m" or "06m" */
+		/** 
+		 * Parses the effort string returned by Kiuwan.
+		 * The returned string is in these formats depending on the effort needed:
+		 * <ul><li>19h 18</li>
+		 * <li>30m</li>
+		 * <li>06m</li></ul>
+		 */
 		private static int[] parseEffort(String effortStr) {
 			int[] effortHoursMinutes = new int[] { 0, 0 };
 			
-			String hoursStr = null;
-			String minsStr = null;
-			
-			int indexH = effortStr.lastIndexOf("h");
-			int indexM = effortStr.lastIndexOf("m");
-			
-			if (indexH >= 0) {
-				hoursStr = effortStr.substring(0, indexH);
-				minsStr = effortStr.substring(indexH + 1, effortStr.length());
-			
-			} else {
-				minsStr = effortStr.substring(0, indexM);
+			if (effortStr != null) {
+				String hoursStr = null;
+				String minsStr = null;
+				
+				int indexH = effortStr.lastIndexOf("h");
+				int indexM = effortStr.lastIndexOf("m");
+				
+				if (indexH >= 0) {
+					hoursStr = effortStr.substring(0, indexH);
+					minsStr = effortStr.substring(indexH + 1, effortStr.length());
+					minsStr = minsStr.trim();
+				
+				} else {
+					minsStr = effortStr.substring(0, indexM);
+				}
+				
+				try { effortHoursMinutes[0] = Integer.parseInt(hoursStr); } catch (NumberFormatException e) { }
+				try { effortHoursMinutes[1] = Integer.parseInt(minsStr); } catch (NumberFormatException e) { }
 			}
-			
-			try { effortHoursMinutes[0] = Integer.parseInt(hoursStr); } catch (NumberFormatException e) { }
-			try { effortHoursMinutes[0] = Integer.parseInt(minsStr); } catch (NumberFormatException e) { }
 			
 			return effortHoursMinutes;
 		}

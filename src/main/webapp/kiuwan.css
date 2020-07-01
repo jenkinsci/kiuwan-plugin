@@ -84,22 +84,27 @@
 	height: 12px;
 }
 
-.kwn-result-pill-ok,
-.kwn-result-pill-ko {
+.kwn-result-pill {
+	text-align: center;
 	padding: 0px 6px;
+}
+
+.kwn-result-pill span {
 	border-radius: 12px;
 	text-transform: uppercase;
 	font-weight: bold;
-	font-size: smaller;	
+	font-size: smaller;
+	color: white;			
 }
 
 .kwn-result-pill-ok {
-	color: #6c6;
+	background: #6c6;
+	padding: 0 10px;
 }
 
 .kwn-result-pill-ko {
-	color: white;
 	background: #e04822;
+	padding: 0 6px;
 }
 
 .kwn-result-ok {
