@@ -103,7 +103,7 @@
 				</f:entry>
 				<f:optionalBlock field="indicateLanguages_dm" name="indicateLanguages_dm" title="Indicate languages" inline="true" help="/plugin/kiuwanJenkinsPlugin/help/help-indicateLanguages.html">
 					<f:entry title="Languages" field="languages_dm" help="/plugin/kiuwanJenkinsPlugin/help/help-languages.html">
-						<f:textbox default="abap,aspnet,c,cobol,cpp,csharp,html,informix,java,javascript,jcl,jsp,natural,objectivec,oracleforms,php,plsql,powerscript,rpg4,ruby,transactsql,vb6,vbnet"/>
+						<f:textbox default="abap,actionscript,aspnet,c,cobol,cpp,csharp,go,groovy,html,informix,java,javascript,jcl,jsp,kotlin,natural,objectivec,oracleforms,other,perl,php,plsql,powerscript,python,rpg4,ruby,scala,sqlscript,swift,transactsql,vb6,vbnet,xml"/>
 					</f:entry>
 				</f:optionalBlock>
 			</f:advanced>
@@ -122,7 +122,7 @@
 			</f:entry>
 		
 			<f:entry title="Extra Parameters" field="extraParameters_em" help="/plugin/kiuwanJenkinsPlugin/help/help-extraParameters.html">
-				<f:textarea default="encoding=&quot;UTF-8&quot; supported.technologies=&quot;abap,aspnet,c,cobol,cpp,csharp,html,informix,java,javascript,jcl,jsp,natural,objectivec,oracleforms,php,plsql,powerscript,rpg4,ruby,transactsql,vb6,vbnet&quot; exclude.patterns=&quot;**/src/test/**,**/__MACOSX/**,**/*.min.js,**/*.Designer.vb,**/*Reference.vb,**/*Service.vb,**/*Silverlight.vb,**/*.Designer.cs,**/*Reference.cs,**/*Service.cs,**/*Silverlight.cs,**/.*,**/Pods/BuildHeaders/**/*.h,**/Pods/Headers/**/*.h&quot;" />
+				<f:textarea default="encoding=&quot;UTF-8&quot; supported.technologies=&quot;abap,actionscript,aspnet,c,cobol,cpp,csharp,go,groovy,html,informix,java,javascript,jcl,jsp,kotlin,natural,objectivec,oracleforms,other,perl,php,plsql,powerscript,python,rpg4,ruby,scala,sqlscript,swift,transactsql,vb6,vbnet,xml&quot; exclude.patterns=&quot;**/src/test/**,**/__MACOSX/**,**/*.min.js,**/*.Designer.vb,**/*Reference.vb,**/*Service.vb,**/*Silverlight.vb,**/*.Designer.cs,**/*Reference.cs,**/*Service.cs,**/*Silverlight.cs,**/.*,**/Pods/BuildHeaders/**/*.h,**/Pods/Headers/**/*.h&quot;" />
 			</f:entry>
 		
 	 		<f:advanced>

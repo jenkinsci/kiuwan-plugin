@@ -211,7 +211,7 @@
 						
 					</j:if>
 					
-					<p><a href="${sv.url}" target="_blank">See the details in Kiuwan</a></p>
+					<p><a href="${sv.url}" target="_blank" rel="noopener">See the details in Kiuwan</a></p>
 				</j:if>
 			
 				<!-- (2) Delivery + wait for results -->
@@ -273,7 +273,7 @@
 						</p>
 					</j:if>
 					
-					<p><a href="${sv.url}" target="_blank">See the audit results in Kiuwan</a></p>
+					<p><a href="${sv.url}" target="_blank" rel="noopener">See the audit results in Kiuwan</a></p>
 				</j:if>
 				
 			</div>

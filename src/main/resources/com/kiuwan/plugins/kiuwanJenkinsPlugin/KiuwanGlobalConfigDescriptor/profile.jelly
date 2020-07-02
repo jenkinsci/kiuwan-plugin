@@ -16,7 +16,7 @@
 		<f:invisibleEntry>
 			<f:textbox field="uuid" />
 		</f:invisibleEntry>
-		<f:entry title="Profile name" field="name" help="/plugin/kiuwanJenkinsPlugin/help/help-name.html">
+		<f:entry title="Profile name" field="name" help="/plugin/kiuwanJenkinsPlugin/help/help-profileName.html">
 			<f:textbox clazz="required" />
 			<j:if test="${not empty instance.getUuid()}">
 				 <div class="info" style="margin-top: 6px">Connection profile identifier: ${instance.getUuid()}</div>
