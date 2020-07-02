@@ -9,12 +9,14 @@ import org.apache.commons.lang.RandomStringUtils;
 import org.kohsuke.stapler.DataBoundConstructor;
 import org.kohsuke.stapler.DataBoundSetter;
 
+import com.kiuwan.plugins.kiuwanJenkinsPlugin.model.KiuwanModelObject;
+
 import hudson.model.Describable;
 import hudson.model.Descriptor;
 import hudson.util.Secret;
 import jenkins.model.Jenkins;
 
-public class KiuwanConnectionProfile implements Describable<KiuwanConnectionProfile>, Serializable {
+public class KiuwanConnectionProfile implements Describable<KiuwanConnectionProfile>, KiuwanModelObject, Serializable {
 
 	public static final String PROXY_AUTHENTICATION_BASIC = "Basic";
 	public static final String PROXY_AUTHENTICATION_NONE = "None";
@@ -68,6 +70,7 @@ public class KiuwanConnectionProfile implements Describable<KiuwanConnectionProf
 		return proxyType;
 	}
 	
+	@Override
 	public String getDisplayName() {
 		String profileName = name != null && !name.isEmpty() ? name : "?";
 		String profileUsername = username != null && !username.isEmpty() ? username : "?";
@@ -85,6 +88,11 @@ public class KiuwanConnectionProfile implements Describable<KiuwanConnectionProf
 		}
 		
 		return profileName + " - " + profileUsername + "@" + profileHost + " (" + this.uuid + ")";
+	}
+	
+	@Override
+	public String getValue() {
+		return uuid;
 	}
 	
 	public String generateUuid() {

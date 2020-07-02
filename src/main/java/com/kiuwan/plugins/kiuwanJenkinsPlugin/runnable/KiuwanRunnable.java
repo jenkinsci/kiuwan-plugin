@@ -20,7 +20,6 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicReference;
 
-import org.apache.commons.lang.StringUtils;
 import org.apache.commons.lang.exception.ExceptionUtils;
 
 import com.kiuwan.plugins.kiuwanJenkinsPlugin.KiuwanConnectionProfile;
@@ -73,7 +72,7 @@ public class KiuwanRunnable implements Runnable {
 		this.listener = listener;
 		this.resultReference = resultReference;
 		this.exceptionReference = exceptionReference;
-		this.commandBuilder = new KiuwanAnalyzerCommandBuilder(descriptor, recorder, build);
+		this.commandBuilder = new KiuwanAnalyzerCommandBuilder(descriptor, recorder, build, launcher, listener);
 		this.loggerPrintStream = listener.getLogger();
 		
 		String connectionProfileUuid = recorder.getConnectionProfileUuid();
@@ -124,7 +123,7 @@ public class KiuwanRunnable implements Runnable {
 		printExecutionConfiguration(localAnalyzerHome);
 		
 		// 4 - Get the command line arguments to use
-		List<String> args = buildLocalAnalyzerCommand(localAnalyzerHome, envVars);
+		List<String> args = commandBuilder.buildLocalAnalyzerCommand(localAnalyzerHome, envVars);
 		
 		// 5 - Execute Kiuwan Local Analyzer
 		int klaReturnCode = runKiuwanLocalAnalyzer(args, envVars, localAnalyzerHome);
@@ -189,43 +188,6 @@ public class KiuwanRunnable implements Runnable {
 				loggerPrintStream.println("Failure threshold: " + recorder.getFailureThreshold());
 			}
 		}
-	}
-	
-	private List<String> buildLocalAnalyzerCommand(FilePath localAnalyzerHome, EnvVars envVars) 
-			throws IOException, InterruptedException {
-		
-		String name = null;
-		String analysisLabel = null;
-		String analysisEncoding = null;
-		
-		if (Mode.DELIVERY_MODE.equals(recorder.getSelectedMode())) {
-			name = recorder.getApplicationName_dm();
-			analysisLabel = recorder.getLabel_dm();
-			analysisEncoding = recorder.getEncoding_dm();
-		
-		} else {
-			name = recorder.getApplicationName();
-			analysisLabel = recorder.getLabel();
-			analysisEncoding = recorder.getEncoding();
-		}
-		
-		if (StringUtils.isEmpty(name)) {
-			name = build.getProject().getName();
-		}
-			
-		if (StringUtils.isEmpty(analysisLabel)) {
-			analysisLabel = "#" + build.getNumber();
-		}
-				
-		if (StringUtils.isEmpty(analysisEncoding)) {
-			analysisEncoding = "UTF-8";
-		}
-
-		FilePath srcFolder = build.getModuleRoot();
-		List<String> args = commandBuilder.buildLocalAnalyzerCommand(launcher, listener, 
-			localAnalyzerHome, srcFolder, name, analysisLabel, analysisEncoding, envVars);
-		
-		return args;
 	}
 	
 	private int runKiuwanLocalAnalyzer(List<String> args, EnvVars envVars, FilePath localAnalyzerHome)

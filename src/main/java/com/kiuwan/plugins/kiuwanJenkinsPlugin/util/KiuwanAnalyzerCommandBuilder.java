@@ -8,6 +8,7 @@ import static com.kiuwan.plugins.kiuwanJenkinsPlugin.util.KiuwanUtils.getOutputF
 import static com.kiuwan.plugins.kiuwanJenkinsPlugin.util.KiuwanUtils.getRemoteFileAbsolutePath;
 
 import java.io.BufferedReader;
+import java.io.File;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.util.ArrayList;
@@ -31,7 +32,7 @@ import hudson.EnvVars;
 import hudson.FilePath;
 import hudson.Launcher;
 import hudson.model.AbstractBuild;
-import hudson.model.TaskListener;
+import hudson.model.BuildListener;
 
 public class KiuwanAnalyzerCommandBuilder {
 
@@ -57,28 +58,60 @@ public class KiuwanAnalyzerCommandBuilder {
 	
 	private KiuwanGlobalConfigDescriptor descriptor;
 	private KiuwanRecorder recorder;
-	private KiuwanConnectionProfile connectionProfile;
 	private AbstractBuild<?, ?> build;
+	private Launcher launcher;
+	private BuildListener listener;
+	private KiuwanConnectionProfile connectionProfile;
 	
-	public KiuwanAnalyzerCommandBuilder(KiuwanGlobalConfigDescriptor descriptor, KiuwanRecorder recorder, AbstractBuild<?, ?> build) {
+	public KiuwanAnalyzerCommandBuilder(KiuwanGlobalConfigDescriptor descriptor, KiuwanRecorder recorder, 
+			AbstractBuild<?, ?> build, Launcher launcher, BuildListener listener) {
 		super();
 		this.descriptor = descriptor;
 		this.recorder = recorder;
 		this.build = build;
+		this.launcher = launcher;
+		this.listener = listener;
+		
 		String connectionProfileUuid = recorder.getConnectionProfileUuid();
 		this.connectionProfile = descriptor.getConnectionProfile(connectionProfileUuid);
 	}
 
-	public List<String> buildLocalAnalyzerCommand(Launcher launcher, TaskListener listener, FilePath agentHome, 
-			FilePath srcFolder, String name, String analysisLabel, String analysisEncoding, EnvVars envVars) 
-			throws IOException, InterruptedException {
+	public List<String> buildLocalAnalyzerCommand(FilePath agentHome, EnvVars envVars) throws IOException, InterruptedException {
+		Mode selectedMode = recorder.getSelectedMode();
 		
+		String name = null;
+		String analysisLabel = null;
+		String analysisEncoding = null;
+		{
+			if (Mode.DELIVERY_MODE.equals(selectedMode)) {
+				name = recorder.getApplicationName_dm();
+				analysisLabel = recorder.getLabel_dm();
+				analysisEncoding = recorder.getEncoding_dm();
+			
+			} else {
+				name = recorder.getApplicationName();
+				analysisLabel = recorder.getLabel();
+				analysisEncoding = recorder.getEncoding();
+			}
+			
+			if (StringUtils.isEmpty(name)) {
+				name = build.getProject().getName();
+			}
+				
+			if (StringUtils.isEmpty(analysisLabel)) {
+				analysisLabel = "#" + build.getNumber();
+			}
+					
+			if (StringUtils.isEmpty(analysisEncoding)) {
+				analysisEncoding = "UTF-8";
+			}
+		}
+
 		Integer timeout = null;
 		String includes = null;
 		String excludes = null;
 		String languages = null;
 		
-		Mode selectedMode = recorder.getSelectedMode();
 		if (Mode.DELIVERY_MODE.equals(selectedMode)) {
 			timeout = recorder.getTimeout_dm();
 			includes = recorder.getIncludes_dm();
@@ -107,6 +140,18 @@ public class KiuwanAnalyzerCommandBuilder {
 		String commandAbsolutePath = getRemoteFileAbsolutePath(command, listener);
 		args.add(launcher.isUnix() ? commandAbsolutePath : "\"" + commandAbsolutePath + "\"");
 
+		FilePath srcFolder = null;
+		if (recorder.getSourcePath() != null && !recorder.getSourcePath().isEmpty()) {
+			String sourcePath = recorder.getSourcePath();
+			File sourcePathFile = new File(sourcePath);
+			if (sourcePathFile.isAbsolute()) {
+				srcFolder = new FilePath(sourcePathFile);
+			} else {
+				srcFolder = new FilePath(build.getWorkspace(), sourcePath);
+			}
+		} else {
+			srcFolder = build.getModuleRoot();
+		}
 		args.add("-s");
 		args.add(buildArgument(launcher, getRemoteFileAbsolutePath(srcFolder, listener)));
 		

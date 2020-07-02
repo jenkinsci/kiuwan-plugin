@@ -19,6 +19,9 @@
 		<f:entry title="Connection profile" name="connectionProfileUuid" field="connectionProfileUuid" help="/plugin/kiuwanJenkinsPlugin/help/help-connectionProfile.html">
 			<f:select clazz="required" />
 		</f:entry>
+		<f:entry title="Source path" name="sourcePath" field="sourcePath" help="/plugin/kiuwanJenkinsPlugin/help/help-sourcePath.html">
+			<f:textbox default="" />
+		</f:entry>
 		
 		<!-- Baseline mode -->
 		<f:radioBlock title="Baseline Mode" name="mode" checked="${instance.isInMode('STANDARD_MODE')}" value="STANDARD_MODE" inline="true">
@@ -32,10 +35,10 @@
 		
 			<f:advanced>
 				<f:entry title="Encoding" name="encoding" field="encoding" help="/plugin/kiuwanJenkinsPlugin/help/help-encoding.html">
-					<f:textbox default="UTF-8"/>
+					<f:textbox default="UTF-8" />
 				</f:entry>
 				<f:entry title="Include pattern" name="includes" field="includes" help="/plugin/kiuwanJenkinsPlugin/help/help-includes.html">
-					<f:textbox default=""/>
+					<f:textbox default="" />
 				</f:entry>
 				<f:entry title="Exclude pattern" name="excludes" field="excludes">
 					<f:textbox default="**/src/test/**,**/__MACOSX/**,**/*.min.js,**/*.Designer.vb,**/*Reference.vb,**/*Service.vb,**/*Silverlight.vb,**/*.Designer.cs,**/*Reference.cs,**/*Service.cs,**/*Silverlight.cs,**/.*,**/Pods/BuildHeaders/**/*.h,**/Pods/Headers/**/*.h"/>

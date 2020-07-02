@@ -29,6 +29,7 @@ public class KiuwanRecorder extends Recorder {
 	public final static Mode DEFAULT_MODE = Mode.STANDARD_MODE;
 	
 	private String connectionProfileUuid;
+	private String sourcePath;
 	
 	private Mode selectedMode;
 
@@ -196,6 +197,7 @@ public class KiuwanRecorder extends Recorder {
 	}
 
 	public String getConnectionProfileUuid() { return connectionProfileUuid; }
+	public String getSourcePath() { return sourcePath; }
 	public Mode getSelectedMode() { return selectedMode; }
 	public String getApplicationName() { return this.applicationName; }
 	public String getLabel() { return this.label; }
@@ -231,6 +233,7 @@ public class KiuwanRecorder extends Recorder {
 	public String getMarkAsInOtherCases_em() { return markAsInOtherCases_em; }
 
 	@DataBoundSetter public void setConnectionProfileUuid(String connectionProfileUuid) { this.connectionProfileUuid = connectionProfileUuid; }
+	@DataBoundSetter public void setSourcePath(String sourcePath) { this.sourcePath = sourcePath; }
 	@DataBoundSetter public void setMode(String mode) { this.selectedMode = (mode == null ? DEFAULT_MODE : Mode.valueOf(mode)); }
 	@DataBoundSetter public void setApplicationName(String applicationName) { this.applicationName = applicationName; }
 	@DataBoundSetter public void setApplicationName_dm(String applicationName_dm) { this.applicationName_dm = applicationName_dm; }
