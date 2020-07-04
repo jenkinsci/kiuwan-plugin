@@ -31,16 +31,14 @@
 		<f:entry title="Kiuwan SSO domain" field="domain" help="/plugin/kiuwanJenkinsPlugin/help/help-domain.html">
 			<f:textbox />
 		</f:entry>
-
 		<f:optionalBlock name="configureKiuwanURL" field="configureKiuwanURL" title="Configure Kiuwan URL" 
 				inline="true" help="/plugin/kiuwanJenkinsPlugin/help/help-configureKiuwanURL.html">
-			
 			<f:entry title="Kiuwan server URL" field="kiuwanURL" help="/plugin/kiuwanJenkinsPlugin/help/help-kiuwanURL.html">
 				<f:textbox />
 			</f:entry>
 		</f:optionalBlock>
-
-		<f:optionalBlock name="configureProxy" field="configureProxy" title="Configure Proxy" inline="true">
+		<f:optionalBlock name="configureProxy" field="configureProxy" title="Configure Proxy for Kiuwan Local Analyzer " inline="true"
+				help="/plugin/kiuwanJenkinsPlugin/help/help-proxy.html">
 			<f:entry title="Proxy Host" field="proxyHost">
 				<f:textbox />
 			</f:entry>
@@ -61,8 +59,7 @@
 			</f:entry>
 		</f:optionalBlock>
 		
-		<f:validateButton title="Test Configuration" progress="Validating..." method="testConnection"
+		<f:validateButton title="Check Credentials" progress="Validating..." method="checkCredentials"
 			with="uuid,name,username,password,domain,configureKiuwanURL,kiuwanURL,configureProxy,proxyHost,proxyPort,proxyProtocol,proxyAuthentication,proxyUsername,proxyPassword" />
-		
 	</f:section>
 </j:jelly>

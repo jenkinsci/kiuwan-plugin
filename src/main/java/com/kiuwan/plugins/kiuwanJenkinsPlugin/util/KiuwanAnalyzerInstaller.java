@@ -9,9 +9,7 @@ import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
-import java.net.InetSocketAddress;
 import java.net.MalformedURLException;
-import java.net.Proxy;
 import java.net.URL;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
@@ -99,7 +97,9 @@ public class KiuwanAnalyzerInstaller {
 		String engineVersionContents = null;
 		if (engineVersionCacheContents != null) {
 			try {
-				ApiClient client = KiuwanUtils.instantiateClient(connectionProfile);
+				ApiClient client = KiuwanUtils.instantiateClient(
+					connectionProfile.isConfigureKiuwanURL(), connectionProfile.getKiuwanURL(),
+					connectionProfile.getUsername(), connectionProfile.getPassword(), connectionProfile.getDomain());
 				InformationApi infoApi = new InformationApi(client);
 				UserInformationResponse userInfo = infoApi.getInformation();
 				engineVersionContents = userInfo.getEngineVersion();
@@ -127,8 +127,7 @@ public class KiuwanAnalyzerInstaller {
 			downloadToFile(kiuwanEngineURL, kiuwanEngineCacheFile);
 		}
 		
-		
-		// -------------------------------------
+		/*
 		String relativePath = getRelativePathForConnectionProfile(LOCAL_ANALYZER_PARENT_DIRECTORY, connectionProfile);
 		FilePath installDir = rootDir.child(relativePath);
 		FilePath agentHome = installDir.child(LOCAL_ANALYZER_DIRECTORY);
@@ -145,6 +144,7 @@ public class KiuwanAnalyzerInstaller {
 				agentBinDir.child("agent.sh").chmod(0755);
 			}
 		}
+		*/
 		
 		return agentHome;
 	}
@@ -191,17 +191,6 @@ public class KiuwanAnalyzerInstaller {
 		listener.getLogger().println("Downloading Kiuwan Local Analyzer from " + url);
 		File tmp = new File(cacheFile.getPath() + ".tmp");
 		tmp.getParentFile().mkdirs();
-		
-		/*
-		ProxyConfiguration jenkinsProxy = ProxyConfiguration.load();
-		String username = jenkinsProxy.getUserName();
-		String password = jenkinsProxy.getPassword();
-		
-		Proxy javaProxy = jenkinsProxy.createProxy("www.kiuwan.com");
-		InetSocketAddress address = (InetSocketAddress) javaProxy.address();
-		String host = address.getHostName();
-		int port = address.getPort();
-		*/
 		
 		try (InputStream in = ProxyConfiguration.open(url).getInputStream()) {
 			Files.copy(in, tmp.toPath(), REPLACE_EXISTING);

@@ -106,33 +106,13 @@ public class KiuwanConnectionProfileDescriptor extends Descriptor<KiuwanConnecti
 		return items;
 	}
 	
-	public FormValidation doTestConnection(@QueryParameter String uuid, 
-			@QueryParameter String name, @QueryParameter String username, 
+	public FormValidation doCheckCredentials(@QueryParameter String username, 
 			@QueryParameter String password, @QueryParameter String domain,
-			@QueryParameter boolean configureKiuwanURL, @QueryParameter String kiuwanURL,  
-			@QueryParameter boolean configureProxy, @QueryParameter String proxyHost, @QueryParameter int proxyPort,
-			@QueryParameter String proxyProtocol, @QueryParameter String proxyAuthentication,
-			@QueryParameter String proxyUsername, @QueryParameter String proxyPassword) {
-		
-		KiuwanConnectionProfile connectionProfile = new KiuwanConnectionProfile();
-		connectionProfile.setUuid(uuid);
-		connectionProfile.setName(name);
-		connectionProfile.setUsername(username);
-		connectionProfile.setPassword(password);
-		connectionProfile.setDomain(domain);
-		connectionProfile.setConfigureKiuwanURL(configureKiuwanURL);
-		connectionProfile.setKiuwanURL(kiuwanURL);
-		connectionProfile.setConfigureProxy(configureProxy);
-		connectionProfile.setProxyHost(proxyHost);
-		connectionProfile.setProxyPort(proxyPort);
-		connectionProfile.setProxyProtocol(proxyProtocol);
-		connectionProfile.setProxyAuthentication(proxyAuthentication);
-		connectionProfile.setProxyUsername(proxyUsername);
-		connectionProfile.setProxyPassword(proxyPassword);
-		
+			@QueryParameter boolean configureKiuwanURL, @QueryParameter String kiuwanURL) {
+
 		FormValidation formValidation = null;
 		try {
-			ApiClient client = KiuwanUtils.instantiateClient(connectionProfile);
+			ApiClient client = KiuwanUtils.instantiateClient(configureKiuwanURL, kiuwanURL, username, password, domain);
 			InformationApi api = new InformationApi(client);
 			api.getInformation();
 			formValidation = FormValidation.ok("Authentication completed successfully!");

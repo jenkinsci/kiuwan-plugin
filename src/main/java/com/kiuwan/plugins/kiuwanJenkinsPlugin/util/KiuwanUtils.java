@@ -5,6 +5,8 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
+import java.net.InetSocketAddress;
+import java.net.Proxy;
 import java.util.HashSet;
 import java.util.Set;
 import java.util.logging.Level;
@@ -13,7 +15,6 @@ import java.util.logging.Logger;
 import com.fasterxml.jackson.core.JsonParser.Feature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.base.Objects;
-import com.kiuwan.plugins.kiuwanJenkinsPlugin.KiuwanConnectionProfile;
 import com.kiuwan.plugins.kiuwanJenkinsPlugin.filecallable.KiuwanRemoteFilePath;
 import com.kiuwan.plugins.kiuwanJenkinsPlugin.model.KiuwanModelObject;
 import com.kiuwan.plugins.kiuwanJenkinsPlugin.model.results.AnalysisResult;
@@ -22,6 +23,7 @@ import com.kiuwan.rest.client.Configuration;
 
 import hudson.FilePath;
 import hudson.Launcher;
+import hudson.ProxyConfiguration;
 import hudson.model.AbstractBuild;
 import hudson.model.TaskListener;
 import hudson.util.ListBoxModel;
@@ -157,19 +159,44 @@ public class KiuwanUtils {
 		return AnalysisResult;
 	}
 
-	public static ApiClient instantiateClient(KiuwanConnectionProfile connectionProfile) {
-		ApiClient apiClient = Configuration.newClient(
-			connectionProfile.isConfigureKiuwanURL(),
-			connectionProfile.getKiuwanURL(),
-			connectionProfile.getUsername(),
-			connectionProfile.getPassword(),
-			connectionProfile.getDomain(),
-			connectionProfile.isConfigureProxy(),
-			connectionProfile.getProxyType().name(),
-			connectionProfile.getProxyHost(),
-			connectionProfile.getProxyPort(),
-			connectionProfile.getProxyUsername(),
-			connectionProfile.getProxyPassword());
+	/**
+	 * Creates a Kiuwan API client object using the current Jenkins proxy configuration and the specified connection settings
+	 * @return a {@link ApiClient} object ready to use
+	 */
+	public static ApiClient instantiateClient(boolean isConfigureKiuwanURL, String kiuwanURL, 
+			String username, String password, String domain) {
+		
+		ApiClient apiClient = Configuration
+			.newClient(isConfigureKiuwanURL, kiuwanURL)
+			.withBasicAuthentication(username, password)
+			.withDomain(domain);
+		
+		ProxyConfiguration jenkinsProxy = null;
+		try {
+			jenkinsProxy = ProxyConfiguration.load();
+		} catch (IOException e) {
+			logger().severe("Could not retrieve Jenkins proxy configuration: " + e.getLocalizedMessage());
+		}
+		
+		if (jenkinsProxy != null && !Proxy.NO_PROXY.equals(jenkinsProxy)) {
+			String proxyUsername = jenkinsProxy.getUserName();
+			String proxyPassword = jenkinsProxy.getPassword();
+			
+			String basePath = apiClient.getBasePath();
+			Proxy javaProxy = jenkinsProxy.createProxy(basePath);
+			if (javaProxy.address() instanceof InetSocketAddress) {
+				InetSocketAddress address = (InetSocketAddress) javaProxy.address();
+				String proxyHost = address.getHostName();
+				int proxyPort = address.getPort();
+
+				if (jenkinsProxy.getUserName() == null || jenkinsProxy.getUserName().isEmpty()) {
+					apiClient = apiClient.withProxy(Proxy.Type.HTTP.name(), proxyHost, proxyPort);
+				} else {
+					apiClient = apiClient.withProxy(Proxy.Type.HTTP.name(), proxyHost, proxyPort, proxyUsername, proxyPassword);
+				}
+			}
+			
+		}
 		
 		return apiClient;
 	}
