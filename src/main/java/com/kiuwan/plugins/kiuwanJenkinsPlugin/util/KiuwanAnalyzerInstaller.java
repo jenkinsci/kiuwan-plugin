@@ -49,37 +49,35 @@ public class KiuwanAnalyzerInstaller {
 		logger().info("Begin installation process of KLA and Kiuwan engine for " + connectionProfile);
 		
 		// 1 - Check current agent.version
-		String agentVersionCacheContents = null;
+		String klaVersionCacheContents = null;
 		
-		URL agentVersionURL = getDownloadURL(connectionProfile, KIUWAN_LOCAL_ANALYZER_VERSION_DOWNLOAD_FILE);
-		File agentVersionCacheFile = getLocalCacheFile(agentVersionURL, connectionProfile);
-		try (InputStream is = new FileInputStream(agentVersionCacheFile)) {
-			agentVersionCacheContents = agentVersionCacheFile != null ? IOUtils.toString(is, StandardCharsets.UTF_8) : null;
+		URL klaVersionURL = getDownloadURL(connectionProfile, KIUWAN_LOCAL_ANALYZER_VERSION_DOWNLOAD_FILE);
+		File klaVersionCacheFile = getLocalCacheFile(klaVersionURL, connectionProfile);
+		try (InputStream is = new FileInputStream(klaVersionCacheFile)) {
+			klaVersionCacheContents = klaVersionCacheFile != null ? IOUtils.toString(is, StandardCharsets.UTF_8) : null;
 		}
 		
-		logger().info("Kiuwan Local Analyzer cached version = " + agentVersionCacheContents);
+		logger().info("Kiuwan Local Analyzer cached version = " + klaVersionCacheContents);
 		
 		boolean klaNeedsUpdate = true;
-		if (agentVersionCacheContents != null) {
-			String agentVersionContents = downloadToString(agentVersionURL);
-			logger().info("Kiuwan Local Analyzer remote version = " + agentVersionContents);
+		if (klaVersionCacheContents != null) {
+			String klaVersionContents = downloadToString(klaVersionURL);
+			logger().info("Kiuwan Local Analyzer remote version = " + klaVersionContents);
 			
-			klaNeedsUpdate = agentVersionCacheContents.equals(agentVersionContents);
+			klaNeedsUpdate = klaVersionCacheContents.equals(klaVersionContents);
 		}
 		
 		logger().info("Kiuwan Local Analyzer needs update = " + klaNeedsUpdate);
 		
 		// 2 - Clean cache and store remote Kiuwan Local Analyzer files
+		URL klaURL = getDownloadURL(connectionProfile, KIUWAN_LOCAL_ANALYZER_DOWNLOAD_FILE);
+		File klaCacheFile = getLocalCacheFile(klaURL, connectionProfile);
 		if (klaNeedsUpdate) {
-			URL kiuwanLocalAnalyzerURL = getDownloadURL(connectionProfile, KIUWAN_LOCAL_ANALYZER_DOWNLOAD_FILE);
-			File kiuwanLocalAnalyzerCacheFile = getLocalCacheFile(kiuwanLocalAnalyzerURL, connectionProfile);
-
-			logger().info("Updating Kiuwan Local Analyzer from" + kiuwanLocalAnalyzerURL);
-
-			agentVersionCacheFile.delete();
-			kiuwanLocalAnalyzerCacheFile.delete();
-			downloadToFile(agentVersionURL, agentVersionCacheFile);
-			downloadToFile(kiuwanLocalAnalyzerURL, kiuwanLocalAnalyzerCacheFile);
+			logger().info("Updating Kiuwan Local Analyzer from" + klaURL);
+			klaVersionCacheFile.delete();
+			klaCacheFile.delete();
+			downloadToFile(klaVersionURL, klaVersionCacheFile);
+			downloadToFile(klaURL, klaCacheFile);
 		}
 		
 		// 3 - Check current engine.version
@@ -114,17 +112,39 @@ public class KiuwanAnalyzerInstaller {
 		logger().info("Kiuwan Engine needs update = " + engineNeedsUpdate);
 		
 		// 4 - Clean cache and store remote Kiuwan Engine files
+		String engineDownloadFileName = String.format(KIUWAN_LOCAL_ANALYZER_ENGINE_DOWNLOAD_FILE, engineVersionContents);
+		URL kiuwanEngineURL = getDownloadURL(connectionProfile, engineDownloadFileName);
+		File kiuwanEngineCacheFile = getLocalCacheFile(kiuwanEngineURL, connectionProfile);
 		if (engineNeedsUpdate) {
-			String engineDownloadFile = String.format(KIUWAN_LOCAL_ANALYZER_ENGINE_DOWNLOAD_FILE, engineVersionContents);
-			URL kiuwanEngineURL = getDownloadURL(connectionProfile, engineDownloadFile);
-			File kiuwanEngineCacheFile = getLocalCacheFile(kiuwanEngineURL, connectionProfile);
-
 			logger().info("Updating Kiuwan Engine from" + kiuwanEngineURL);
-
 			engineVersionCacheFile.delete();
 			kiuwanEngineCacheFile.delete();
 			downloadToFile(engineVersionURL, engineVersionCacheFile);
 			downloadToFile(kiuwanEngineURL, kiuwanEngineCacheFile);
+		}
+
+		// 5 - Install KLA if not already installed
+		String relativePath = getRelativePathForConnectionProfile(LOCAL_ANALYZER_PARENT_DIRECTORY, connectionProfile);
+		FilePath installDir = rootDir.child(relativePath);
+		FilePath klaHome = installDir.child(LOCAL_ANALYZER_DIRECTORY);
+		if (!klaHome.exists()) {
+			listener.getLogger().println("Installing Kiuwan Local Analyzer (connection profile = \"" + 
+				connectionProfile.getName() + "\") to " + installDir);
+			installDir.mkdirs();
+			
+			FilePath klaCacheFilePath = new FilePath(klaCacheFile);
+			FilePath kiuwanEngineCacheFilePath = new FilePath(kiuwanEngineCacheFile);
+			
+			klaCacheFilePath.unzip(installDir);
+			// TODO: ignore engine folder
+			kiuwanEngineCacheFilePath.unzip(installDir);
+			
+			// TODO: set permissions to all .sh
+			if (isUnix()) {
+				FilePath klaBinDir = klaHome.child("bin");
+				listener.getLogger().println("Changing agent.sh permission");
+				klaBinDir.child("agent.sh").chmod(0755);
+			}
 		}
 		
 		/*
@@ -146,7 +166,7 @@ public class KiuwanAnalyzerInstaller {
 		}
 		*/
 		
-		return agentHome;
+		return klaHome;
 	}
 	
 	private static File downloadKiuwanLocalAnalyzerCurrentVersion(TaskListener listener, KiuwanConnectionProfile connectionProfile) 
