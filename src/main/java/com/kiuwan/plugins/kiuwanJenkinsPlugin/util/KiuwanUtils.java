@@ -30,8 +30,6 @@ public class KiuwanUtils {
 	
 	private static final Logger LOGGER = Logger.getLogger("com.kiuwan.plugins.kiuwanJenkinsPlugin");
 
-	private static final String KIUWAN_DOMAIN_HEADER = "X-KW-CORPORATE-DOMAIN-ID";
-	
 	public static Logger logger() {
 		return LOGGER;
 	}
@@ -165,17 +163,13 @@ public class KiuwanUtils {
 			connectionProfile.getKiuwanURL(),
 			connectionProfile.getUsername(),
 			connectionProfile.getPassword(),
+			connectionProfile.getDomain(),
 			connectionProfile.isConfigureProxy(),
 			connectionProfile.getProxyType().name(),
 			connectionProfile.getProxyHost(),
 			connectionProfile.getProxyPort(),
 			connectionProfile.getProxyUsername(),
 			connectionProfile.getProxyPassword());
-		
-		String domain = connectionProfile.getDomain();
-		if (domain != null && !domain.isEmpty()) {
-			apiClient.addDefaultHeader(KIUWAN_DOMAIN_HEADER, domain);
-		}
 		
 		return apiClient;
 	}

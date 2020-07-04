@@ -54,6 +54,11 @@ public class KiuwanConnectionProfile implements Describable<KiuwanConnectionProf
 	public Descriptor<KiuwanConnectionProfile> getDescriptor() {
 		return Jenkins.getInstance().getDescriptorByType(KiuwanConnectionProfileDescriptor.class);
 	}
+
+	@Override
+	public String toString() {
+		return getDisplayName();
+	}
 	
 	public Type getProxyType() {
 		Type proxyType = null;
