@@ -6,7 +6,9 @@ import java.io.InputStream;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.net.InetSocketAddress;
+import java.net.MalformedURLException;
 import java.net.Proxy;
+import java.net.URL;
 import java.util.HashSet;
 import java.util.Set;
 import java.util.logging.Level;
@@ -171,31 +173,40 @@ public class KiuwanUtils {
 			.withBasicAuthentication(username, password)
 			.withDomain(domain);
 		
-		ProxyConfiguration jenkinsProxy = null;
+		ProxyConfiguration jenkinsProxyConfiguration = null;
 		try {
-			jenkinsProxy = ProxyConfiguration.load();
+			jenkinsProxyConfiguration = ProxyConfiguration.load();
 		} catch (IOException e) {
 			logger().severe("Could not retrieve Jenkins proxy configuration: " + e.getLocalizedMessage());
 		}
 		
-		if (jenkinsProxy != null && !Proxy.NO_PROXY.equals(jenkinsProxy)) {
-			String proxyUsername = jenkinsProxy.getUserName();
-			String proxyPassword = jenkinsProxy.getPassword();
+		if (jenkinsProxyConfiguration != null) {
+			String proxyUsername = jenkinsProxyConfiguration.getUserName();
+			String proxyPassword = jenkinsProxyConfiguration.getPassword();
 			
-			String basePath = apiClient.getBasePath();
-			Proxy javaProxy = jenkinsProxy.createProxy(basePath);
-			if (javaProxy.address() instanceof InetSocketAddress) {
-				InetSocketAddress address = (InetSocketAddress) javaProxy.address();
-				String proxyHost = address.getHostName();
-				int proxyPort = address.getPort();
-
-				if (jenkinsProxy.getUserName() == null || jenkinsProxy.getUserName().isEmpty()) {
-					apiClient = apiClient.withProxy(Proxy.Type.HTTP.name(), proxyHost, proxyPort);
-				} else {
-					apiClient = apiClient.withProxy(Proxy.Type.HTTP.name(), proxyHost, proxyPort, proxyUsername, proxyPassword);
-				}
+			URL basePathURL = null;
+			try {
+				basePathURL = new URL(apiClient.getBasePath());
+			} catch (MalformedURLException e) {
+				logger().log(Level.WARNING, "Could not create URL to setup proxy: " + e.getLocalizedMessage());
 			}
 			
+			if (basePathURL != null) {
+				Proxy javaProxy = jenkinsProxyConfiguration.createProxy(basePathURL.getHost());
+				if (!Proxy.NO_PROXY.equals(javaProxy)) {
+					if (javaProxy.address() instanceof InetSocketAddress) {
+						InetSocketAddress address = (InetSocketAddress) javaProxy.address();
+						String proxyHost = address.getHostName();
+						int proxyPort = address.getPort();
+		
+						if (jenkinsProxyConfiguration.getUserName() == null || jenkinsProxyConfiguration.getUserName().isEmpty()) {
+							apiClient = apiClient.withProxy(Proxy.Type.HTTP.name(), proxyHost, proxyPort);
+						} else {
+							apiClient = apiClient.withProxy(Proxy.Type.HTTP.name(), proxyHost, proxyPort, proxyUsername, proxyPassword);
+						}
+					}
+				}
+			}
 		}
 		
 		return apiClient;
