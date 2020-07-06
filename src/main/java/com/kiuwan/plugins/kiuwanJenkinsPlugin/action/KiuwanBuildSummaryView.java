@@ -53,9 +53,9 @@ public class KiuwanBuildSummaryView {
 	}
 	
 	public boolean hasQuality() {
-		MetricValue riskIndex = analysisResult.getRiskIndex();
 		MetricValue qualityIndicator = analysisResult.getQualityIndicator();
 		MetricValue effortToTarget = analysisResult.getEffortToTarget();
+		MetricValue riskIndex = analysisResult.getRiskIndex();
 		return riskIndex != null && qualityIndicator != null && effortToTarget != null;
 	}
 	

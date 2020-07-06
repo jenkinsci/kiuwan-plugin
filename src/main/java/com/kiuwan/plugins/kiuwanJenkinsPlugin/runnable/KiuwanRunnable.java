@@ -232,10 +232,21 @@ public class KiuwanRunnable implements Runnable {
 			String analysisStatus = analysisResult != null ? analysisResult.getAnalysisStatus() : null;
 			
 			if (ANALYSIS_STATUS_FINISHED.equalsIgnoreCase(analysisStatus)) {
-				double qualityIndicator = roundDouble(analysisResult.getQualityIndicator().getValue());
-				double effortToTarget = roundDouble(analysisResult.getEffortToTarget().getValue());
-				double riskIndex = roundDouble(analysisResult.getRiskIndex().getValue());
+				Double qualityIndicator = null;
+				if (analysisResult.getQualityIndicator() != null) {
+					qualityIndicator = roundDouble(analysisResult.getQualityIndicator().getValue());
+				}
 				
+				Double effortToTarget = null;
+				if (analysisResult.getEffortToTarget() != null) {
+					effortToTarget = roundDouble(analysisResult.getEffortToTarget().getValue());
+				}
+				
+				Double riskIndex = null;
+				if (analysisResult.getRiskIndex() != null) {
+					riskIndex = roundDouble(analysisResult.getRiskIndex().getValue());
+				}
+					
 				// TODO: is this still needed?
 				printStandardModeConsoleSummary(qualityIndicator, effortToTarget, riskIndex);
 				
@@ -294,39 +305,53 @@ public class KiuwanRunnable implements Runnable {
 		}
 	}
 	
-	private void printStandardModeConsoleSummary(double qualityIndicator, double effortToTarget, double riskIndex) {
+	private void printStandardModeConsoleSummary(Double qualityIndicator, Double effortToTarget, Double riskIndex) {
 		loggerPrintStream.println("==========================================================================");
 		loggerPrintStream.println("                    Kiuwan Static Analysis Summary                        ");
 		loggerPrintStream.println("==========================================================================");
-		loggerPrintStream.println(" - Global indicator: " + qualityIndicator);
-		loggerPrintStream.println(" - Effort to target: " + effortToTarget);
-		loggerPrintStream.println(" - Risk index: " + riskIndex);
+		loggerPrintStream.println(" - Global indicator: " + (qualityIndicator != null ? qualityIndicator : "unknown"));
+		loggerPrintStream.println(" - Effort to target: " + (effortToTarget != null ? effortToTarget : "unknown"));
+		loggerPrintStream.println(" - Risk index: " + (riskIndex != null ? riskIndex : "unknown"));
 		loggerPrintStream.println();
 	}
 
-	private void checkThresholds(double qualityIndicator, double effortToTarget, double riskIndex) {
+	private void checkThresholds(Double qualityIndicator, Double effortToTarget, Double riskIndex) {
 		String measure = recorder.getMeasure();
 
 		if (Measure.QUALITY_INDICATOR.name().equals(measure)) {
-			if (qualityIndicator < recorder.getFailureThreshold()) {
+			if (qualityIndicator == null) {
+				loggerPrintStream.println("Global indicator value is unknown, cannot check configured value");
+				
+			} else if (qualityIndicator < recorder.getFailureThreshold()) {
 				resultReference.set(Result.FAILURE);
 				loggerPrintStream.println("Global indicator is lower than " + recorder.getFailureThreshold());
+			
 			} else if (qualityIndicator < recorder.getUnstableThreshold()) {
 				resultReference.set(Result.UNSTABLE);
 				loggerPrintStream.println("Global indicator is lower than " + recorder.getUnstableThreshold());
 			}
+		
 		} else if (Measure.EFFORT_TO_TARGET.name().equals(measure)) {
-			if (effortToTarget > recorder.getFailureThreshold()) {
+			if (effortToTarget == null) {
+				loggerPrintStream.println("Effort to target value is unknown, cannot check configured value");
+			
+			} else if (effortToTarget > recorder.getFailureThreshold()) {
 				resultReference.set(Result.FAILURE);
 				loggerPrintStream.println("Effort to target is greater than " + recorder.getFailureThreshold());
+			
 			} else if (effortToTarget > recorder.getUnstableThreshold()) {
 				resultReference.set(Result.UNSTABLE);
 				loggerPrintStream.println("Effort to target is greater than " + recorder.getUnstableThreshold());
 			}
+		
 		} else if (Measure.RISK_INDEX.name().equals(measure)) {
-			if (riskIndex > recorder.getFailureThreshold()) {
+			if (riskIndex == null) {
+				loggerPrintStream.println("Risk index value is unknown, cannot check configured value");
+			
+			} else if (riskIndex > recorder.getFailureThreshold()) {
 				resultReference.set(Result.FAILURE);
 				loggerPrintStream.println("Risk index is greater than " + recorder.getFailureThreshold());
+			
 			} else if (riskIndex > recorder.getUnstableThreshold()) {
 				resultReference.set(Result.UNSTABLE);
 				loggerPrintStream.println("Risk index is greater than " + recorder.getUnstableThreshold());
