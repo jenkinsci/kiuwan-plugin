@@ -19,6 +19,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.base.Objects;
 import com.kiuwan.plugins.kiuwanJenkinsPlugin.filecallable.KiuwanRemoteFilePath;
 import com.kiuwan.plugins.kiuwanJenkinsPlugin.model.KiuwanModelObject;
+import com.kiuwan.plugins.kiuwanJenkinsPlugin.model.ProxyConfig;
 import com.kiuwan.plugins.kiuwanJenkinsPlugin.model.results.AnalysisResult;
 import com.kiuwan.rest.client.ApiClient;
 import com.kiuwan.rest.client.Configuration;
@@ -173,6 +174,28 @@ public class KiuwanUtils {
 			.withBasicAuthentication(username, password)
 			.withDomain(domain);
 		
+		URL basePathURL = null;
+		try {
+			basePathURL = new URL(apiClient.getBasePath());
+		} catch (MalformedURLException e) {
+			logger().log(Level.WARNING, "Could not create URL to setup proxy: " + e.getLocalizedMessage());
+		}
+		
+		if (basePathURL != null) {
+			ProxyConfig proxyConfig = getJenkinsProxy(basePathURL.getHost());
+			
+			if (ProxyConfig.AUTHENTICATION_NONE.equals(proxyConfig.getAuthentication())) {
+				apiClient = apiClient.withProxy(proxyConfig.getProtocol(), 
+					proxyConfig.getHost(), proxyConfig.getPort());
+			
+			} else {
+				apiClient = apiClient.withProxy(proxyConfig.getProtocol(), 
+					proxyConfig.getHost(), proxyConfig.getPort(), 
+					proxyConfig.getUsername(), proxyConfig.getPassword());
+			}
+		}
+		
+		/*
 		ProxyConfiguration jenkinsProxyConfiguration = null;
 		try {
 			jenkinsProxyConfiguration = ProxyConfiguration.load();
@@ -208,8 +231,44 @@ public class KiuwanUtils {
 				}
 			}
 		}
+		*/
 		
 		return apiClient;
+	}
+	
+	public static ProxyConfig getJenkinsProxy(String targetHost) {
+		ProxyConfiguration jenkinsProxyConfiguration = null;
+		try {
+			jenkinsProxyConfiguration = ProxyConfiguration.load();
+		} catch (IOException e) {
+			logger().severe("Could not retrieve Jenkins proxy configuration: " + e.getLocalizedMessage());
+		}
+		
+		ProxyConfig proxy = null;
+		if (jenkinsProxyConfiguration != null) {
+			String proxyUsername = jenkinsProxyConfiguration.getUserName();
+			String proxyPassword = jenkinsProxyConfiguration.getPassword();
+			
+			Proxy javaProxy = jenkinsProxyConfiguration.createProxy(targetHost);
+			if (javaProxy.address() instanceof InetSocketAddress) {
+				InetSocketAddress address = (InetSocketAddress) javaProxy.address();
+				String proxyHost = address.getHostName();
+				int proxyPort = address.getPort();
+				
+				if (proxyUsername == null || proxyUsername.isEmpty()) {
+					proxy = new ProxyConfig(proxyHost, proxyPort, 
+						ProxyConfig.PROTOCOL_HTTP, ProxyConfig.AUTHENTICATION_NONE, 
+						null, null);
+
+				} else {
+					proxy = new ProxyConfig(proxyHost, proxyPort, 
+						ProxyConfig.PROTOCOL_HTTP, ProxyConfig.AUTHENTICATION_BASIC, 
+						proxyUsername, proxyPassword);
+				}
+			}
+		}
+		
+		return proxy;
 	}
 
 }

@@ -1,5 +1,7 @@
 package com.kiuwan.plugins.kiuwanJenkinsPlugin.util;
 
+import static com.kiuwan.plugins.kiuwanJenkinsPlugin.KiuwanConnectionProfile.CONFIGURE_PROXY_JENKINS;
+import static com.kiuwan.plugins.kiuwanJenkinsPlugin.KiuwanConnectionProfile.CONFIGURE_PROXY_NONE;
 import static com.kiuwan.plugins.kiuwanJenkinsPlugin.KiuwanRecorder.TIMEOUT_MARGIN_MILLIS;
 import static com.kiuwan.plugins.kiuwanJenkinsPlugin.KiuwanRecorder.TIMEOUT_MARGIN_SECONDS;
 import static com.kiuwan.plugins.kiuwanJenkinsPlugin.util.KiuwanUtils.buildAdditionalParameterExpression;
@@ -27,6 +29,7 @@ import com.kiuwan.plugins.kiuwanJenkinsPlugin.model.ChangeRequestStatusType;
 import com.kiuwan.plugins.kiuwanJenkinsPlugin.model.DeliveryType;
 import com.kiuwan.plugins.kiuwanJenkinsPlugin.model.Measure;
 import com.kiuwan.plugins.kiuwanJenkinsPlugin.model.Mode;
+import com.kiuwan.plugins.kiuwanJenkinsPlugin.model.ProxyConfig;
 
 import hudson.EnvVars;
 import hudson.FilePath;
@@ -246,28 +249,27 @@ public class KiuwanAnalyzerCommandBuilder {
 			}
 		}
 		
-		String proxyHost = connectionProfile.getProxyHost();
-		String proxyPort = Integer.toString(connectionProfile.getProxyPort());
-		String proxyProtocol = connectionProfile.getProxyProtocol();
-		String proxyAuthentication = KiuwanConnectionProfile.PROXY_AUTHENTICATION_BASIC;
-		String proxyUsername = connectionProfile.getProxyUsername();
-		String proxyPassword = connectionProfile.getProxyPassword();
-		String configSaveStamp = descriptor.getConfigSaveTimestamp();
+		ProxyConfig proxyConfig = null;
 				
-		if (!connectionProfile.isConfigureProxy()) {
-			proxyHost = "";
-			proxyAuthentication = KiuwanConnectionProfile.PROXY_AUTHENTICATION_NONE;
+		// No proxy
+		if (CONFIGURE_PROXY_NONE.equals(connectionProfile.getConfigureProxy())) {
+			proxyConfig = new ProxyConfig("", ProxyConfig.PORT_DEFAULT, "", ProxyConfig.AUTHENTICATION_NONE, "", "");
 		
-		} else if (!KiuwanConnectionProfile.PROXY_AUTHENTICATION_BASIC.equals(connectionProfile.getProxyAuthentication())) {
-			proxyAuthentication = KiuwanConnectionProfile.PROXY_AUTHENTICATION_NONE;
-			proxyUsername = "";
-			proxyPassword = "";
+		// Use jenkins proxy
+		} else if (CONFIGURE_PROXY_JENKINS.equals(connectionProfile.getConfigureProxy())) {
+			proxyConfig = KiuwanUtils.getJenkinsProxy(null);
+		
+		// Use custom proxy
+		} else if (KiuwanConnectionProfile.CONFIGURE_PROXY_CUSTOM.equals(connectionProfile.getConfigureProxy())) {
+			proxyConfig = new ProxyConfig(connectionProfile.getProxyHost(), connectionProfile.getProxyPort(), 
+				connectionProfile.getProxyProtocol(), connectionProfile.getProxyAuthentication(),
+				connectionProfile.getProxyUsername(), connectionProfile.getProxyPassword());
 		}
 		
 		FilePath agentBinDir = getAgentBinDir(agentHome);
 		writeConfigToProperties(agentBinDir, 
-			proxyHost, proxyPort, proxyProtocol, proxyAuthentication,
-			proxyUsername, proxyPassword, configSaveStamp);
+			proxyConfig.getHost(), proxyConfig.getPort(), proxyConfig.getProtocol(), proxyConfig.getAuthentication(),
+			proxyConfig.getUsername(), proxyConfig.getPassword(), descriptor.getConfigSaveTimestamp());
 		
 		return args;
 	}
@@ -417,7 +419,7 @@ public class KiuwanAnalyzerCommandBuilder {
 	}
 	
 	private void writeConfigToProperties(FilePath agentBinDir, 
-			String proxyHost, String proxyPort, String proxyProtocol, String proxyAuthentication, 
+			String proxyHost, int proxyPort, String proxyProtocol, String proxyAuthentication, 
 			String proxyUsername, String proxyPassword, String configSaveStamp) throws IOException, InterruptedException {
 		
 		FilePath agentPropertiesPath = agentBinDir.getParent().child(AGENT_CONF_DIR_NAME).child(AGENT_PROPERTIES_FILE_NAME);
@@ -471,7 +473,7 @@ public class KiuwanAnalyzerCommandBuilder {
 				
 		if (updateConfig) {
 			newFileContent.append(PROXY_HOST + "=" + proxyHost + "\n");
-			newFileContent.append(PROXY_PORT + "=" + proxyPort + "\n");
+			newFileContent.append(PROXY_PORT + "=" + String.valueOf(proxyPort) + "\n");
 			newFileContent.append(PROXY_PROTOCOL + "=" + proxyProtocol + "\n");
 			newFileContent.append(PROXY_AUTHENTICATION + "=" + proxyAuthentication + "\n");
 			newFileContent.append(PROXY_USERNAME + "=" + proxyUsername + "\n");

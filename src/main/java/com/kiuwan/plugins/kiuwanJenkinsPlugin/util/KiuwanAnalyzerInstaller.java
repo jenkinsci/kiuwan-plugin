@@ -25,7 +25,6 @@ import com.kiuwan.rest.client.api.InformationApi;
 import com.kiuwan.rest.client.model.UserInformationResponse;
 
 import hudson.FilePath;
-import hudson.Platform;
 import hudson.ProxyConfiguration;
 import hudson.model.TaskListener;
 import jenkins.model.Jenkins;
@@ -42,6 +41,7 @@ public class KiuwanAnalyzerInstaller {
 	
 	public static final String LOCAL_ANALYZER_PARENT_DIRECTORY = "tools/kiuwan";
 	public static final String LOCAL_ANALYZER_DIRECTORY = "KiuwanLocalAnalyzer";
+	public static final String ENGINE_DIRECTORY = "engine";
 	
 	public static FilePath installKiuwanLocalAnalyzer(FilePath rootDir, TaskListener listener, 
 			KiuwanConnectionProfile connectionProfile) throws IOException, InterruptedException {
@@ -76,7 +76,7 @@ public class KiuwanAnalyzerInstaller {
 		URL klaURL = getDownloadURL(connectionProfile, KIUWAN_LOCAL_ANALYZER_DOWNLOAD_FILE);
 		File cachedKlaFile = getLocalCacheFile(klaURL, connectionProfile);
 		if (klaNeedsUpdate) {
-			logger().info("Updating cached Kiuwan Local Analyzer from" + klaURL);
+			logger().info("Updating cached Kiuwan Local Analyzer from " + klaURL);
 			cachedKlaVersionFile.delete();
 			cachedKlaFile.delete();
 			downloadToFile(klaVersionURL, cachedKlaVersionFile);
@@ -116,50 +116,57 @@ public class KiuwanAnalyzerInstaller {
 		logger().info("Kiuwan Engine needs update = " + engineNeedsUpdate);
 		
 		// 4 - Clean cache and store remote Kiuwan Engine files
-		File engineCacheFile = null;
+		String engineDownloadFileName = String.format(KIUWAN_LOCAL_ANALYZER_ENGINE_DOWNLOAD_FILE, remoteEngineVersion);
+		URL engineURL = getDownloadURL(connectionProfile, engineDownloadFileName);
+		File engineCacheFile = getLocalCacheFile(engineURL, connectionProfile);
 		if (engineNeedsUpdate && remoteEngineVersion != null) {
-			String engineDownloadFileName = String.format(KIUWAN_LOCAL_ANALYZER_ENGINE_DOWNLOAD_FILE, remoteEngineVersion);
-			URL engineURL = getDownloadURL(connectionProfile, engineDownloadFileName);
-			engineCacheFile = getLocalCacheFile(engineURL, connectionProfile);
-			if (engineNeedsUpdate) {
-				logger().info("Updating cached Kiuwan Engine from " + engineURL);
-				cachedEngineVersionFile.delete();
-				engineCacheFile.delete();
-				downloadToFile(engineVersionURL, cachedEngineVersionFile);
-				downloadToFile(engineURL, engineCacheFile);
-			}
+			logger().info("Updating cached Kiuwan Engine from " + engineURL);
+			cachedEngineVersionFile.delete();
+			engineCacheFile.delete();
+			downloadToFile(engineVersionURL, cachedEngineVersionFile);
+			downloadToFile(engineURL, engineCacheFile);
 		}
 		
 		// 5 - Install KLA if not already installed
 		String profileRelativePath = getRelativePathForConnectionProfile(LOCAL_ANALYZER_PARENT_DIRECTORY, connectionProfile);
 		FilePath nodeToolsDir = rootDir.child(profileRelativePath);
+		FilePath engineInstallDir = new FilePath(nodeToolsDir, ENGINE_DIRECTORY);
 		FilePath klaHome = nodeToolsDir.child(LOCAL_ANALYZER_DIRECTORY);
 		if (!klaHome.exists()) {
 			listener.getLogger().println("Installing Kiuwan Local Analyzer for connection profile " + 
 				connectionProfile.getDisplayName() + " to " + nodeToolsDir);
 			
-			klaHome.mkdirs();
-			
-			// Install Engine first (this eases the process, as the engine package contains a folder "engine" inside
-			// and the FilePath implementation fails when moving all children to destinations that already exist)
-			if (engineCacheFile != null && engineCacheFile.exists()) {
-				FilePath engineCacheFilePath = new FilePath(engineCacheFile);
-				engineCacheFilePath.unzip(nodeToolsDir);
+			try {
+				klaHome.mkdirs();
 				
-				FilePath engineInstallDir = new FilePath(nodeToolsDir, "engine");
-				engineInstallDir.moveAllChildrenTo(klaHome);
-			}
-			
-			// Install KLA
-			FilePath klaCacheFilePath = new FilePath(cachedKlaFile);
-			klaCacheFilePath.unzip(nodeToolsDir);
-			
-			// Set permissions to all .sh files
-			if (isUnix()) {
-				for (FilePath shellScript : klaHome.list("*.sh")) {
-					listener.getLogger().println("Changing " + shellScript + " permissions");
-					shellScript.chmod(0755);
+				// Install Engine first (this eases the process, as the engine package contains a folder "engine" inside
+				// and the FilePath implementation fails when moving all children to destinations that already exist)
+				if (engineCacheFile != null && engineCacheFile.exists()) {
+					FilePath engineCacheFilePath = new FilePath(engineCacheFile);
+					engineCacheFilePath.unzip(nodeToolsDir);
+					engineInstallDir.moveAllChildrenTo(klaHome);
 				}
+				
+				// Install KLA
+				FilePath klaCacheFilePath = new FilePath(cachedKlaFile);
+				klaCacheFilePath.unzip(nodeToolsDir);
+				
+				// Set permissions to all .sh files in non windows systems
+				if (klaHome.mode() != -1) {
+					for (FilePath shellScript : klaHome.list("**/*.sh")) {
+						listener.getLogger().println("Changing " + shellScript + " permissions");
+						shellScript.chmod(0755);
+					}
+				}
+				
+			} catch (IOException e) {
+				if (engineInstallDir.exists()) {
+					try { engineInstallDir.delete(); } catch (IOException ioe) { }
+				}
+				if (klaHome.exists()) {
+					try { klaHome.delete(); } catch (IOException ioe) { }
+				}
+				throw e;
 			}
 		}
 		
@@ -179,8 +186,8 @@ public class KiuwanAnalyzerInstaller {
 			String urlPort = url.getPort() != -1 ? ":" + url.getPort() : "";
 			String baseURL = url.getProtocol() + "://" + url.getHost() + urlPort;
 			urlStr = baseURL + "/pub";
-		}
-				
+		}	
+		
 		URL downloadBaseURL = new URL(urlStr);
 		URL downloadURL = new URL(downloadBaseURL.getProtocol(), downloadBaseURL.getHost(), 
 			downloadBaseURL.getPort(), downloadBaseURL.getFile() + file);
@@ -230,16 +237,6 @@ public class KiuwanAnalyzerInstaller {
 	 */
 	private static String getRelativePathForConnectionProfile(String prefix, KiuwanConnectionProfile connectionProfile) {
 		return prefix + "_" + connectionProfile.getUuid();
-	}
-	
-	private static boolean isUnix() {
-		boolean isUnix = false;
-		try {
-			isUnix = (Platform.WINDOWS != Platform.current());
-		} catch (Exception e) {
-			KiuwanUtils.logger().warning("Could not get current platform: " + e.getLocalizedMessage());
-		}
-		return isUnix;
 	}
 	
 }

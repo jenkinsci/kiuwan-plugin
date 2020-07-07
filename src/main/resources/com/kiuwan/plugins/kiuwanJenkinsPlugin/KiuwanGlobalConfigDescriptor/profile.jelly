@@ -37,8 +37,37 @@
 				<f:textbox />
 			</f:entry>
 		</f:optionalBlock>
-		<f:optionalBlock name="configureProxy" field="configureProxy" title="Configure Proxy for Kiuwan Local Analyzer " inline="true"
-				help="/plugin/kiuwanJenkinsPlugin/help/help-proxy.html">
+
+		<f:section title="Proxy for Kiuwan Local Analyzer" help="/plugin/kiuwanJenkinsPlugin/help/help-proxy.html">
+		
+			<!-- TODO: Use constants for radio values -->
+			<f:radioBlock name="configureProxy" inline="true" title="No proxy" value="false" />
+			<f:radioBlock name="configureProxy" inline="true" title="Use Jenkins proxy" value="jenkins" />
+			<f:radioBlock name="configureProxy" inline="true" title="Use custom proxy" value="true">
+				<f:entry title="Proxy Host" field="proxyHost">
+					<f:textbox />
+				</f:entry>
+				<f:entry title="Proxy Port" field="proxyPort">
+					<f:number />
+				</f:entry>
+				<f:entry title="Proxy Protocol" field="proxyProtocol">
+					<f:select />
+				</f:entry>
+				<f:entry title="Proxy Authentication" field="proxyAuthentication">
+					<f:select />
+				</f:entry>
+				<f:entry title="Proxy Username" field="proxyUsername">
+					<f:textbox />
+				</f:entry>
+				<f:entry title="Proxy Password" field="proxyPassword">
+					<f:password />
+				</f:entry>
+			</f:radioBlock>
+		</f:section>
+
+		<!-- 
+		<f:optionalBlock name="configureProxy" field="configureProxy" title="Configure Proxy for Kiuwan Local Analyzer" 
+				inline="true" help="/plugin/kiuwanJenkinsPlugin/help/help-proxy.html">
 			<f:entry title="Proxy Host" field="proxyHost">
 				<f:textbox />
 			</f:entry>
@@ -58,6 +87,7 @@
 				<f:password />
 			</f:entry>
 		</f:optionalBlock>
+		 -->
 		
 		<f:validateButton title="Check Credentials" progress="Validating..." method="checkCredentials"
 			with="uuid,name,username,password,domain,configureKiuwanURL,kiuwanURL,configureProxy,proxyHost,proxyPort,proxyProtocol,proxyAuthentication,proxyUsername,proxyPassword" />

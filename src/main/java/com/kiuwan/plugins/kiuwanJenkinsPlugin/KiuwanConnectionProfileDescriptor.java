@@ -1,10 +1,7 @@
 package com.kiuwan.plugins.kiuwanJenkinsPlugin;
 
 import static com.kiuwan.plugins.kiuwanJenkinsPlugin.KiuwanConnectionProfile.DEFAULT_PROXY_PORT;
-import static com.kiuwan.plugins.kiuwanJenkinsPlugin.KiuwanConnectionProfile.PROXY_AUTHENTICATION_BASIC;
-import static com.kiuwan.plugins.kiuwanJenkinsPlugin.KiuwanConnectionProfile.PROXY_AUTHENTICATION_NONE;
-import static com.kiuwan.plugins.kiuwanJenkinsPlugin.KiuwanConnectionProfile.PROXY_TYPE_HTTP;
-import static com.kiuwan.plugins.kiuwanJenkinsPlugin.KiuwanConnectionProfile.PROXY_TYPE_SOCKS;
+import static com.kiuwan.plugins.kiuwanJenkinsPlugin.util.KiuwanUtils.createListBoxModel;
 
 import java.net.MalformedURLException;
 import java.net.URL;
@@ -12,6 +9,8 @@ import java.util.logging.Level;
 
 import org.kohsuke.stapler.QueryParameter;
 
+import com.kiuwan.plugins.kiuwanJenkinsPlugin.model.ProxyAuthentication;
+import com.kiuwan.plugins.kiuwanJenkinsPlugin.model.ProxyProtocol;
 import com.kiuwan.plugins.kiuwanJenkinsPlugin.util.KiuwanUtils;
 import com.kiuwan.rest.client.ApiClient;
 import com.kiuwan.rest.client.ApiException;
@@ -25,9 +24,6 @@ import hudson.util.ListBoxModel;
 @Extension
 public class KiuwanConnectionProfileDescriptor extends Descriptor<KiuwanConnectionProfile> {
 
-	private final static String[] proxyProtocolComboValues = { PROXY_TYPE_HTTP, PROXY_TYPE_SOCKS };
-	private final static String[] proxyAuthenticationTypeComboValues = { PROXY_AUTHENTICATION_NONE, PROXY_AUTHENTICATION_BASIC };
-	
 	public KiuwanConnectionProfileDescriptor() {
 		super(KiuwanConnectionProfile.class);
 	}
@@ -80,30 +76,11 @@ public class KiuwanConnectionProfileDescriptor extends Descriptor<KiuwanConnecti
 	}
 	
 	public ListBoxModel doFillProxyProtocolItems(@QueryParameter("proxyProtocol") String proxyProtocol) {
-		ListBoxModel items = new ListBoxModel();
-		for (int i = 0; i < proxyProtocolComboValues.length; i++) {
-			if (proxyProtocolComboValues[i].equalsIgnoreCase(proxyProtocol)) {
-				items.add(new ListBoxModel.Option(proxyProtocolComboValues[i], proxyProtocolComboValues[i], true));
-			} else {
-				items.add(proxyProtocolComboValues[i], proxyProtocolComboValues[i]);
-			}
-		}
-
-		return items;
+		return createListBoxModel(ProxyProtocol.values(), proxyProtocol);
 	}
 
 	public ListBoxModel doFillProxyAuthenticationItems(@QueryParameter("proxyAuthentication") String proxyAuthentication) {
-		ListBoxModel items = new ListBoxModel();
-		for (int i = 0; i < proxyAuthenticationTypeComboValues.length; i++) {
-			if (proxyAuthenticationTypeComboValues[i].equalsIgnoreCase(proxyAuthentication)) {
-				items.add(new ListBoxModel.Option(proxyAuthenticationTypeComboValues[i],
-						proxyAuthenticationTypeComboValues[i], true));
-			} else {
-				items.add(proxyAuthenticationTypeComboValues[i], proxyAuthenticationTypeComboValues[i]);
-			}
-		}
-
-		return items;
+		return createListBoxModel(ProxyAuthentication.values(), proxyAuthentication);
 	}
 	
 	public FormValidation doCheckCredentials(@QueryParameter String username, 

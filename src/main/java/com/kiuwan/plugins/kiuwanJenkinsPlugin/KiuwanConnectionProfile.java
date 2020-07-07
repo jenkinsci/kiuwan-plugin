@@ -10,6 +10,7 @@ import org.kohsuke.stapler.DataBoundConstructor;
 import org.kohsuke.stapler.DataBoundSetter;
 
 import com.kiuwan.plugins.kiuwanJenkinsPlugin.model.KiuwanModelObject;
+import com.kiuwan.plugins.kiuwanJenkinsPlugin.model.ProxyProtocol;
 
 import hudson.model.Describable;
 import hudson.model.Descriptor;
@@ -18,14 +19,13 @@ import jenkins.model.Jenkins;
 
 public class KiuwanConnectionProfile implements Describable<KiuwanConnectionProfile>, KiuwanModelObject, Serializable {
 
-	public static final String PROXY_AUTHENTICATION_BASIC = "Basic";
-	public static final String PROXY_AUTHENTICATION_NONE = "None";
-	
-	public static final String PROXY_TYPE_HTTP = "http";
-	public static final String PROXY_TYPE_SOCKS = "socks";
-	public static final int DEFAULT_PROXY_PORT = 3128;
-	
 	private static final long serialVersionUID = 1768850962607295267L;
+
+	public static final String CONFIGURE_PROXY_NONE = "false";
+	public static final String CONFIGURE_PROXY_JENKINS = "jenkins";
+	public static final String CONFIGURE_PROXY_CUSTOM = "true";
+	
+	public static final int DEFAULT_PROXY_PORT = 3128;
 	
 	private String uuid;
 	private String name;
@@ -37,7 +37,7 @@ public class KiuwanConnectionProfile implements Describable<KiuwanConnectionProf
 	private boolean configureKiuwanURL;
 	private String kiuwanURL;
 	
-	private boolean configureProxy;
+	private String configureProxy;
 	private String proxyHost;
 	private int proxyPort;
 	private String proxyProtocol;
@@ -60,15 +60,15 @@ public class KiuwanConnectionProfile implements Describable<KiuwanConnectionProf
 		return getDisplayName();
 	}
 	
-	public Type getProxyType() {
+	public Type getJavaProxyType() {
 		Type proxyType = null;
 		
 		// Type: HTTP
-		if (PROXY_TYPE_HTTP.equalsIgnoreCase(proxyProtocol)) {
+		if (ProxyProtocol.HTTP.getValue().equals(proxyProtocol)) {
 			proxyType = Type.HTTP;
 		
 		// Type: socks
-		} else if (PROXY_TYPE_SOCKS.equalsIgnoreCase(proxyProtocol)) {
+		} else if (ProxyProtocol.SOCKS.getValue().equals(proxyProtocol)) {
 			proxyType = Type.SOCKS;
 		}
 		
@@ -92,7 +92,18 @@ public class KiuwanConnectionProfile implements Describable<KiuwanConnectionProf
 			profileHost = "www.kiuwan.com";
 		}
 		
-		return profileName + " - " + profileUsername + "@" + profileHost + " (" + this.uuid + ")";
+		String profileProxy = null;
+		if (configureProxy == null) {
+			profileProxy = "no proxy";
+			
+		} else if (Boolean.FALSE.equals(configureProxy)) {
+			profileProxy = "Jenkins proxy";
+
+		} else if (Boolean.TRUE.equals(configureProxy)) {
+			profileProxy = "custom proxy";
+		}
+		
+		return profileName + " - " + profileUsername + "@" + profileHost + " - using " + profileProxy + " (" + this.uuid + ")";
 	}
 	
 	@Override
@@ -111,18 +122,18 @@ public class KiuwanConnectionProfile implements Describable<KiuwanConnectionProf
 
 	public String getUuid() { return uuid; }
 	public String getName() { return name; }
-	public String getUsername() { return this.username; }
-	public String getPassword() { return decrypt(this.password); }
-	public String getDomain() { return this.domain; }
+	public String getUsername() { return username; }
+	public String getPassword() { return decrypt(password); }
+	public String getDomain() { return domain; }
 	public boolean isConfigureKiuwanURL() { return configureKiuwanURL; }
 	public String getKiuwanURL() { return kiuwanURL; }
-	public boolean isConfigureProxy() { return this.configureProxy; }
-	public String getProxyHost() { return this.proxyHost; }
-	public int getProxyPort() { return this.proxyPort; }
-	public String getProxyProtocol() { return this.proxyProtocol; }
-	public String getProxyAuthentication() { return this.proxyAuthentication; }
-	public String getProxyUsername() { return this.proxyUsername; }
-	public String getProxyPassword() { return decrypt(this.proxyPassword); }
+	public String getConfigureProxy() { return configureProxy; }
+	public String getProxyHost() { return proxyHost; }
+	public int getProxyPort() { return proxyPort; }
+	public String getProxyProtocol() { return proxyProtocol; }
+	public String getProxyAuthentication() { return proxyAuthentication; }
+	public String getProxyUsername() { return proxyUsername; }
+	public String getProxyPassword() { return decrypt(proxyPassword); }
 
 	@DataBoundSetter public void setUuid(String uuid) { this.uuid = uuid; }
 	@DataBoundSetter public void setName(String name) { this.name = name; }
@@ -131,7 +142,7 @@ public class KiuwanConnectionProfile implements Describable<KiuwanConnectionProf
 	@DataBoundSetter public void setDomain(String domain) { this.domain = domain; }
 	@DataBoundSetter public void setConfigureKiuwanURL(boolean configureKiuwanURL) { this.configureKiuwanURL = configureKiuwanURL; }
 	@DataBoundSetter public void setKiuwanURL(String kiuwanURL) { this.kiuwanURL = kiuwanURL; }
-	@DataBoundSetter public void setConfigureProxy(boolean configureProxy) { this.configureProxy = configureProxy; }
+	@DataBoundSetter public void setConfigureProxy(String configureProxy) { this.configureProxy = configureProxy; }
 	@DataBoundSetter public void setProxyHost(String proxyHost) { this.proxyHost = proxyHost; }
 	@DataBoundSetter public void setProxyPort(int proxyPort) { this.proxyPort = proxyPort; }
 	@DataBoundSetter public void setProxyProtocol(String proxyProtocol) { this.proxyProtocol = proxyProtocol; }

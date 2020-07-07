@@ -312,7 +312,6 @@ public class KiuwanRunnable implements Runnable {
 		loggerPrintStream.println(" - Global indicator: " + (qualityIndicator != null ? qualityIndicator : "unknown"));
 		loggerPrintStream.println(" - Effort to target: " + (effortToTarget != null ? effortToTarget : "unknown"));
 		loggerPrintStream.println(" - Risk index: " + (riskIndex != null ? riskIndex : "unknown"));
-		loggerPrintStream.println();
 	}
 
 	private void checkThresholds(Double qualityIndicator, Double effortToTarget, Double riskIndex) {
