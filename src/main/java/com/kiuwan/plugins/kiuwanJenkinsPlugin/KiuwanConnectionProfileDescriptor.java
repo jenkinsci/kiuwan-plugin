@@ -7,8 +7,11 @@ import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.logging.Level;
 
+import org.apache.commons.lang.StringUtils;
 import org.kohsuke.stapler.QueryParameter;
 
+import com.kiuwan.plugins.kiuwanJenkinsPlugin.client.KiuwanClientException;
+import com.kiuwan.plugins.kiuwanJenkinsPlugin.client.KiuwanClientUtils;
 import com.kiuwan.plugins.kiuwanJenkinsPlugin.model.ProxyAuthentication;
 import com.kiuwan.plugins.kiuwanJenkinsPlugin.model.ProxyProtocol;
 import com.kiuwan.plugins.kiuwanJenkinsPlugin.util.KiuwanUtils;
@@ -38,7 +41,7 @@ public class KiuwanConnectionProfileDescriptor extends Descriptor<KiuwanConnecti
 	}
 	
 	public FormValidation doCheckName(@QueryParameter("name") String name) {
-		if (name == null || name.isEmpty()) {
+		if (StringUtils.isEmpty(name)) {
 			return FormValidation.error("Field is required");
 		}
 		return FormValidation.ok();
@@ -62,7 +65,7 @@ public class KiuwanConnectionProfileDescriptor extends Descriptor<KiuwanConnecti
 			@QueryParameter("configureProxy") boolean configureProxy, 
 			@QueryParameter("proxyHost") String proxyHost) {
 		
-		if (configureProxy && (proxyHost == null || proxyHost.isEmpty())) {
+		if (configureProxy && (StringUtils.isEmpty(proxyHost))) {
 			return FormValidation.error("Field is required");
 		}
 		return FormValidation.ok();
@@ -89,14 +92,15 @@ public class KiuwanConnectionProfileDescriptor extends Descriptor<KiuwanConnecti
 
 		FormValidation formValidation = null;
 		try {
-			ApiClient client = KiuwanUtils.instantiateClient(configureKiuwanURL, kiuwanURL, username, password, domain);
+			ApiClient client = KiuwanClientUtils.instantiateClient(configureKiuwanURL, kiuwanURL, username, password, domain);
 			InformationApi api = new InformationApi(client);
 			api.getInformation();
 			formValidation = FormValidation.ok("Authentication completed successfully!");
 		
 		} catch (ApiException e) {
-			KiuwanUtils.logger().log(Level.WARNING, e.getLocalizedMessage());
-			formValidation = FormValidation.error("Authentication failed: " + e.getMessage());
+			KiuwanClientException krce = KiuwanClientException.from(e);
+			KiuwanUtils.logger().log(Level.WARNING, krce.getLocalizedMessage());
+			formValidation = FormValidation.error("Authentication failed: " + krce.getLocalizedMessage());
 		
 		} catch (Throwable t) {
 			KiuwanUtils.logger().log(Level.SEVERE, t.getLocalizedMessage());

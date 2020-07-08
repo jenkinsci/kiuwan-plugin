@@ -8,6 +8,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
+import org.apache.commons.lang.StringUtils;
 import org.kohsuke.stapler.QueryParameter;
 
 import com.kiuwan.plugins.kiuwanJenkinsPlugin.model.ChangeRequestStatusType;
@@ -59,7 +60,7 @@ public class KiuwanRecorderDescriptor extends BuildStepDescriptor<Publisher> {
 			KiuwanConnectionProfile[] data = connectionProfiles.toArray(new KiuwanConnectionProfile[connectionProfiles.size()]);
 			boolean found = KiuwanUtils.addAllOptionsToListBoxModel(items, data, connectionProfileUuid);
 			
-			if (!found && connectionProfileUuid != null && !connectionProfileUuid.isEmpty()) {
+			if (!found && StringUtils.isNotEmpty(connectionProfileUuid)) {
 				String displayName = "[UNKNOWN PROFILE] (" + connectionProfileUuid + ")";
 				items.add(new ListBoxModel.Option(displayName, connectionProfileUuid, true));
 			}
@@ -89,7 +90,7 @@ public class KiuwanRecorderDescriptor extends BuildStepDescriptor<Publisher> {
 	}
 
 	public FormValidation doCheckConnectionProfileUuid(@QueryParameter("connectionProfileUuid") String connectionProfileUuid) {
-		if (connectionProfileUuid == null || connectionProfileUuid.isEmpty()) {
+		if (StringUtils.isEmpty(connectionProfileUuid)) {
 			return FormValidation.error("This field is required.");
 		} else {
 			KiuwanConnectionProfile connectionProfile = KiuwanGlobalConfigDescriptor.get().getConnectionProfile(connectionProfileUuid);

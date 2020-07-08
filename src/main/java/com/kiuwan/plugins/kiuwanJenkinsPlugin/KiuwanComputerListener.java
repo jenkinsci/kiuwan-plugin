@@ -34,12 +34,13 @@ public class KiuwanComputerListener extends ComputerListener {
 	public void process(Computer computer, FilePath root, TaskListener listener) throws IOException, InterruptedException {
 		KiuwanGlobalConfigDescriptor descriptor = KiuwanGlobalConfigDescriptor.get();
 		if (descriptor.getConnectionProfiles() != null) {
+			KiuwanUtils.logger().log(Level.INFO, "Checking Kiuwan Local Analyzer installations on node " + computer.getDisplayName());
 			for (KiuwanConnectionProfile connectionProfile : descriptor.getConnectionProfiles()) {
 				try {
 					KiuwanAnalyzerInstaller.installKiuwanLocalAnalyzer(root, listener, connectionProfile);
 					
 				} catch (IOException e) {
-					String error = "Failed to install KiuwanAnalyzer: " + e;
+					String error = "Failed to install Kiuwan Local Analyzer: " + e;
 					KiuwanUtils.logger().log(Level.SEVERE, error);
 					listener.error(error);
 				}

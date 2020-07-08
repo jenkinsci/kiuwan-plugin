@@ -19,6 +19,8 @@ import java.util.logging.Level;
 import org.apache.commons.io.IOUtils;
 
 import com.kiuwan.plugins.kiuwanJenkinsPlugin.KiuwanConnectionProfile;
+import com.kiuwan.plugins.kiuwanJenkinsPlugin.client.KiuwanClientException;
+import com.kiuwan.plugins.kiuwanJenkinsPlugin.client.KiuwanClientUtils;
 import com.kiuwan.rest.client.ApiClient;
 import com.kiuwan.rest.client.ApiException;
 import com.kiuwan.rest.client.api.InformationApi;
@@ -100,14 +102,15 @@ public class KiuwanAnalyzerInstaller {
 		boolean engineNeedsUpdate = true;
 		String remoteEngineVersion = null;
 		try {
-			ApiClient client = KiuwanUtils.instantiateClient(
+			ApiClient client = KiuwanClientUtils.instantiateClient(
 				connectionProfile.isConfigureKiuwanURL(), connectionProfile.getKiuwanURL(),
 				connectionProfile.getUsername(), connectionProfile.getPassword(), connectionProfile.getDomain());
 			InformationApi infoApi = new InformationApi(client);
 			UserInformationResponse userInfo = infoApi.getInformation();
 			remoteEngineVersion = userInfo.getEngineVersion();
 		} catch (ApiException e) {
-			logger().log(Level.SEVERE, e.getLocalizedMessage());
+			KiuwanClientException kce = KiuwanClientException.from(e);
+			logger().log(Level.SEVERE, kce.getLocalizedMessage());
 		}
 		
 		logger().info("Kiuwan Engine remote version = " + remoteEngineVersion);

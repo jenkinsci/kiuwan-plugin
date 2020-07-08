@@ -7,6 +7,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
+import org.apache.commons.lang.StringUtils;
 import org.kohsuke.stapler.StaplerRequest;
 
 import com.kiuwan.plugins.kiuwanJenkinsPlugin.upgrade.UpgradeToConnectionProfiles;
@@ -50,11 +51,11 @@ public class KiuwanGlobalConfigDescriptor extends GlobalConfiguration implements
 	public void setUpgradeJobsToConnectionProfilesTimestamp(String upgradeJobsToConnectionProfilesTimestamp) { this.upgradeJobsToConnectionProfilesTimestamp = upgradeJobsToConnectionProfilesTimestamp; }
 
 	public boolean isConfigUpgradedToConnectionProfiles() {
-		return upgradeConfigToConnectionProfilesTimestamp != null && !upgradeConfigToConnectionProfilesTimestamp.isEmpty();
+		return StringUtils.isNotEmpty(upgradeConfigToConnectionProfilesTimestamp);
 	}
 	
 	public boolean isJobsUpgradedToConnectionProfiles() {
-		return upgradeJobsToConnectionProfilesTimestamp != null && !upgradeJobsToConnectionProfilesTimestamp.isEmpty();
+		return StringUtils.isNotEmpty(upgradeJobsToConnectionProfilesTimestamp);
 	}
 	
 	public static KiuwanGlobalConfigDescriptor get() {
@@ -136,7 +137,7 @@ public class KiuwanGlobalConfigDescriptor extends GlobalConfiguration implements
 				if (publisher instanceof KiuwanRecorder) {
 					KiuwanRecorder kiuwanRecorder = (KiuwanRecorder) publisher;
 					String connectionProfileUuid = kiuwanRecorder.getConnectionProfileUuid();
-					if (connectionProfileUuid == null || connectionProfileUuid.isEmpty()) {
+					if (StringUtils.isEmpty(connectionProfileUuid)) {
 						return true;
 					} else {
 						KiuwanConnectionProfile connectionProfile = getConnectionProfile(connectionProfileUuid);
@@ -187,7 +188,7 @@ public class KiuwanGlobalConfigDescriptor extends GlobalConfiguration implements
 				return true;
 			}
 			
-			if (connectionProfile.getName() != null && !connectionProfile.getName().isEmpty()) {
+			if (StringUtils.isNotEmpty(connectionProfile.getName())) {
 				profileNames.add(connectionProfile.getName());
 			}
 		}
@@ -200,7 +201,7 @@ public class KiuwanGlobalConfigDescriptor extends GlobalConfiguration implements
 		List<String> duplicates = new ArrayList<>();
 		for (KiuwanConnectionProfile connectionProfile : connectionProfiles) {
 			if (!profileNames.add(connectionProfile.getName())) {
-				if (connectionProfile.getName() != null && !connectionProfile.getName().isEmpty()) {
+				if (StringUtils.isNotEmpty(connectionProfile.getName())) {
 					duplicates.add(connectionProfile.getName());
 				}
 			}
@@ -213,7 +214,7 @@ public class KiuwanGlobalConfigDescriptor extends GlobalConfiguration implements
 		for (KiuwanConnectionProfile connectionProfile : list) {
 			
 			// Generate UUIDs for new connection profiles
-			if (connectionProfile.getUuid() == null || connectionProfile.getUuid().isEmpty()) {
+			if (StringUtils.isEmpty(connectionProfile.getUuid())) {
 				connectionProfile.generateUuid();
 			}
 		}

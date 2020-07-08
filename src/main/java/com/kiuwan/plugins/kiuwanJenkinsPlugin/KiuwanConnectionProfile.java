@@ -2,15 +2,14 @@ package com.kiuwan.plugins.kiuwanJenkinsPlugin;
 
 import java.io.Serializable;
 import java.net.MalformedURLException;
-import java.net.Proxy.Type;
 import java.net.URL;
 
 import org.apache.commons.lang.RandomStringUtils;
+import org.apache.commons.lang.StringUtils;
 import org.kohsuke.stapler.DataBoundConstructor;
 import org.kohsuke.stapler.DataBoundSetter;
 
 import com.kiuwan.plugins.kiuwanJenkinsPlugin.model.KiuwanModelObject;
-import com.kiuwan.plugins.kiuwanJenkinsPlugin.model.ProxyProtocol;
 
 import hudson.model.Describable;
 import hudson.model.Descriptor;
@@ -60,25 +59,10 @@ public class KiuwanConnectionProfile implements Describable<KiuwanConnectionProf
 		return getDisplayName();
 	}
 	
-	public Type getJavaProxyType() {
-		Type proxyType = null;
-		
-		// Type: HTTP
-		if (ProxyProtocol.HTTP.getValue().equals(proxyProtocol)) {
-			proxyType = Type.HTTP;
-		
-		// Type: socks
-		} else if (ProxyProtocol.SOCKS.getValue().equals(proxyProtocol)) {
-			proxyType = Type.SOCKS;
-		}
-		
-		return proxyType;
-	}
-	
 	@Override
 	public String getDisplayName() {
-		String profileName = name != null && !name.isEmpty() ? name : "?";
-		String profileUsername = username != null && !username.isEmpty() ? username : "?";
+		String profileName = StringUtils.isNotEmpty(name) ? name : "?";
+		String profileUsername = StringUtils.isNotEmpty(username) ? username : "?";
 		String profileHost = null;
 		
 		if (configureKiuwanURL) {
@@ -93,23 +77,32 @@ public class KiuwanConnectionProfile implements Describable<KiuwanConnectionProf
 		}
 		
 		String profileProxy = null;
-		if (configureProxy == null) {
+		if (CONFIGURE_PROXY_NONE.equals(configureProxy)) {
 			profileProxy = "no proxy";
 			
-		} else if (Boolean.FALSE.equals(configureProxy)) {
+		} else if (CONFIGURE_PROXY_JENKINS.equals(configureProxy)) {
 			profileProxy = "Jenkins proxy";
 
-		} else if (Boolean.TRUE.equals(configureProxy)) {
+		} else if (CONFIGURE_PROXY_CUSTOM.equals(configureProxy)) {
 			profileProxy = "custom proxy";
 		}
 		
-		return profileName + " - " + profileUsername + "@" + profileHost + " - using " + profileProxy + " (" + this.uuid + ")";
+		return profileName + " - " + profileUsername + "@" + profileHost + " - " + profileProxy + " for KLA (" + this.uuid + ")";
 	}
 	
 	@Override
 	public String getValue() {
 		return uuid;
 	}
+	
+	// <j:getStatic> doesn't work due to a classloader problem 
+	// (KiuwanConnectionProfile is not accessible in a static way from jelly script)
+	// See https://issues.jenkins-ci.org/browse/JENKINS-26579
+	// This methods are here to workaround this problem
+	
+	public static String getConfigureProxyNone() { return CONFIGURE_PROXY_NONE; }
+	public static String getConfigureProxyJenkins() { return CONFIGURE_PROXY_JENKINS; }
+	public static String getConfigureProxyCustom() { return CONFIGURE_PROXY_CUSTOM; }
 	
 	public String generateUuid() {
 		int length = 8;

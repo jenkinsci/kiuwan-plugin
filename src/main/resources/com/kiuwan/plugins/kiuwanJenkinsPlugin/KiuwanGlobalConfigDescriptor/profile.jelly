@@ -5,7 +5,7 @@
 	This Jelly script is used to produce the global configuration option. 
 	Jenkins uses a set of tag libraries to provide uniformity in forms.
 	To determine where this tag is defined, first check the namespace URI, 
-	and then look under $JENKINS/views/. 
+	and then look under $JENKINS/views/.
 	For example, <f:section> is defined in $JENKINS/views/lib/form/section.jelly. 
 	It's also often useful to just check other similar scripts to see what tags they use. 
 	Views are always organized according to its owner class, 
@@ -38,12 +38,23 @@
 			</f:entry>
 		</f:optionalBlock>
 
-		<f:section title="Proxy for Kiuwan Local Analyzer" help="/plugin/kiuwanJenkinsPlugin/help/help-proxy.html">
+		<f:validateButton title="Check Credentials" progress="Validating..." method="checkCredentials"
+			with="username,password,domain,configureKiuwanURL,kiuwanURL" />
+
+		<f:section title="Proxy for Kiuwan Local Analyzer">
 		
-			<!-- TODO: Use constants for radio values -->
-			<f:radioBlock name="configureProxy" inline="true" title="No proxy" value="false" />
-			<f:radioBlock name="configureProxy" inline="true" title="Use Jenkins proxy" value="jenkins" />
-			<f:radioBlock name="configureProxy" inline="true" title="Use custom proxy" value="true">
+			<f:radioBlock name="configureProxy" title="No proxy" inline="true" value="${instance.getConfigureProxyNone()}" 
+					checked="${instance.getConfigureProxyNone().equals(instance.getConfigureProxy())}"
+					help="/plugin/kiuwanJenkinsPlugin/help/help-proxy-none.html" />
+			
+			<f:radioBlock name="configureProxy" title="Use Jenkins proxy" inline="true" value="${instance.getConfigureProxyJenkins()}" 
+					checked="${instance.getConfigureProxyJenkins().equals(instance.getConfigureProxy())}" 
+					help="/plugin/kiuwanJenkinsPlugin/help/help-proxy-jenkins.html" />
+			
+			<f:radioBlock name="configureProxy" title="Use custom proxy" inline="true" value="${instance.getConfigureProxyCustom()}" 
+					checked="${instance.getConfigureProxyCustom().equals(instance.getConfigureProxy())}" 
+					help="/plugin/kiuwanJenkinsPlugin/help/help-proxy-custom.html">
+				
 				<f:entry title="Proxy Host" field="proxyHost">
 					<f:textbox />
 				</f:entry>
@@ -65,31 +76,5 @@
 			</f:radioBlock>
 		</f:section>
 
-		<!-- 
-		<f:optionalBlock name="configureProxy" field="configureProxy" title="Configure Proxy for Kiuwan Local Analyzer" 
-				inline="true" help="/plugin/kiuwanJenkinsPlugin/help/help-proxy.html">
-			<f:entry title="Proxy Host" field="proxyHost">
-				<f:textbox />
-			</f:entry>
-			<f:entry title="Proxy Port" field="proxyPort">
-				<f:number />
-			</f:entry>
-			<f:entry title="Proxy Protocol" field="proxyProtocol">
-				<f:select />
-			</f:entry>
-			<f:entry title="Proxy Authentication" field="proxyAuthentication">
-				<f:select />
-			</f:entry>
-			<f:entry title="Proxy Username" field="proxyUsername">
-				<f:textbox />
-			</f:entry>
-			<f:entry title="Proxy Password" field="proxyPassword">
-				<f:password />
-			</f:entry>
-		</f:optionalBlock>
-		 -->
-		
-		<f:validateButton title="Check Credentials" progress="Validating..." method="checkCredentials"
-			with="uuid,name,username,password,domain,configureKiuwanURL,kiuwanURL,configureProxy,proxyHost,proxyPort,proxyProtocol,proxyAuthentication,proxyUsername,proxyPassword" />
 	</f:section>
 </j:jelly>

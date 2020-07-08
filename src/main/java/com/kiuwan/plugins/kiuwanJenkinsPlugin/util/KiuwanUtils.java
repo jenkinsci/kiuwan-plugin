@@ -6,23 +6,22 @@ import java.io.InputStream;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.net.InetSocketAddress;
-import java.net.MalformedURLException;
 import java.net.Proxy;
-import java.net.URL;
 import java.util.HashSet;
 import java.util.Set;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+import org.apache.commons.lang.StringUtils;
+
 import com.fasterxml.jackson.core.JsonParser.Feature;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.google.common.base.Objects;
 import com.kiuwan.plugins.kiuwanJenkinsPlugin.filecallable.KiuwanRemoteFilePath;
 import com.kiuwan.plugins.kiuwanJenkinsPlugin.model.KiuwanModelObject;
+import com.kiuwan.plugins.kiuwanJenkinsPlugin.model.ProxyAuthentication;
 import com.kiuwan.plugins.kiuwanJenkinsPlugin.model.ProxyConfig;
+import com.kiuwan.plugins.kiuwanJenkinsPlugin.model.ProxyProtocol;
 import com.kiuwan.plugins.kiuwanJenkinsPlugin.model.results.AnalysisResult;
-import com.kiuwan.rest.client.ApiClient;
-import com.kiuwan.rest.client.Configuration;
 
 import hudson.FilePath;
 import hudson.Launcher;
@@ -78,7 +77,7 @@ public class KiuwanUtils {
 		if (resultCodes != null) {
 			String[] errorCodesAsString = resultCodes.split(",");
 			for (String errorCodeAsString : errorCodesAsString) {
-				if (errorCodeAsString != null && !errorCodeAsString.isEmpty()) {
+				if (StringUtils.isNotEmpty(errorCodeAsString)) {
 					errorCodes.add(Integer.parseInt(errorCodeAsString.trim()));
 				}
 			}
@@ -97,7 +96,7 @@ public class KiuwanUtils {
 		for (KiuwanModelObject kmo : data) {
 			String label = kmo.getDisplayName();
 			String value = kmo.getValue();
-			boolean selected = Objects.equal(value, selectedValue);
+			boolean selected = StringUtils.equalsIgnoreCase(value, selectedValue);
 			items.add(new ListBoxModel.Option(label, value, selected));
 			optionFound |= selected;
 		}
@@ -142,7 +141,7 @@ public class KiuwanUtils {
 			}
 		}
 		
-		if (arg == null || arg.isEmpty()) {
+		if (StringUtils.isEmpty(arg)) {
 			arg = "\"\"";
 		}
 		
@@ -162,80 +161,6 @@ public class KiuwanUtils {
 		return AnalysisResult;
 	}
 
-	/**
-	 * Creates a Kiuwan API client object using the current Jenkins proxy configuration and the specified connection settings
-	 * @return a {@link ApiClient} object ready to use
-	 */
-	public static ApiClient instantiateClient(boolean isConfigureKiuwanURL, String kiuwanURL, 
-			String username, String password, String domain) {
-		
-		ApiClient apiClient = Configuration
-			.newClient(isConfigureKiuwanURL, kiuwanURL)
-			.withBasicAuthentication(username, password)
-			.withDomain(domain);
-		
-		URL basePathURL = null;
-		try {
-			basePathURL = new URL(apiClient.getBasePath());
-		} catch (MalformedURLException e) {
-			logger().log(Level.WARNING, "Could not create URL to setup proxy: " + e.getLocalizedMessage());
-		}
-		
-		if (basePathURL != null) {
-			ProxyConfig proxyConfig = getJenkinsProxy(basePathURL.getHost());
-			
-			if (ProxyConfig.AUTHENTICATION_NONE.equals(proxyConfig.getAuthentication())) {
-				apiClient = apiClient.withProxy(proxyConfig.getProtocol(), 
-					proxyConfig.getHost(), proxyConfig.getPort());
-			
-			} else {
-				apiClient = apiClient.withProxy(proxyConfig.getProtocol(), 
-					proxyConfig.getHost(), proxyConfig.getPort(), 
-					proxyConfig.getUsername(), proxyConfig.getPassword());
-			}
-		}
-		
-		/*
-		ProxyConfiguration jenkinsProxyConfiguration = null;
-		try {
-			jenkinsProxyConfiguration = ProxyConfiguration.load();
-		} catch (IOException e) {
-			logger().severe("Could not retrieve Jenkins proxy configuration: " + e.getLocalizedMessage());
-		}
-		
-		if (jenkinsProxyConfiguration != null) {
-			String proxyUsername = jenkinsProxyConfiguration.getUserName();
-			String proxyPassword = jenkinsProxyConfiguration.getPassword();
-			
-			URL basePathURL = null;
-			try {
-				basePathURL = new URL(apiClient.getBasePath());
-			} catch (MalformedURLException e) {
-				logger().log(Level.WARNING, "Could not create URL to setup proxy: " + e.getLocalizedMessage());
-			}
-			
-			if (basePathURL != null) {
-				Proxy javaProxy = jenkinsProxyConfiguration.createProxy(basePathURL.getHost());
-				if (!Proxy.NO_PROXY.equals(javaProxy)) {
-					if (javaProxy.address() instanceof InetSocketAddress) {
-						InetSocketAddress address = (InetSocketAddress) javaProxy.address();
-						String proxyHost = address.getHostName();
-						int proxyPort = address.getPort();
-		
-						if (jenkinsProxyConfiguration.getUserName() == null || jenkinsProxyConfiguration.getUserName().isEmpty()) {
-							apiClient = apiClient.withProxy(Proxy.Type.HTTP.name(), proxyHost, proxyPort);
-						} else {
-							apiClient = apiClient.withProxy(Proxy.Type.HTTP.name(), proxyHost, proxyPort, proxyUsername, proxyPassword);
-						}
-					}
-				}
-			}
-		}
-		*/
-		
-		return apiClient;
-	}
-	
 	public static ProxyConfig getJenkinsProxy(String targetHost) {
 		ProxyConfiguration jenkinsProxyConfiguration = null;
 		try {
@@ -252,17 +177,17 @@ public class KiuwanUtils {
 			Proxy javaProxy = jenkinsProxyConfiguration.createProxy(targetHost);
 			if (javaProxy.address() instanceof InetSocketAddress) {
 				InetSocketAddress address = (InetSocketAddress) javaProxy.address();
-				String proxyHost = address.getHostName();
+				String proxyHost = address.getHostString();
 				int proxyPort = address.getPort();
 				
-				if (proxyUsername == null || proxyUsername.isEmpty()) {
+				if (StringUtils.isEmpty(proxyUsername)) {
 					proxy = new ProxyConfig(proxyHost, proxyPort, 
-						ProxyConfig.PROTOCOL_HTTP, ProxyConfig.AUTHENTICATION_NONE, 
+						ProxyProtocol.HTTP, ProxyAuthentication.NONE, 
 						null, null);
 
 				} else {
 					proxy = new ProxyConfig(proxyHost, proxyPort, 
-						ProxyConfig.PROTOCOL_HTTP, ProxyConfig.AUTHENTICATION_BASIC, 
+						ProxyProtocol.HTTP, ProxyAuthentication.BASIC, 
 						proxyUsername, proxyPassword);
 				}
 			}

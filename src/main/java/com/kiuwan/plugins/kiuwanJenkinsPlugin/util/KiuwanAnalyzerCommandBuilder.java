@@ -144,7 +144,7 @@ public class KiuwanAnalyzerCommandBuilder {
 		args.add(launcher.isUnix() ? commandAbsolutePath : "\"" + commandAbsolutePath + "\"");
 
 		FilePath srcFolder = null;
-		if (recorder.getSourcePath() != null && !recorder.getSourcePath().isEmpty()) {
+		if (StringUtils.isNotEmpty(recorder.getSourcePath())) {
 			String sourcePath = recorder.getSourcePath();
 			File sourcePathFile = new File(sourcePath);
 			if (sourcePathFile.isAbsolute()) {
@@ -253,7 +253,7 @@ public class KiuwanAnalyzerCommandBuilder {
 				
 		// No proxy
 		if (CONFIGURE_PROXY_NONE.equals(connectionProfile.getConfigureProxy())) {
-			proxyConfig = new ProxyConfig("", ProxyConfig.PORT_DEFAULT, "", ProxyConfig.AUTHENTICATION_NONE, "", "");
+			proxyConfig = ProxyConfig.EMPTY;
 		
 		// Use jenkins proxy
 		} else if (CONFIGURE_PROXY_JENKINS.equals(connectionProfile.getConfigureProxy())) {
@@ -267,9 +267,7 @@ public class KiuwanAnalyzerCommandBuilder {
 		}
 		
 		FilePath agentBinDir = getAgentBinDir(agentHome);
-		writeConfigToProperties(agentBinDir, 
-			proxyConfig.getHost(), proxyConfig.getPort(), proxyConfig.getProtocol(), proxyConfig.getAuthentication(),
-			proxyConfig.getUsername(), proxyConfig.getPassword(), descriptor.getConfigSaveTimestamp());
+		writeConfigToProperties(agentBinDir, proxyConfig, descriptor.getConfigSaveTimestamp());
 		
 		return args;
 	}
@@ -418,9 +416,8 @@ public class KiuwanAnalyzerCommandBuilder {
 		}
 	}
 	
-	private void writeConfigToProperties(FilePath agentBinDir, 
-			String proxyHost, int proxyPort, String proxyProtocol, String proxyAuthentication, 
-			String proxyUsername, String proxyPassword, String configSaveStamp) throws IOException, InterruptedException {
+	private void writeConfigToProperties(FilePath agentBinDir, ProxyConfig proxyConfig, 
+			String configSaveStamp) throws IOException, InterruptedException {
 		
 		FilePath agentPropertiesPath = agentBinDir.getParent().child(AGENT_CONF_DIR_NAME).child(AGENT_PROPERTIES_FILE_NAME);
 		StringBuilder newFileContent = new StringBuilder();
@@ -472,12 +469,12 @@ public class KiuwanAnalyzerCommandBuilder {
 		}
 				
 		if (updateConfig) {
-			newFileContent.append(PROXY_HOST + "=" + proxyHost + "\n");
-			newFileContent.append(PROXY_PORT + "=" + String.valueOf(proxyPort) + "\n");
-			newFileContent.append(PROXY_PROTOCOL + "=" + proxyProtocol + "\n");
-			newFileContent.append(PROXY_AUTHENTICATION + "=" + proxyAuthentication + "\n");
-			newFileContent.append(PROXY_USERNAME + "=" + proxyUsername + "\n");
-			newFileContent.append(PROXY_PASSWORD + "=" + proxyPassword + "\n");
+			newFileContent.append(PROXY_HOST + "=" + proxyConfig.getHost() + "\n");
+			newFileContent.append(PROXY_PORT + "=" + proxyConfig.getPort() + "\n");
+			newFileContent.append(PROXY_PROTOCOL + "=" + proxyConfig.getLocalAnalyzerProtocolOption() + "\n");
+			newFileContent.append(PROXY_AUTHENTICATION + "=" + proxyConfig.getLocalAnalyzerAuthenticationOption() + "\n");
+			newFileContent.append(PROXY_USERNAME + "=" + proxyConfig.getUsername() + "\n");
+			newFileContent.append(PROXY_PASSWORD + "=" + proxyConfig.getPassword() + "\n");
 			
 			agentPropertiesPath.write(newFileContent.toString(), "UTF-8");
 		}
