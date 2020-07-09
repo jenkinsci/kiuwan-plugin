@@ -6,6 +6,7 @@ import static java.nio.file.StandardCopyOption.REPLACE_EXISTING;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileInputStream;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -41,9 +42,19 @@ public class KiuwanAnalyzerInstaller {
 	private static final String KIUWAN_LOCAL_ANALYZER_ENGINE_DOWNLOAD_FILE = "/analyzer/engine_%s.zip";
 	private static final String KIUWAN_LOCAL_ANALYZER_ENGINE_VERSION_DOWNLOAD_FILE = "/analyzer/engine.version";
 	
-	public static final String LOCAL_ANALYZER_PARENT_DIRECTORY = "tools/kiuwan";
-	public static final String LOCAL_ANALYZER_DIRECTORY = "KiuwanLocalAnalyzer";
-	public static final String ENGINE_DIRECTORY = "engine";
+	private static final String LOCAL_ANALYZER_PARENT_DIRECTORY = "tools/kiuwan";
+	private static final String LOCAL_ANALYZER_DIRECTORY = "KiuwanLocalAnalyzer";
+	private static final String ENGINE_DIRECTORY = "engine";
+	
+	public static String getCurrentKlaVersion(boolean configureKiuwanURL, String kiuwanURL) throws IOException {
+		
+		KiuwanConnectionProfile connectionProfile = new KiuwanConnectionProfile();
+		connectionProfile.setConfigureKiuwanURL(configureKiuwanURL);
+		connectionProfile.setKiuwanURL(kiuwanURL);
+		
+		URL klaVersionURL = getDownloadURL(connectionProfile, KIUWAN_LOCAL_ANALYZER_VERSION_DOWNLOAD_FILE);
+		return downloadToString(klaVersionURL);
+	}
 	
 	public static FilePath installKiuwanLocalAnalyzer(FilePath rootDir, TaskListener listener, 
 			KiuwanConnectionProfile connectionProfile) throws IOException, InterruptedException {
@@ -79,10 +90,14 @@ public class KiuwanAnalyzerInstaller {
 		File cachedKlaFile = getLocalCacheFile(klaURL, connectionProfile);
 		if (klaNeedsUpdate) {
 			logger().info("Updating cached Kiuwan Local Analyzer from " + klaURL);
+			
+			// Clean current cache
 			cachedKlaVersionFile.delete();
 			cachedKlaFile.delete();
-			downloadToFile(klaVersionURL, cachedKlaVersionFile);
+			
+			// Download version after zip to use it as signal of a successful cache update 
 			downloadToFile(klaURL, cachedKlaFile);
+			downloadToFile(klaVersionURL, cachedKlaVersionFile);
 		}
 		
 		// 3 - Check current engine.version
@@ -100,19 +115,7 @@ public class KiuwanAnalyzerInstaller {
 		}
 		
 		boolean engineNeedsUpdate = true;
-		String remoteEngineVersion = null;
-		try {
-			ApiClient client = KiuwanClientUtils.instantiateClient(
-				connectionProfile.isConfigureKiuwanURL(), connectionProfile.getKiuwanURL(),
-				connectionProfile.getUsername(), connectionProfile.getPassword(), connectionProfile.getDomain());
-			InformationApi infoApi = new InformationApi(client);
-			UserInformationResponse userInfo = infoApi.getInformation();
-			remoteEngineVersion = userInfo.getEngineVersion();
-		} catch (ApiException e) {
-			KiuwanClientException kce = KiuwanClientException.from(e);
-			logger().log(Level.SEVERE, kce.getLocalizedMessage());
-		}
-		
+		String remoteEngineVersion = getCustomerEngineVersion(connectionProfile);
 		logger().info("Kiuwan Engine remote version = " + remoteEngineVersion);
 		
 		engineNeedsUpdate = cachedEngineVersion == null || !cachedEngineVersion.equals(remoteEngineVersion);
@@ -124,10 +127,18 @@ public class KiuwanAnalyzerInstaller {
 		File engineCacheFile = getLocalCacheFile(engineURL, connectionProfile);
 		if (engineNeedsUpdate && remoteEngineVersion != null) {
 			logger().info("Updating cached Kiuwan Engine from " + engineURL);
+			
 			cachedEngineVersionFile.delete();
 			engineCacheFile.delete();
-			downloadToFile(engineVersionURL, cachedEngineVersionFile);
+			
+			// Dump version after engine zip to use it as signal of a successful cache update
 			downloadToFile(engineURL, engineCacheFile);
+			
+			try (OutputStream os = new FileOutputStream(cachedEngineVersionFile)) {
+				IOUtils.write(remoteEngineVersion, os);
+			} catch (IOException e) {
+				logger().log(Level.SEVERE, e.getLocalizedMessage());	
+			}
 		}
 		
 		// 5 - Install KLA if not already installed
@@ -205,6 +216,24 @@ public class KiuwanAnalyzerInstaller {
 		String path = getRelativePathForConnectionProfile("cache/kiuwan", connectionProfile);
 		File parentDir = new File(rootDir, path);
 		return new File(parentDir, fileName);
+	}
+	
+	private static String getCustomerEngineVersion(KiuwanConnectionProfile connectionProfile) {
+		String remoteEngineVersion = null;
+		try {
+			ApiClient client = KiuwanClientUtils.instantiateClient(
+				connectionProfile.isConfigureKiuwanURL(), connectionProfile.getKiuwanURL(),
+				connectionProfile.getUsername(), connectionProfile.getPassword(), connectionProfile.getDomain());
+			InformationApi infoApi = new InformationApi(client);
+			UserInformationResponse userInfo = infoApi.getInformation();
+			remoteEngineVersion = userInfo.getEngineVersion();
+		
+		} catch (ApiException e) {
+			KiuwanClientException kce = KiuwanClientException.from(e);
+			logger().log(Level.SEVERE, kce.getLocalizedMessage());
+		}
+		
+		return remoteEngineVersion;
 	}
 	
 	private static String downloadToString(URL url) throws IOException {

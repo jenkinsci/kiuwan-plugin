@@ -45,7 +45,10 @@ public class KiuwanClientException extends Exception {
 		} catch (JsonSyntaxException jse) {
 			if (e.getCode() == 404) {
 				return new KiuwanClientException(e.getCode() + 
-					" - A server responded but Kiuwan is not available in the specified URL");
+					" - A server responded but Kiuwan is not available in the specified URL", e);
+			} else if (e.getCode() == 407) {
+				return new KiuwanClientException(e.getCode() + 
+					" - Proxy authentication required", e);
 			}
 			
 			return new KiuwanClientException("Cannot deserialize error response", e);

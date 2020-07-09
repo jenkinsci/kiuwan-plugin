@@ -42,7 +42,6 @@
 			with="username,password,domain,configureKiuwanURL,kiuwanURL" />
 
 		<f:section title="Proxy for Kiuwan Local Analyzer">
-		
 			<f:radioBlock name="configureProxy" title="No proxy" inline="true" value="${instance.getConfigureProxyNone()}" 
 					checked="${instance.getConfigureProxyNone().equals(instance.getConfigureProxy())}"
 					help="/plugin/kiuwanJenkinsPlugin/help/help-proxy-none.html" />

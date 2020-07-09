@@ -36,7 +36,7 @@ public class KiuwanConnectionProfile implements Describable<KiuwanConnectionProf
 	private boolean configureKiuwanURL;
 	private String kiuwanURL;
 	
-	private String configureProxy;
+	private String configureProxy = CONFIGURE_PROXY_NONE;
 	private String proxyHost;
 	private int proxyPort;
 	private String proxyProtocol;
@@ -78,13 +78,13 @@ public class KiuwanConnectionProfile implements Describable<KiuwanConnectionProf
 		
 		String profileProxy = null;
 		if (CONFIGURE_PROXY_NONE.equals(configureProxy)) {
-			profileProxy = "no proxy";
+			profileProxy = "No proxy";
 			
 		} else if (CONFIGURE_PROXY_JENKINS.equals(configureProxy)) {
 			profileProxy = "Jenkins proxy";
 
 		} else if (CONFIGURE_PROXY_CUSTOM.equals(configureProxy)) {
-			profileProxy = "custom proxy";
+			profileProxy = "Custom proxy";
 		}
 		
 		return profileName + " - " + profileUsername + "@" + profileHost + " - " + profileProxy + " for KLA (" + this.uuid + ")";

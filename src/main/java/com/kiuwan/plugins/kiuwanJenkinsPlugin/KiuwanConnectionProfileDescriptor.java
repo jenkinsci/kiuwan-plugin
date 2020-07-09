@@ -8,16 +8,19 @@ import java.net.URL;
 import java.util.logging.Level;
 
 import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang.exception.ExceptionUtils;
 import org.kohsuke.stapler.QueryParameter;
 
 import com.kiuwan.plugins.kiuwanJenkinsPlugin.client.KiuwanClientException;
 import com.kiuwan.plugins.kiuwanJenkinsPlugin.client.KiuwanClientUtils;
 import com.kiuwan.plugins.kiuwanJenkinsPlugin.model.ProxyAuthentication;
 import com.kiuwan.plugins.kiuwanJenkinsPlugin.model.ProxyProtocol;
+import com.kiuwan.plugins.kiuwanJenkinsPlugin.util.KiuwanAnalyzerInstaller;
 import com.kiuwan.plugins.kiuwanJenkinsPlugin.util.KiuwanUtils;
 import com.kiuwan.rest.client.ApiClient;
 import com.kiuwan.rest.client.ApiException;
 import com.kiuwan.rest.client.api.InformationApi;
+import com.kiuwan.rest.client.model.UserInformationResponse;
 
 import hudson.Extension;
 import hudson.model.Descriptor;
@@ -90,21 +93,61 @@ public class KiuwanConnectionProfileDescriptor extends Descriptor<KiuwanConnecti
 			@QueryParameter String password, @QueryParameter String domain,
 			@QueryParameter boolean configureKiuwanURL, @QueryParameter String kiuwanURL) {
 
-		FormValidation formValidation = null;
+		// 1 - Check credentials using Kiuwan rest client
+		String customerEngineVersion = null;
+		String credentialsErrorMessage = null;
 		try {
 			ApiClient client = KiuwanClientUtils.instantiateClient(configureKiuwanURL, kiuwanURL, username, password, domain);
 			InformationApi api = new InformationApi(client);
-			api.getInformation();
-			formValidation = FormValidation.ok("Authentication completed successfully!");
-		
+			UserInformationResponse information = api.getInformation();
+			customerEngineVersion = information.getEngineVersion() + (information.isEngineFrozen() ? " [FROZEN]" : "");
+			
 		} catch (ApiException e) {
 			KiuwanClientException krce = KiuwanClientException.from(e);
-			KiuwanUtils.logger().log(Level.WARNING, krce.getLocalizedMessage());
-			formValidation = FormValidation.error("Authentication failed: " + krce.getLocalizedMessage());
+			KiuwanUtils.logger().log(Level.WARNING, krce.toString());
+			Throwable rootCause = ExceptionUtils.getRootCause(krce);
+			credentialsErrorMessage = "Authentication failed. Reason: " + 
+				(rootCause != null ? rootCause : e);
 		
 		} catch (Throwable t) {
-			KiuwanUtils.logger().log(Level.SEVERE, t.getLocalizedMessage());
-			formValidation = FormValidation.warning("Could not initiate the authentication process. Reason: " + t.getLocalizedMessage());
+			KiuwanUtils.logger().log(Level.SEVERE, t.toString());
+			Throwable rootCause = ExceptionUtils.getRootCause(t);
+			credentialsErrorMessage = "Could not initiate the authentication process. Reason: " + 
+				(rootCause != null ? rootCause : t);
+		}
+		
+		// 2 - Check connection from Jenkins (when connecting through proxy, if Basic authentication is not
+		// enabled, connection may fail)
+		String currentKlaVersion = null;
+		String connectionErrorMessage = null;
+		try {
+			currentKlaVersion = KiuwanAnalyzerInstaller.getCurrentKlaVersion(configureKiuwanURL, kiuwanURL);
+		
+		} catch (Throwable t) {
+			KiuwanUtils.logger().log(Level.SEVERE, t.toString());
+			Throwable rootCause = ExceptionUtils.getRootCause(t);
+			connectionErrorMessage = "Cannot reach Kiuwan using Jenkins connection API. Reason: " + 
+				(rootCause != null ? rootCause : t);
+		}
+		
+		// Success
+		FormValidation formValidation = null;
+		if (customerEngineVersion != null && currentKlaVersion != null) {
+			formValidation = FormValidation.okWithMarkup("Authentication completed successfully.<br><ul>" + 
+				"<li>Current Kiuwan Local Analyzer version: <b>" + currentKlaVersion + "</b>.</li>" + 
+				"<li>Current Kiuwan Engine version: <b>" + customerEngineVersion + "</b>.</li></ul>");
+		
+		// Credentials failed
+		} else if (customerEngineVersion == null && currentKlaVersion != null) {
+			formValidation = FormValidation.error(credentialsErrorMessage);
+					
+		// Connection failed
+		} else if (customerEngineVersion != null && currentKlaVersion == null) {
+			formValidation = FormValidation.error(connectionErrorMessage);
+			
+		// All failed
+		} else {
+			formValidation = FormValidation.errorWithMarkup(credentialsErrorMessage + "<br>" + connectionErrorMessage);
 		}
 		
 		return formValidation;
