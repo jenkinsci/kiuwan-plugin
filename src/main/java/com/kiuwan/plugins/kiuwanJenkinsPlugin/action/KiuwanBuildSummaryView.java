@@ -14,6 +14,7 @@ import com.kiuwan.plugins.kiuwanJenkinsPlugin.model.results.CheckpointResult;
 import com.kiuwan.plugins.kiuwanJenkinsPlugin.model.results.InsightsData;
 import com.kiuwan.plugins.kiuwanJenkinsPlugin.model.results.MetricValue;
 import com.kiuwan.plugins.kiuwanJenkinsPlugin.model.results.ViolatedRule;
+import com.kiuwan.plugins.kiuwanJenkinsPlugin.util.KiuwanUtils;
 
 /**
  * This class deals with the particularities of a kiuwan analysis result data structure
@@ -153,7 +154,21 @@ public class KiuwanBuildSummaryView {
 	}
 	
 	public String getEffortToTarget() {
-		return formatDouble(analysisResult.getEffortToTarget().getValue());
+		Double effortToTarget = analysisResult.getEffortToTarget().getValue();
+		
+		StringBuilder sb = new StringBuilder();
+		
+		int effortM = (int) (KiuwanUtils.roundDouble(effortToTarget) * 60);
+		int effortH = (effortM / 60);
+		effortM = (effortM % 60);
+		
+		sb.append(effortH + "h ");
+		
+		if (effortH <= 100) {
+			sb.append(effortM + "m");
+		}
+		
+		return sb.toString();
 	}
 	
 	public String getEfficiency() {
