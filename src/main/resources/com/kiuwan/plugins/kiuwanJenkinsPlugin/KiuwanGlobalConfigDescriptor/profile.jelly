@@ -13,9 +13,6 @@
 -->
 
 	<f:section>
-		<f:invisibleEntry>
-			<f:textbox field="uuid" />
-		</f:invisibleEntry>
 		<f:entry title="Profile name" field="name" help="/plugin/kiuwanJenkinsPlugin/help/help-profileName.html">
 			<f:textbox clazz="required" />
 		</f:entry>
