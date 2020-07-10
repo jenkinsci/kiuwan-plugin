@@ -16,6 +16,7 @@ import org.apache.commons.lang.StringUtils;
 
 import com.fasterxml.jackson.core.JsonParser.Feature;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.kiuwan.plugins.kiuwanJenkinsPlugin.KiuwanConnectionProfile;
 import com.kiuwan.plugins.kiuwanJenkinsPlugin.filecallable.KiuwanRemoteFilePath;
 import com.kiuwan.plugins.kiuwanJenkinsPlugin.model.KiuwanModelObject;
 import com.kiuwan.plugins.kiuwanJenkinsPlugin.model.ProxyAuthentication;
@@ -27,13 +28,18 @@ import hudson.FilePath;
 import hudson.Launcher;
 import hudson.ProxyConfiguration;
 import hudson.model.AbstractBuild;
+import hudson.model.Node;
 import hudson.model.TaskListener;
 import hudson.util.ListBoxModel;
 
 public class KiuwanUtils {
 	
 	private static final Logger LOGGER = Logger.getLogger("com.kiuwan.plugins.kiuwanJenkinsPlugin");
-
+	
+	private static final String KIUWAN_CACHE_RELATIVE_PATH = "cache/kiuwan";
+	private static final String KIUWAN_TOOLS_RELATIVE_PATH = "tools/kiuwan";
+	private static final String KIUWAN_TEMP_RELATIVE_PATH = "temp";
+	
 	public static Logger logger() {
 		return LOGGER;
 	}
@@ -44,6 +50,43 @@ public class KiuwanUtils {
 			listener.fatalError("File: " + filePath + " not found.");
 		}
 		return path;
+	}
+	
+	public static FilePath getNodeJenkinsDirectory(Node node, AbstractBuild<?, ?> build) {
+		FilePath rootPath = node.getRootPath();
+		FilePath workspace = build.getWorkspace();
+		
+		FilePath nodeJenkinsDir = null;
+		if (workspace.isRemote()) {
+			nodeJenkinsDir = new FilePath(workspace.getChannel(), rootPath.getRemote());
+		} else {
+			nodeJenkinsDir = new FilePath(new File(rootPath.getRemote()));
+		}
+		
+		return nodeJenkinsDir;
+	}
+	
+	public static String getCacheRelativePath(KiuwanConnectionProfile connectionProfile) {
+		return getRelativePathForConnectionProfile(KIUWAN_CACHE_RELATIVE_PATH, connectionProfile);
+	}
+	
+	public static String getToolsRelativePath(KiuwanConnectionProfile connectionProfile) {
+		return getRelativePathForConnectionProfile(KIUWAN_TOOLS_RELATIVE_PATH, connectionProfile);
+	}
+	
+	public static String getToolsTempRelativePath(KiuwanConnectionProfile connectionProfile) {
+		String toolsRelativePath = getRelativePathForConnectionProfile(KIUWAN_TOOLS_RELATIVE_PATH, connectionProfile);
+		return toolsRelativePath + "/" + KIUWAN_TEMP_RELATIVE_PATH;
+	}
+	
+	/**
+	 * Returns a relative path by concatenating the specified <code>prefix</code> to a safe and unique folder name. 
+	 * @param prefix directory prefix
+	 * @param connectionProfile the current connection profile
+	 * @return the specified prefix followed by the character '_' and the connection profile uuid 
+	 */
+	private static String getRelativePathForConnectionProfile(String prefix, KiuwanConnectionProfile connectionProfile) {
+		return prefix + "_" + connectionProfile.getUuid();
 	}
 
 	/** 

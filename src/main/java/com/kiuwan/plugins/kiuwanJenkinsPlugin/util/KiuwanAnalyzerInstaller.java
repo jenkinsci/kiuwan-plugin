@@ -42,7 +42,6 @@ public class KiuwanAnalyzerInstaller {
 	private static final String KIUWAN_LOCAL_ANALYZER_ENGINE_DOWNLOAD_FILE = "/analyzer/engine_%s.zip";
 	private static final String KIUWAN_LOCAL_ANALYZER_ENGINE_VERSION_DOWNLOAD_FILE = "/analyzer/engine.version";
 	
-	private static final String LOCAL_ANALYZER_PARENT_DIRECTORY = "tools/kiuwan";
 	private static final String LOCAL_ANALYZER_DIRECTORY = "KiuwanLocalAnalyzer";
 	private static final String ENGINE_DIRECTORY = "engine";
 	
@@ -141,8 +140,8 @@ public class KiuwanAnalyzerInstaller {
 		}
 		
 		// 5 - Install KLA if not already installed
-		String profileRelativePath = getRelativePathForConnectionProfile(LOCAL_ANALYZER_PARENT_DIRECTORY, connectionProfile);
-		FilePath nodeToolsDir = rootDir.child(profileRelativePath);
+		String toolsRelativePath = KiuwanUtils.getToolsRelativePath(connectionProfile);
+		FilePath nodeToolsDir = rootDir.child(toolsRelativePath);
 		FilePath engineInstallDir = new FilePath(nodeToolsDir, ENGINE_DIRECTORY);
 		FilePath klaHome = nodeToolsDir.child(LOCAL_ANALYZER_DIRECTORY);
 		if (!klaHome.exists()) {
@@ -212,8 +211,8 @@ public class KiuwanAnalyzerInstaller {
 		String s = src.toExternalForm();
 		String fileName = s.substring(s.lastIndexOf('/') + 1);
 		File rootDir = Jenkins.getInstance().getRootDir();
-		String path = getRelativePathForConnectionProfile("cache/kiuwan", connectionProfile);
-		File parentDir = new File(rootDir, path);
+		String cacheRelativePath = KiuwanUtils.getCacheRelativePath(connectionProfile);
+		File parentDir = new File(rootDir, cacheRelativePath);
 		return new File(parentDir, fileName);
 	}
 	
@@ -260,14 +259,4 @@ public class KiuwanAnalyzerInstaller {
 		}
 	}
 
-	/**
-	 * Returns a relative path by concatenating the specified <code>prefix</code> to a safe and unique folder name. 
-	 * @param prefix directory prefix
-	 * @param connectionProfile the current connection profile
-	 * @return the specified prefix followed by the character '_' and the connection profile uuid 
-	 */
-	private static String getRelativePathForConnectionProfile(String prefix, KiuwanConnectionProfile connectionProfile) {
-		return prefix + "_" + connectionProfile.getUuid();
-	}
-	
 }

@@ -6,8 +6,9 @@ import static com.kiuwan.plugins.kiuwanJenkinsPlugin.KiuwanRecorder.TIMEOUT_MARG
 import static com.kiuwan.plugins.kiuwanJenkinsPlugin.KiuwanRecorder.TIMEOUT_MARGIN_SECONDS;
 import static com.kiuwan.plugins.kiuwanJenkinsPlugin.util.KiuwanUtils.buildAdditionalParameterExpression;
 import static com.kiuwan.plugins.kiuwanJenkinsPlugin.util.KiuwanUtils.buildArgument;
-import static com.kiuwan.plugins.kiuwanJenkinsPlugin.util.KiuwanUtils.getOutputFile;
+import static com.kiuwan.plugins.kiuwanJenkinsPlugin.util.KiuwanUtils.getNodeJenkinsDirectory;
 import static com.kiuwan.plugins.kiuwanJenkinsPlugin.util.KiuwanUtils.getRemoteFileAbsolutePath;
+import static com.kiuwan.plugins.kiuwanJenkinsPlugin.util.KiuwanUtils.getToolsTempRelativePath;
 
 import java.io.BufferedReader;
 import java.io.File;
@@ -36,6 +37,7 @@ import hudson.FilePath;
 import hudson.Launcher;
 import hudson.model.AbstractBuild;
 import hudson.model.BuildListener;
+import hudson.model.Node;
 
 public class KiuwanAnalyzerCommandBuilder {
 
@@ -59,6 +61,7 @@ public class KiuwanAnalyzerCommandBuilder {
 	private final static String kiuwanJenkinsPluginHeaderSuffix = " ###";
 	private final static String kiuwanJenkinsPluginHeaderPattern = kiuwanJenkinsPluginHeaderPrefix + "(.*)" + kiuwanJenkinsPluginHeaderSuffix;
 	
+	private Node node;
 	private KiuwanGlobalConfigDescriptor descriptor;
 	private KiuwanRecorder recorder;
 	private AbstractBuild<?, ?> build;
@@ -66,9 +69,12 @@ public class KiuwanAnalyzerCommandBuilder {
 	private BuildListener listener;
 	private KiuwanConnectionProfile connectionProfile;
 	
-	public KiuwanAnalyzerCommandBuilder(KiuwanGlobalConfigDescriptor descriptor, KiuwanRecorder recorder, 
+	private FilePath tempOutputFilePath;
+	
+	public KiuwanAnalyzerCommandBuilder(Node node, KiuwanGlobalConfigDescriptor descriptor, KiuwanRecorder recorder, 
 			AbstractBuild<?, ?> build, Launcher launcher, BuildListener listener) {
 		super();
+		this.node = node;
 		this.descriptor = descriptor;
 		this.recorder = recorder;
 		this.build = build;
@@ -158,9 +164,15 @@ public class KiuwanAnalyzerCommandBuilder {
 		args.add("-s");
 		args.add(buildArgument(launcher, getRemoteFileAbsolutePath(srcFolder, listener)));
 		
-		// Output will always be saved on the master node
+		// Get this node temporal directory under this profiles tools path
+		FilePath nodeJenkinsDir = getNodeJenkinsDirectory(node, build);
+		String toolsTempRelativePath = getToolsTempRelativePath(connectionProfile);
+		FilePath toolsTempDir = nodeJenkinsDir.child(toolsTempRelativePath);
+		toolsTempDir.mkdirs();
+		tempOutputFilePath = toolsTempDir.createTempFile("kiuwanJenkinsPlugin-" + build.getId() + "_", ".json");
+		
 		args.add("-o");
-		args.add(buildArgument(launcher, getOutputFile(build).getAbsolutePath()));
+		args.add(buildArgument(launcher, getRemoteFileAbsolutePath(tempOutputFilePath, listener)));
 
 		args.add("--user");
 		args.add(buildArgument(launcher, connectionProfile.getUsername()));
@@ -180,7 +192,7 @@ public class KiuwanAnalyzerCommandBuilder {
 			args.add(buildArgument(launcher, analysisLabel));
 			args.add("-c");
 			
-			// In standard mode, wait for results as long as a measure is specified 
+			// In standard mode, wait for results only if a measure to check thresholds is specified 
 			if (!Measure.NONE.name().equalsIgnoreCase(recorder.getMeasure())) {
 				args.add("-wr");
 			}
@@ -270,6 +282,10 @@ public class KiuwanAnalyzerCommandBuilder {
 		writeConfigToProperties(agentBinDir, proxyConfig, descriptor.getConfigSaveTimestamp());
 		
 		return args;
+	}
+
+	public FilePath getTempOutputFilePath() {
+		return tempOutputFilePath;
 	}
 	
 	public static FilePath getAgentBinDir(FilePath agentHome) {

@@ -33,6 +33,7 @@ import com.kiuwan.plugins.kiuwanJenkinsPlugin.model.Mode;
 import com.kiuwan.plugins.kiuwanJenkinsPlugin.model.results.AnalysisResult;
 import com.kiuwan.plugins.kiuwanJenkinsPlugin.util.KiuwanAnalyzerCommandBuilder;
 import com.kiuwan.plugins.kiuwanJenkinsPlugin.util.KiuwanAnalyzerInstaller;
+import com.kiuwan.plugins.kiuwanJenkinsPlugin.util.KiuwanUtils;
 
 import hudson.EnvVars;
 import hudson.FilePath;
@@ -47,6 +48,7 @@ import hudson.model.Result;
 public class KiuwanRunnable implements Runnable {
     
     private static final int KLA_RETURN_CODE_AUDIT_FAILED = 10;
+    private static final String JAVA_HOME_ENV_VAR = "JAVA_HOME";
 	
 	private KiuwanRecorder recorder;
 	private KiuwanConnectionProfile connectionProfile;
@@ -72,7 +74,7 @@ public class KiuwanRunnable implements Runnable {
 		this.listener = listener;
 		this.resultReference = resultReference;
 		this.exceptionReference = exceptionReference;
-		this.commandBuilder = new KiuwanAnalyzerCommandBuilder(descriptor, recorder, build, launcher, listener);
+		this.commandBuilder = new KiuwanAnalyzerCommandBuilder(node, descriptor, recorder, build, launcher, listener);
 		this.loggerPrintStream = listener.getLogger();
 		
 		String connectionProfileUuid = recorder.getConnectionProfileUuid();
@@ -128,37 +130,39 @@ public class KiuwanRunnable implements Runnable {
 		// 5 - Execute Kiuwan Local Analyzer
 		int klaReturnCode = runKiuwanLocalAnalyzer(args, envVars, localAnalyzerHome);
 		
-		// 6 - Read analysis results
+		// 6 - Copy results to master if needed
+		copyOutputFileToMaster();
+		
+		// 7 - Read analysis results
 		AnalysisResult analysisResult = loadAnalysisResults();
 		
-		// 7 - Process results
-		if (Mode.STANDARD_MODE.equals(recorder.getSelectedMode())) {
-			onAnalysisFinishedStandardMode(klaReturnCode, analysisResult);
-		
-		} else if (Mode.DELIVERY_MODE.equals(recorder.getSelectedMode())) {
-			onAnalysisFinishedDeliveryMode(klaReturnCode);
+		// 8 - Process results
+		if (klaReturnCode == 0 && analysisResult == null) {
+			loggerPrintStream.println("Kiuwan Local Analyzer returned a success status code but " + 
+				"the plugin could not read the analysis results file and check the remote status of the analysis");
+			resultReference.set(Result.NOT_BUILT);
 			
-		} else if (Mode.EXPERT_MODE.equals(recorder.getSelectedMode())) {
-			onAnalysisFinishedExpertMode(klaReturnCode);
-		} 
+		} else {
+			if (Mode.STANDARD_MODE.equals(recorder.getSelectedMode())) {
+				onAnalysisFinishedStandardMode(klaReturnCode, analysisResult);
+			
+			} else if (Mode.DELIVERY_MODE.equals(recorder.getSelectedMode())) {
+				onAnalysisFinishedDeliveryMode(klaReturnCode);
+				
+			} else if (Mode.EXPERT_MODE.equals(recorder.getSelectedMode())) {
+				onAnalysisFinishedExpertMode(klaReturnCode);
+			}
+			
+			KiuwanBuildSummaryView summaryView = new KiuwanBuildSummaryView(analysisResult);
+			KiuwanBuildSummaryAction resultsSummaryAction = new KiuwanBuildSummaryAction(summaryView);
+			build.addAction(resultsSummaryAction);
+		}
 		
-		KiuwanBuildSummaryView summaryView = new KiuwanBuildSummaryView(analysisResult);
-		KiuwanBuildSummaryAction resultsSummaryAction = new KiuwanBuildSummaryAction(summaryView);
-		build.addAction(resultsSummaryAction);
 	}
 	
 	private FilePath installLocalAnalyzer() throws IOException, InterruptedException {
-		FilePath rootPath = node.getRootPath();
-		FilePath workspace = build.getWorkspace();
-		
-		FilePath jenkinsRootDir = null;
-		if (workspace.isRemote()) {
-			jenkinsRootDir = new FilePath(workspace.getChannel(), rootPath.getRemote());
-		} else {
-			jenkinsRootDir = new FilePath(new File(rootPath.getRemote()));
-		}
-		
-		FilePath agentHome = KiuwanAnalyzerInstaller.installKiuwanLocalAnalyzer(jenkinsRootDir, listener, connectionProfile);
+		FilePath nodeJenkinsDir = KiuwanUtils.getNodeJenkinsDirectory(node, build); 
+		FilePath agentHome = KiuwanAnalyzerInstaller.installKiuwanLocalAnalyzer(nodeJenkinsDir, listener, connectionProfile);
 		return agentHome;
 	}
 	
@@ -171,6 +175,13 @@ public class KiuwanRunnable implements Runnable {
 
 		EnvVars remoteEnv = build.getWorkspace().act(new KiuwanRemoteEnvironment());
 		envVars.putAll(remoteEnv);
+		
+		// Just in case this job is running on a slave node that has not JAVA_HOME declared, avoid
+		// passing the master's JAVA_HOME variable to KLA so the launch script can resolve the
+		// java executable location by itself
+		if (!remoteEnv.containsKey(JAVA_HOME_ENV_VAR)) {
+			envVars.remove(JAVA_HOME_ENV_VAR);
+		}
 		
 		return envVars;
 	}
@@ -210,6 +221,17 @@ public class KiuwanRunnable implements Runnable {
 		return klaReturnCode;
 	}
 	
+	private void copyOutputFileToMaster() {
+		File targetOutputFile = KiuwanUtils.getOutputFile(build);
+		FilePath targetOutputFilePath = new FilePath(targetOutputFile);
+		FilePath tempOutputFilePath = commandBuilder.getTempOutputFilePath();
+		try {
+			tempOutputFilePath.copyTo(targetOutputFilePath);
+		} catch (IOException | InterruptedException e) {
+			loggerPrintStream.println("Could not copy output file to this run folder: " + e);
+		}
+	}
+	
 	private AnalysisResult loadAnalysisResults() {
 		AnalysisResult analysisResults = null;
 		File outputReportFile = getOutputFile(build);
@@ -219,6 +241,8 @@ public class KiuwanRunnable implements Runnable {
 		  	} catch (IOException e) {
 		  		loggerPrintStream.println("Could not read analysis results: " + e);
 		  	}
+		} else {
+			loggerPrintStream.println("Analysis results file not found: " + outputReportFile);
 		}
 		return analysisResults;
 	}
@@ -229,9 +253,7 @@ public class KiuwanRunnable implements Runnable {
 			resultReference.set(Result.NOT_BUILT);
 		
 		} else if (!Measure.NONE.name().equals(recorder.getMeasure())) {
-			String analysisStatus = analysisResult != null ? analysisResult.getAnalysisStatus() : null;
-			
-			if (ANALYSIS_STATUS_FINISHED.equalsIgnoreCase(analysisStatus)) {
+			if (ANALYSIS_STATUS_FINISHED.equalsIgnoreCase(analysisResult.getAnalysisStatus())) {
 				Double qualityIndicator = null;
 				if (analysisResult.getQualityIndicator() != null) {
 					qualityIndicator = roundDouble(analysisResult.getQualityIndicator().getValue());
@@ -251,7 +273,7 @@ public class KiuwanRunnable implements Runnable {
 				printStandardModeConsoleSummary(qualityIndicator, effortToTarget, riskIndex);
 				
 				checkThresholds(qualityIndicator, effortToTarget, riskIndex);
-
+			
 			// In any other case, an error happened when processing the results in Kiuwan
 			// (note that in case of timeout the parent thread would kill this one, and
 			// in case of being the KLA the one that returns an error, the previous branch of

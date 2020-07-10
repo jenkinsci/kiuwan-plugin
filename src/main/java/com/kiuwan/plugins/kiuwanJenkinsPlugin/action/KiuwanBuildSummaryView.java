@@ -162,7 +162,9 @@ public class KiuwanBuildSummaryView {
 		int effortH = (effortM / 60);
 		effortM = (effortM % 60);
 		
-		sb.append(effortH + "h ");
+		if (effortH > 0) {
+			sb.append(effortH + "h ");
+		}
 		
 		if (effortH <= 100) {
 			sb.append(effortM + "m");
@@ -288,7 +290,9 @@ public class KiuwanBuildSummaryView {
 		effortH += (effortM / 60);
 		effortM = (effortM % 60);
 		
-		sb.append(effortH + " hours ");
+		if (effortH > 0) {
+			sb.append(effortH + " hours ");
+		}
 		
 		if (effortH <= 100) {
 			sb.append(effortM + " minutes");
