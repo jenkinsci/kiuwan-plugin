@@ -47,7 +47,6 @@ public class KiuwanAnalyzerInstaller {
 	private static final String ENGINE_DIRECTORY = "engine";
 	
 	public static String getCurrentKlaVersion(boolean configureKiuwanURL, String kiuwanURL) throws IOException {
-		
 		KiuwanConnectionProfile connectionProfile = new KiuwanConnectionProfile();
 		connectionProfile.setConfigureKiuwanURL(configureKiuwanURL);
 		connectionProfile.setKiuwanURL(kiuwanURL);

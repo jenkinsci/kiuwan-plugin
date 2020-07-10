@@ -18,28 +18,34 @@
 		</f:invisibleEntry>
 		<f:entry title="Profile name" field="name" help="/plugin/kiuwanJenkinsPlugin/help/help-profileName.html">
 			<f:textbox clazz="required" />
-			<j:if test="${not empty instance.getUuid()}">
-				 <div class="info" style="margin-top: 6px">Connection profile identifier: ${instance.getUuid()}</div>
-			</j:if>
 		</f:entry>
-		<f:entry title="Kiuwan account username" field="username" help="/plugin/kiuwanJenkinsPlugin/help/help-username.html">
-			<f:textbox clazz="required" />
-		</f:entry>
-		<f:entry title="Kiuwan account password" field="password" help="/plugin/kiuwanJenkinsPlugin/help/help-password.html">
-			<f:password clazz="required" />
-		</f:entry>
-		<f:entry title="Kiuwan SSO domain" field="domain" help="/plugin/kiuwanJenkinsPlugin/help/help-domain.html">
-			<f:textbox />
-		</f:entry>
-		<f:optionalBlock name="configureKiuwanURL" field="configureKiuwanURL" title="Configure Kiuwan URL" 
-				inline="true" help="/plugin/kiuwanJenkinsPlugin/help/help-configureKiuwanURL.html">
-			<f:entry title="Kiuwan server URL" field="kiuwanURL" help="/plugin/kiuwanJenkinsPlugin/help/help-kiuwanURL.html">
+		
+		<j:if test="${not empty instance.uuid}">
+			<f:entry title="Profile unique identifier" field="uuid" help="/plugin/kiuwanJenkinsPlugin/help/help-profileUuid.html">
+				<f:readOnlyTextbox clazz="disabled" />
+			</f:entry>
+		</j:if>
+		
+		<f:section title="Connection settings">
+			<f:entry title="Kiuwan account username" field="username" help="/plugin/kiuwanJenkinsPlugin/help/help-username.html">
+				<f:textbox clazz="required" />
+			</f:entry>
+			<f:entry title="Kiuwan account password" field="password" help="/plugin/kiuwanJenkinsPlugin/help/help-password.html">
+				<f:password clazz="required" />
+			</f:entry>
+			<f:entry title="Kiuwan SSO domain" field="domain" help="/plugin/kiuwanJenkinsPlugin/help/help-domain.html">
 				<f:textbox />
 			</f:entry>
-		</f:optionalBlock>
-
-		<f:validateButton title="Check Credentials" progress="Validating..." method="checkCredentials"
-			with="username,password,domain,configureKiuwanURL,kiuwanURL" />
+			<f:optionalBlock name="configureKiuwanURL" field="configureKiuwanURL" title="Configure Kiuwan URL" 
+					inline="true" help="/plugin/kiuwanJenkinsPlugin/help/help-configureKiuwanURL.html">
+				<f:entry title="Kiuwan server URL" field="kiuwanURL" help="/plugin/kiuwanJenkinsPlugin/help/help-kiuwanURL.html">
+					<f:textbox />
+				</f:entry>
+			</f:optionalBlock>
+	
+			<f:validateButton title="Check Credentials" progress="Validating..." method="checkCredentials"
+				with="username,password,domain,configureKiuwanURL,kiuwanURL" />
+		</f:section>
 
 		<f:section title="Proxy for Kiuwan Local Analyzer">
 			<f:radioBlock name="configureProxy" title="No proxy" inline="true" value="${instance.getConfigureProxyNone()}" 

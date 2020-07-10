@@ -106,18 +106,19 @@ public class KiuwanConnectionProfileDescriptor extends Descriptor<KiuwanConnecti
 			KiuwanClientException krce = KiuwanClientException.from(e);
 			KiuwanUtils.logger().log(Level.WARNING, krce.toString());
 			Throwable rootCause = ExceptionUtils.getRootCause(krce);
-			credentialsErrorMessage = "Authentication failed. Reason: " + 
-				(rootCause != null ? rootCause : e);
+			credentialsErrorMessage = "Authentication failed. Reason: " + krce.getLocalizedMessage() + 
+				(rootCause != null ? " (" + rootCause + ")" : "");
 		
 		} catch (Throwable t) {
 			KiuwanUtils.logger().log(Level.SEVERE, t.toString());
 			Throwable rootCause = ExceptionUtils.getRootCause(t);
-			credentialsErrorMessage = "Could not initiate the authentication process. Reason: " + 
-				(rootCause != null ? rootCause : t);
+			credentialsErrorMessage = "Could not initiate the authentication process. Reason: "  + t.getLocalizedMessage() + 
+				(rootCause != null ? " (" + rootCause + ")" : "");
 		}
 		
-		// 2 - Check connection from Jenkins (when connecting through proxy, if Basic authentication is not
-		// enabled, connection may fail)
+		// 2 - Check connection from Jenkins (when connecting through an authenticating proxy, 
+		// Basic authentication must be enabled in the Jenkins JVM, this also grants that no certificate
+		// problems arise when connecting to a kiuwan on premises instance)
 		String currentKlaVersion = null;
 		String connectionErrorMessage = null;
 		try {
@@ -126,14 +127,14 @@ public class KiuwanConnectionProfileDescriptor extends Descriptor<KiuwanConnecti
 		} catch (Throwable t) {
 			KiuwanUtils.logger().log(Level.SEVERE, t.toString());
 			Throwable rootCause = ExceptionUtils.getRootCause(t);
-			connectionErrorMessage = "Cannot reach Kiuwan using Jenkins connection API. Reason: " + 
-				(rootCause != null ? rootCause : t);
+			connectionErrorMessage = "Cannot reach Kiuwan using Jenkins connection API. Reason: " + t + 
+				(rootCause != null ? " (" + rootCause + ")" : "");
 		}
 		
 		// Success
 		FormValidation formValidation = null;
 		if (customerEngineVersion != null && currentKlaVersion != null) {
-			formValidation = FormValidation.okWithMarkup("Authentication completed successfully.<br><ul>" + 
+			formValidation = FormValidation.okWithMarkup("Authentication completed successfully.<ul>" + 
 				"<li>Current Kiuwan Local Analyzer version: <b>" + currentKlaVersion + "</b>.</li>" + 
 				"<li>Current Kiuwan Engine version: <b>" + customerEngineVersion + "</b>.</li></ul>");
 		
@@ -147,7 +148,7 @@ public class KiuwanConnectionProfileDescriptor extends Descriptor<KiuwanConnecti
 			
 		// All failed
 		} else {
-			formValidation = FormValidation.errorWithMarkup(credentialsErrorMessage + "<br>" + connectionErrorMessage);
+			formValidation = FormValidation.errorWithMarkup(credentialsErrorMessage + "<br><br>" + connectionErrorMessage);
 		}
 		
 		return formValidation;
