@@ -51,7 +51,7 @@ public class KiuwanConnectionProfile implements Describable<KiuwanConnectionProf
 	
 	@Override
 	public Descriptor<KiuwanConnectionProfile> getDescriptor() {
-		return Jenkins.getInstance().getDescriptorByType(KiuwanConnectionProfileDescriptor.class);
+		return Jenkins.get().getDescriptorByType(KiuwanConnectionProfileDescriptor.class);
 	}
 
 	@Override
@@ -95,14 +95,9 @@ public class KiuwanConnectionProfile implements Describable<KiuwanConnectionProf
 		return uuid;
 	}
 	
-	// <j:getStatic> doesn't work due to a classloader problem 
-	// (KiuwanConnectionProfile is not accessible in a static way from jelly script)
-	// See https://issues.jenkins-ci.org/browse/JENKINS-26579
-	// This methods are here to workaround this problem
-	
-	public static String getConfigureProxyNone() { return CONFIGURE_PROXY_NONE; }
-	public static String getConfigureProxyJenkins() { return CONFIGURE_PROXY_JENKINS; }
-	public static String getConfigureProxyCustom() { return CONFIGURE_PROXY_CUSTOM; }
+	public boolean isConfigureProxyNone() { return CONFIGURE_PROXY_NONE.equals(configureProxy); }
+	public boolean isConfigureProxyJenkins() { return CONFIGURE_PROXY_JENKINS.equals(configureProxy); }
+	public boolean isConfigureProxyCustom() { return CONFIGURE_PROXY_CUSTOM.equals(configureProxy); }
 	
 	public String generateUuid() {
 		int length = 8;

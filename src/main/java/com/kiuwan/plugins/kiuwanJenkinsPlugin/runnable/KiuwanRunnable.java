@@ -30,10 +30,10 @@ import com.kiuwan.plugins.kiuwanJenkinsPlugin.action.KiuwanBuildSummaryView;
 import com.kiuwan.plugins.kiuwanJenkinsPlugin.filecallable.KiuwanRemoteEnvironment;
 import com.kiuwan.plugins.kiuwanJenkinsPlugin.model.Measure;
 import com.kiuwan.plugins.kiuwanJenkinsPlugin.model.Mode;
-import com.kiuwan.plugins.kiuwanJenkinsPlugin.model.results.AnalysisResult;
 import com.kiuwan.plugins.kiuwanJenkinsPlugin.util.KiuwanAnalyzerCommandBuilder;
 import com.kiuwan.plugins.kiuwanJenkinsPlugin.util.KiuwanAnalyzerInstaller;
 import com.kiuwan.plugins.kiuwanJenkinsPlugin.util.KiuwanUtils;
+import com.kiuwan.plugins.kiuwanJenkinsPlugin.model.results.AnalysisResult;
 
 import hudson.EnvVars;
 import hudson.FilePath;
@@ -41,9 +41,10 @@ import hudson.Launcher;
 import hudson.Launcher.ProcStarter;
 import hudson.Proc;
 import hudson.model.AbstractBuild;
-import hudson.model.BuildListener;
 import hudson.model.Node;
 import hudson.model.Result;
+import hudson.model.Run;
+import hudson.model.TaskListener;
 
 public class KiuwanRunnable implements Runnable {
     
@@ -51,34 +52,35 @@ public class KiuwanRunnable implements Runnable {
     private static final String JAVA_HOME_ENV_VAR = "JAVA_HOME";
 	
 	private KiuwanRecorder recorder;
+	private FilePath workspace;
 	private KiuwanConnectionProfile connectionProfile;
-	
 	private Node node;
-	private AbstractBuild<?, ?> build;
+	private Run<?, ?> run;
 	private Launcher launcher;
-	private BuildListener listener;
-	private AtomicReference<Result> resultReference;
+	private TaskListener listener;
 	private AtomicReference<Throwable> exceptionReference;
+	private AtomicReference<Result> resultReference;
 	private KiuwanAnalyzerCommandBuilder commandBuilder;
 	private PrintStream loggerPrintStream;
 	
-	public KiuwanRunnable(KiuwanGlobalConfigDescriptor descriptor, KiuwanRecorder recorder, 
-			Node node, AbstractBuild<?, ?> build, Launcher launcher, BuildListener listener,
-			AtomicReference<Result> resultReference, AtomicReference<Throwable> exceptionReference) {
+	public KiuwanRunnable(KiuwanRecorder recorder, FilePath workspace, KiuwanConnectionProfile connectionProfile,
+			KiuwanGlobalConfigDescriptor descriptor, Node node, Run<?, ?> run, 
+			Launcher launcher, TaskListener listener,
+			AtomicReference<Throwable> exceptionReference, AtomicReference<Result> resultReference) {
 		super();
 		
 		this.recorder = recorder;
+		this.workspace = workspace;
+		this.connectionProfile = connectionProfile;
 		this.node = node;
-		this.build = build;
+		this.run = run;
 		this.launcher = launcher;
 		this.listener = listener;
-		this.resultReference = resultReference;
 		this.exceptionReference = exceptionReference;
-		this.commandBuilder = new KiuwanAnalyzerCommandBuilder(node, descriptor, recorder, build, launcher, listener);
+		this.resultReference = resultReference;
+		this.commandBuilder = new KiuwanAnalyzerCommandBuilder(recorder, workspace, connectionProfile, 
+			descriptor, node, run, launcher, listener);
 		this.loggerPrintStream = listener.getLogger();
-		
-		String connectionProfileUuid = recorder.getConnectionProfileUuid();
-		this.connectionProfile = descriptor.getConnectionProfile(connectionProfileUuid);
 	}
 
 	public void run() {
@@ -155,33 +157,36 @@ public class KiuwanRunnable implements Runnable {
 			
 			KiuwanBuildSummaryView summaryView = new KiuwanBuildSummaryView(analysisResult);
 			KiuwanBuildSummaryAction resultsSummaryAction = new KiuwanBuildSummaryAction(summaryView);
-			build.addAction(resultsSummaryAction);
+			run.addAction(resultsSummaryAction);
 		}
 		
 	}
 	
 	private FilePath installLocalAnalyzer() throws IOException, InterruptedException {
-		FilePath nodeJenkinsDir = KiuwanUtils.getNodeJenkinsDirectory(node, build); 
+		FilePath nodeJenkinsDir = KiuwanUtils.getNodeJenkinsDirectory(node, workspace); 
 		FilePath agentHome = KiuwanAnalyzerInstaller.installKiuwanLocalAnalyzer(nodeJenkinsDir, listener, connectionProfile);
 		return agentHome;
 	}
 	
 	private EnvVars buildEnvVars() throws IOException, InterruptedException {
-		EnvVars environment = build.getEnvironment(listener);
+		EnvVars computerEnvironment = node.toComputer().getEnvironment();
+		EnvVars environment = run.getEnvironment(listener);
 		EnvVars envVars = new EnvVars(environment);
 		
-		Map<String, String> buildVariables = build.getBuildVariables();
-		envVars.putAll(buildVariables);
-
-		EnvVars remoteEnv = build.getWorkspace().act(new KiuwanRemoteEnvironment());
-		envVars.putAll(remoteEnv);
+		if (run instanceof AbstractBuild) {
+			AbstractBuild<?, ?> build = (AbstractBuild<?, ?>) run;
+			Map<String, String> buildVariables = build.getBuildVariables();
+			envVars.putAll(buildVariables);
+		}
 		
 		// Just in case this job is running on a slave node that has not JAVA_HOME declared, avoid
 		// passing the master's JAVA_HOME variable to KLA so the launch script can resolve the
 		// java executable location by itself
+		EnvVars remoteEnv = workspace.act(new KiuwanRemoteEnvironment());
 		if (!remoteEnv.containsKey(JAVA_HOME_ENV_VAR)) {
 			envVars.remove(JAVA_HOME_ENV_VAR);
 		}
+		envVars.putAll(remoteEnv);
 		
 		return envVars;
 	}
@@ -222,7 +227,7 @@ public class KiuwanRunnable implements Runnable {
 	}
 	
 	private void copyOutputFileToMaster() {
-		File targetOutputFile = KiuwanUtils.getOutputFile(build);
+		File targetOutputFile = getOutputFile(run);
 		FilePath targetOutputFilePath = new FilePath(targetOutputFile);
 		FilePath tempOutputFilePath = commandBuilder.getTempOutputFilePath();
 		try {
@@ -234,7 +239,7 @@ public class KiuwanRunnable implements Runnable {
 	
 	private AnalysisResult loadAnalysisResults() {
 		AnalysisResult analysisResults = null;
-		File outputReportFile = getOutputFile(build);
+		File outputReportFile = getOutputFile(run);
 		if (outputReportFile != null && outputReportFile.exists() && outputReportFile.canRead()) {
 			try (InputStream is = new FileInputStream(outputReportFile)) {
 		  		analysisResults = readAnalysisResult(is);

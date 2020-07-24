@@ -36,8 +36,9 @@ import hudson.EnvVars;
 import hudson.FilePath;
 import hudson.Launcher;
 import hudson.model.AbstractBuild;
-import hudson.model.BuildListener;
 import hudson.model.Node;
+import hudson.model.Run;
+import hudson.model.TaskListener;
 
 public class KiuwanAnalyzerCommandBuilder {
 
@@ -61,28 +62,28 @@ public class KiuwanAnalyzerCommandBuilder {
 	private final static String kiuwanJenkinsPluginHeaderSuffix = " ###";
 	private final static String kiuwanJenkinsPluginHeaderPattern = kiuwanJenkinsPluginHeaderPrefix + "(.*)" + kiuwanJenkinsPluginHeaderSuffix;
 	
-	private Node node;
-	private KiuwanGlobalConfigDescriptor descriptor;
 	private KiuwanRecorder recorder;
-	private AbstractBuild<?, ?> build;
-	private Launcher launcher;
-	private BuildListener listener;
+	private FilePath workspace;
 	private KiuwanConnectionProfile connectionProfile;
+	private KiuwanGlobalConfigDescriptor descriptor;
+	private Node node;
+	private Run<?, ?> run;
+	private Launcher launcher;
+	private TaskListener listener;
 	
 	private FilePath tempOutputFilePath;
 	
-	public KiuwanAnalyzerCommandBuilder(Node node, KiuwanGlobalConfigDescriptor descriptor, KiuwanRecorder recorder, 
-			AbstractBuild<?, ?> build, Launcher launcher, BuildListener listener) {
+	public KiuwanAnalyzerCommandBuilder(KiuwanRecorder recorder, FilePath workspace, KiuwanConnectionProfile connectionProfile, 
+			KiuwanGlobalConfigDescriptor descriptor, Node node, Run<?, ?> run, Launcher launcher, TaskListener listener) {
 		super();
-		this.node = node;
-		this.descriptor = descriptor;
 		this.recorder = recorder;
-		this.build = build;
+		this.workspace = workspace;
+		this.connectionProfile = connectionProfile;
+		this.descriptor = descriptor;
+		this.node = node;
+		this.run = run;
 		this.launcher = launcher;
 		this.listener = listener;
-		
-		String connectionProfileUuid = recorder.getConnectionProfileUuid();
-		this.connectionProfile = descriptor.getConnectionProfile(connectionProfileUuid);
 	}
 
 	public List<String> buildLocalAnalyzerCommand(FilePath agentHome, EnvVars envVars) throws IOException, InterruptedException {
@@ -104,11 +105,11 @@ public class KiuwanAnalyzerCommandBuilder {
 			}
 			
 			if (StringUtils.isEmpty(name)) {
-				name = build.getProject().getName();
+				name = run.getParent().getName();
 			}
 				
 			if (StringUtils.isEmpty(analysisLabel)) {
-				analysisLabel = "#" + build.getNumber();
+				analysisLabel = "#" + run.getNumber();
 			}
 					
 			if (StringUtils.isEmpty(analysisEncoding)) {
@@ -149,27 +150,16 @@ public class KiuwanAnalyzerCommandBuilder {
 		String commandAbsolutePath = getRemoteFileAbsolutePath(command, listener);
 		args.add(launcher.isUnix() ? commandAbsolutePath : "\"" + commandAbsolutePath + "\"");
 
-		FilePath srcFolder = null;
-		if (StringUtils.isNotEmpty(recorder.getSourcePath())) {
-			String sourcePath = recorder.getSourcePath();
-			File sourcePathFile = new File(sourcePath);
-			if (sourcePathFile.isAbsolute()) {
-				srcFolder = new FilePath(sourcePathFile);
-			} else {
-				srcFolder = new FilePath(build.getWorkspace(), sourcePath);
-			}
-		} else {
-			srcFolder = build.getModuleRoot();
-		}
+		FilePath srcFolder = resolveSrcFolder();
 		args.add("-s");
 		args.add(buildArgument(launcher, getRemoteFileAbsolutePath(srcFolder, listener)));
 		
 		// Get this node temporal directory under this profiles tools path
-		FilePath nodeJenkinsDir = getNodeJenkinsDirectory(node, build);
+		FilePath nodeJenkinsDir = getNodeJenkinsDirectory(node, workspace);
 		String toolsTempRelativePath = getToolsTempRelativePath(connectionProfile);
 		FilePath toolsTempDir = nodeJenkinsDir.child(toolsTempRelativePath);
 		toolsTempDir.mkdirs();
-		tempOutputFilePath = toolsTempDir.createTempFile("kiuwanJenkinsPlugin-" + build.getId() + "_", ".json");
+		tempOutputFilePath = toolsTempDir.createTempFile("kiuwanJenkinsPlugin-" + run.getId() + "_", ".json");
 		
 		args.add("-o");
 		args.add(buildArgument(launcher, getRemoteFileAbsolutePath(tempOutputFilePath, listener)));
@@ -279,7 +269,7 @@ public class KiuwanAnalyzerCommandBuilder {
 		}
 		
 		FilePath agentBinDir = getAgentBinDir(agentHome);
-		writeConfigToProperties(agentBinDir, proxyConfig, descriptor.getConfigSaveTimestamp());
+		writeConfigToProperties(agentBinDir, proxyConfig);
 		
 		return args;
 	}
@@ -432,12 +422,36 @@ public class KiuwanAnalyzerCommandBuilder {
 		}
 	}
 	
-	private void writeConfigToProperties(FilePath agentBinDir, ProxyConfig proxyConfig, 
-			String configSaveStamp) throws IOException, InterruptedException {
+	private FilePath resolveSrcFolder() throws IOException {
+		FilePath srcFolder = null;
+		if (StringUtils.isNotEmpty(recorder.getSourcePath())) {
+			String sourcePath = recorder.getSourcePath();
+			File sourcePathFile = new File(sourcePath);
+			if (sourcePathFile.isAbsolute()) {
+				srcFolder = new FilePath(sourcePathFile);
+			} else {
+				srcFolder = new FilePath(workspace, sourcePath);
+			}
+		
+		} else if (run instanceof AbstractBuild) {
+			AbstractBuild<?, ?> build = (AbstractBuild<?, ?>) run;
+			srcFolder = build.getModuleRoot();
+		}
+		
+		if (srcFolder == null) {
+			throw new IOException("Could not resolver source folder. Source path = \"" + recorder.getSourcePath() + "\"");
+		}
+		
+		return srcFolder;
+	}
+	
+	private void writeConfigToProperties(FilePath agentBinDir, ProxyConfig proxyConfig) 
+			throws IOException, InterruptedException {
 		
 		FilePath agentPropertiesPath = agentBinDir.getParent().child(AGENT_CONF_DIR_NAME).child(AGENT_PROPERTIES_FILE_NAME);
 		StringBuilder newFileContent = new StringBuilder();
 		boolean updateConfig = true;
+		String configSaveStamp = descriptor.getConfigSaveTimestamp();
 		
 		try (BufferedReader reader = new BufferedReader(new InputStreamReader(agentPropertiesPath.read()))) {
 			boolean firstLineProcessed = false;
@@ -449,7 +463,7 @@ public class KiuwanAnalyzerCommandBuilder {
 					if (matcher.find()) {
 						if (configSaveStamp != null) {
 							String stamp = matcher.group(1);
-							if(configSaveStamp.equals(stamp)){
+							if (configSaveStamp.equals(stamp)) {
 								updateConfig = false;
 							}
 						

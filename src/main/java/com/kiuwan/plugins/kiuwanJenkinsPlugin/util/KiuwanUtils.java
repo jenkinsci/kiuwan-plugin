@@ -27,8 +27,8 @@ import com.kiuwan.plugins.kiuwanJenkinsPlugin.model.results.AnalysisResult;
 import hudson.FilePath;
 import hudson.Launcher;
 import hudson.ProxyConfiguration;
-import hudson.model.AbstractBuild;
 import hudson.model.Node;
+import hudson.model.Run;
 import hudson.model.TaskListener;
 import hudson.util.ListBoxModel;
 
@@ -52,17 +52,15 @@ public class KiuwanUtils {
 		return path;
 	}
 	
-	public static FilePath getNodeJenkinsDirectory(Node node, AbstractBuild<?, ?> build) {
+	public static FilePath getNodeJenkinsDirectory(Node node, FilePath workspace) {
 		FilePath rootPath = node.getRootPath();
-		FilePath workspace = build.getWorkspace();
-		
 		FilePath nodeJenkinsDir = null;
 		if (workspace.isRemote()) {
 			nodeJenkinsDir = new FilePath(workspace.getChannel(), rootPath.getRemote());
 		} else {
 			nodeJenkinsDir = new FilePath(new File(rootPath.getRemote()));
 		}
-		
+
 		return nodeJenkinsDir;
 	}
 	
@@ -92,11 +90,11 @@ public class KiuwanUtils {
 	/** 
 	 * Returns the location at the master node for the KLA output file:
 	 * $JENKINS_HOME/jobs/$JOBNAME/builds/#BUILD/kiuwan/output.json
-	 * @param build the current build object
+	 * @param run the current run object
 	 * @return the file location
 	 */
-	public static File getOutputFile(AbstractBuild<?, ?> build) {
-		return new File(build.getRootDir(), "kiuwan/output.json");
+	public static File getOutputFile(Run<?, ?> run) {
+		return new File(run.getRootDir(), "kiuwan/output.json");
 	}
 	
 	public static Double parseDouble(String value) {

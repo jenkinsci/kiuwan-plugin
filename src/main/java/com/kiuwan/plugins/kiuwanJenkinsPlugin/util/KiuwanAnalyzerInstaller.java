@@ -133,7 +133,7 @@ public class KiuwanAnalyzerInstaller {
 			downloadToFile(engineURL, engineCacheFile);
 			
 			try (OutputStream os = new FileOutputStream(cachedEngineVersionFile)) {
-				IOUtils.write(remoteEngineVersion, os);
+				IOUtils.write(remoteEngineVersion, os, StandardCharsets.UTF_8);
 			} catch (IOException e) {
 				logger().log(Level.SEVERE, e.getLocalizedMessage());	
 			}
@@ -210,7 +210,7 @@ public class KiuwanAnalyzerInstaller {
 	private static File getLocalCacheFile(URL src, KiuwanConnectionProfile connectionProfile) throws MalformedURLException {
 		String s = src.toExternalForm();
 		String fileName = s.substring(s.lastIndexOf('/') + 1);
-		File rootDir = Jenkins.getInstance().getRootDir();
+		File rootDir = Jenkins.get().getRootDir();
 		String cacheRelativePath = KiuwanUtils.getCacheRelativePath(connectionProfile);
 		File parentDir = new File(rootDir, cacheRelativePath);
 		return new File(parentDir, fileName);
@@ -240,7 +240,7 @@ public class KiuwanAnalyzerInstaller {
 			OutputStream baos = new ByteArrayOutputStream();
 			InputStream in = ProxyConfiguration.open(url).getInputStream()
 		) {
-			output = IOUtils.toString(in);
+			output = IOUtils.toString(in, StandardCharsets.UTF_8);
 		}
 		return output;
 	}

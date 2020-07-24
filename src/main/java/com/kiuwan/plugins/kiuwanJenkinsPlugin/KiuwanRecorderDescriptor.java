@@ -9,6 +9,7 @@ import java.util.List;
 import java.util.Set;
 
 import org.apache.commons.lang.StringUtils;
+import org.jenkinsci.Symbol;
 import org.kohsuke.stapler.QueryParameter;
 
 import com.kiuwan.plugins.kiuwanJenkinsPlugin.model.ChangeRequestStatusType;
@@ -26,6 +27,7 @@ import hudson.util.FormValidation.Kind;
 import hudson.util.ListBoxModel;
 import jenkins.model.Jenkins;
 
+@Symbol("kiuwan")
 @Extension
 public class KiuwanRecorderDescriptor extends BuildStepDescriptor<Publisher> {
 
@@ -96,7 +98,7 @@ public class KiuwanRecorderDescriptor extends BuildStepDescriptor<Publisher> {
 			KiuwanConnectionProfile connectionProfile = KiuwanGlobalConfigDescriptor.get().getConnectionProfile(connectionProfileUuid);
 			if (connectionProfile == null) {
 				return FormValidation.errorWithMarkup("Selected connection profile does not exist anymore or is not correctly set up. " + 
-					"Please, check your connection profiles in <a href=\"" + Jenkins.getInstance().getRootUrl() + 
+					"Please, check your connection profiles in <a href=\"" + Jenkins.get().getRootUrl() + 
 					"configure\" target=\"_blank\">Kiuwan Global Settings</a> or select a substitute from the list.");
 			}
 		}

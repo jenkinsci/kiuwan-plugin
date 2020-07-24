@@ -3,15 +3,16 @@
 	<parent>
 		<groupId>org.jenkins-ci.plugins</groupId>
 		<artifactId>plugin</artifactId>
-		<version>1.579</version><!-- which version of Jenkins is this plugin built against? -->
+		<version>3.50</version>
 	</parent>
 
+	<name>Jenkins Kiuwan plugin</name>
 	<artifactId>kiuwanJenkinsPlugin</artifactId>
 	<version>1.5.3-SNAPSHOT</version>
 	<packaging>hpi</packaging>
-	<name>Jenkins Kiuwan plugin</name>
 	<description>Run Kiuwan static analysis of your code as part of your continuous integration process with Jenkins.</description>
 	<url>http://wiki.jenkins-ci.org/display/JENKINS/Kiuwan+Plugin</url>
+	
 	<licenses>
 		<license>
 			<name>MIT license</name>
@@ -25,6 +26,13 @@
 		<url>https://github.com/jenkinsci/kiuwan-plugin.git</url>
 		<tag>HEAD</tag>
 	</scm>
+	
+	<properties>
+		<!-- Baseline Jenkins version you use to build the plugin. Users must have this version or newer to run. -->
+		<jenkins.version>2.176.4</jenkins.version>
+		<java.level>8</java.level>
+		<hpi.dependencyResolution>runtime</hpi.dependencyResolution>
+	</properties>
 
 	<developers>
 		<developer>
@@ -62,12 +70,7 @@
 		<dependency>
 			<groupId>com.kiuwan</groupId>
 			<artifactId>kiuwan-rest-client</artifactId>
-			<version>1.0.5</version>
-		</dependency>
-		<dependency>
-			<groupId>org.apache.ant</groupId>
-			<artifactId>ant</artifactId>
-			<version>1.8.1</version>
+			<version>2.8.2004.5</version>
 		</dependency>
 		<dependency>
 			<groupId>org.kohsuke</groupId>
@@ -79,12 +82,12 @@
 			<artifactId>jackson-databind</artifactId>
 			<version>2.9.8</version>
 		</dependency>
+		<dependency>
+			<groupId>org.jenkins-ci.plugins</groupId>
+			<artifactId>structs</artifactId>
+			<version>1.20</version>
+		</dependency>
 	</dependencies>
-
-	<properties>
-		<!-- explicitly specifying the latest version here because one we get from the parent POM tends to lag behind a bit -->
-		<maven-hpi-plugin.version>2.3</maven-hpi-plugin.version>
-	</properties>
 
 	<build>
 		<extensions>
@@ -96,6 +99,14 @@
 			</extension>
 		</extensions>
 		<plugins>
+			<plugin>
+				<groupId>org.jenkins-ci.tools</groupId>
+				<artifactId>maven-hpi-plugin</artifactId>
+				<configuration>
+					<disabledTestInjection>true</disabledTestInjection>
+					<dependencyResolution>${hpi.dependencyResolution}</dependencyResolution>
+				</configuration>
+			</plugin>
 			<plugin>
 				<artifactId>maven-release-plugin</artifactId>
 				<configuration>

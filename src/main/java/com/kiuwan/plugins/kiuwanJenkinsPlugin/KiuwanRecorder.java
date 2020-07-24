@@ -13,16 +13,18 @@ import org.kohsuke.stapler.DataBoundSetter;
 import com.kiuwan.plugins.kiuwanJenkinsPlugin.model.Mode;
 import com.kiuwan.plugins.kiuwanJenkinsPlugin.runnable.KiuwanRunnable;
 
+import hudson.FilePath;
 import hudson.Launcher;
-import hudson.model.AbstractBuild;
-import hudson.model.BuildListener;
 import hudson.model.Computer;
 import hudson.model.Node;
 import hudson.model.Result;
+import hudson.model.Run;
+import hudson.model.TaskListener;
 import hudson.tasks.BuildStepMonitor;
 import hudson.tasks.Recorder;
+import jenkins.tasks.SimpleBuildStep;
 
-public class KiuwanRecorder extends Recorder {
+public class KiuwanRecorder extends Recorder implements SimpleBuildStep {
 
 	public final static Long TIMEOUT_MARGIN_MILLIS = 5000L;
 	public final static Long TIMEOUT_MARGIN_SECONDS = SECONDS.convert(TIMEOUT_MARGIN_MILLIS, MILLISECONDS);
@@ -84,11 +86,11 @@ public class KiuwanRecorder extends Recorder {
 	}
 
 	public BuildStepMonitor getRequiredMonitorService() {
-		return BuildStepMonitor.BUILD;
+		return BuildStepMonitor.NONE;
 	}
-
+	
 	@Override
-	public boolean perform(AbstractBuild<?, ?> build, Launcher launcher, BuildListener listener)
+	public void perform(Run<?, ?> run, FilePath workspace, Launcher launcher, TaskListener listener)
 			throws InterruptedException, IOException {
 		
 		long startTime = System.currentTimeMillis();
@@ -107,11 +109,17 @@ public class KiuwanRecorder extends Recorder {
 		
 		long endTime = startTime + TimeUnit.MILLISECONDS.convert(timeout, TimeUnit.MINUTES);
 		
+		Node node = Computer.currentComputer().getNode();
 		AtomicReference<Throwable> exceptionReference = new AtomicReference<Throwable>();
 		AtomicReference<Result> resultReference = new AtomicReference<Result>();
-		Computer currentComputer = Computer.currentComputer();
-		Node node = currentComputer.getNode();
-		Thread thread = createExecutionThread(node, build, launcher, listener, resultReference, exceptionReference);
+		
+		KiuwanGlobalConfigDescriptor descriptor = KiuwanGlobalConfigDescriptor.get();
+		KiuwanConnectionProfile connectionProfile = descriptor.getConnectionProfile(connectionProfileUuid);
+		
+		Runnable runnable = new KiuwanRunnable(this, workspace, connectionProfile, descriptor, node, run, 
+			launcher, listener, exceptionReference, resultReference);
+		
+		Thread thread = new Thread(runnable);
 		thread.start();
 
 		long currentTime = System.currentTimeMillis();
@@ -124,13 +132,13 @@ public class KiuwanRecorder extends Recorder {
 			if (thread.isAlive()) {
 				thread.interrupt();
 			}
-			build.setResult(Result.ABORTED);
+			run.setResult(Result.ABORTED);
 			throw interruptedException;
 		}
 
 		if (thread.isAlive()) {
 			listener.getLogger().println("Aborted by timeout.");
-			build.setResult(Result.ABORTED);
+			run.setResult(Result.ABORTED);
 		}
 
 		Throwable throwable = exceptionReference.get();
@@ -140,32 +148,21 @@ public class KiuwanRecorder extends Recorder {
 			} else if (throwable instanceof IOException) {
 				throw (IOException) throwable;
 			} else {
-				build.setResult(Result.FAILURE);
+				run.setResult(Result.FAILURE);
 			}
 		}
 
 		Result result = resultReference.get();
 		if (result != null) {
-			build.setResult(result);
+			run.setResult(result);
 		}
 
-		return true;
 	}
 
 	public boolean isInMode(String mode) {
 		return getMode().equals(mode) ? true : false;
 	}
 
-	private Thread createExecutionThread(final Node node, final AbstractBuild<?, ?> build, final Launcher launcher,
-			final BuildListener listener, final AtomicReference<Result> resultReference,
-			final AtomicReference<Throwable> exceptionReference) {
-		
-		KiuwanGlobalConfigDescriptor descriptor = KiuwanGlobalConfigDescriptor.get();
-		Runnable runnable = new KiuwanRunnable(descriptor, this, node, build, 
-			launcher, listener, resultReference, exceptionReference);
-		return new Thread(runnable);
-	}
-	
 	/*
 	 * Configuration getters
 	 */

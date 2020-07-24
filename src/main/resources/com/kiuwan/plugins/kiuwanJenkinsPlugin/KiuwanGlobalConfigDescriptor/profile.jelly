@@ -45,16 +45,16 @@
 		</f:section>
 
 		<f:section title="Proxy for Kiuwan Local Analyzer">
-			<f:radioBlock name="configureProxy" title="No proxy" inline="true" value="${instance.getConfigureProxyNone()}" 
-					checked="${instance.getConfigureProxyNone().equals(instance.getConfigureProxy())}"
+			<f:radioBlock name="configureProxy" title="No proxy" inline="true" value="false" 
+					checked="${instance != null ? instance.isConfigureProxyNone() : 'true'}"
 					help="/plugin/kiuwanJenkinsPlugin/help/help-proxy-none.html" />
 			
-			<f:radioBlock name="configureProxy" title="Use Jenkins proxy" inline="true" value="${instance.getConfigureProxyJenkins()}" 
-					checked="${instance.getConfigureProxyJenkins().equals(instance.getConfigureProxy())}" 
+			<f:radioBlock name="configureProxy" title="Use Jenkins proxy" inline="true" value="jenkins" 
+					checked="${instance != null ? instance.isConfigureProxyJenkins() : 'false'}" 
 					help="/plugin/kiuwanJenkinsPlugin/help/help-proxy-jenkins.html" />
 			
-			<f:radioBlock name="configureProxy" title="Use custom proxy" inline="true" value="${instance.getConfigureProxyCustom()}" 
-					checked="${instance.getConfigureProxyCustom().equals(instance.getConfigureProxy())}" 
+			<f:radioBlock name="configureProxy" title="Use custom proxy" inline="true" value="true" 
+					checked="${instance != null ? instance.isConfigureProxyCustom() : 'false'}" 
 					help="/plugin/kiuwanJenkinsPlugin/help/help-proxy-custom.html">
 				
 				<f:entry title="Proxy Host" field="proxyHost">

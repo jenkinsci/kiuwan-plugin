@@ -20,7 +20,7 @@ public class KiuwanComputerListener extends ComputerListener {
 	@Override
 	public void onOnline(Computer c, TaskListener listener) throws IOException, InterruptedException {
 		// work around the bug where master doesn't call preOnline method
-		if (c.getNode() == Jenkins.getInstance()) {
+		if (c.getNode() == Jenkins.get()) {
 			process(c, c.getNode().getRootPath(), listener);
 		}
 	}
