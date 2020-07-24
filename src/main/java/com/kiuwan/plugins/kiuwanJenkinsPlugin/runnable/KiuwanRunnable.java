@@ -19,7 +19,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.logging.Level;
 
+import org.apache.commons.lang.StringUtils;
 import org.apache.commons.lang.exception.ExceptionUtils;
 
 import com.kiuwan.plugins.kiuwanJenkinsPlugin.KiuwanConnectionProfile;
@@ -90,9 +92,16 @@ public class KiuwanRunnable implements Runnable {
 		try {
 			if (connectionProfile == null) {
 				String uuid = recorder.getConnectionProfileUuid();
-				loggerPrintStream.print("Could not find the specified connection profile (" + uuid + "). Verify your ");
-				listener.hyperlink("/configure", "Kiuwan Global Settings");
-				loggerPrintStream.println(".");
+				
+				if (StringUtils.isEmpty(uuid)) {
+					loggerPrintStream.println("A connection profile has not been set. Please set a connection profile before analyzing.");
+					
+				} else {
+					loggerPrintStream.print("Could not find the specified connection profile (" + uuid + "). Verify your ");
+					listener.hyperlink("/configure", "Kiuwan Global Settings");
+					loggerPrintStream.println(".");
+				}
+				
 				resultReference.set(Result.NOT_BUILT);
 			
 			} else {
@@ -169,14 +178,13 @@ public class KiuwanRunnable implements Runnable {
 	}
 	
 	private EnvVars buildEnvVars() throws IOException, InterruptedException {
-		EnvVars computerEnvironment = node.toComputer().getEnvironment();
 		EnvVars environment = run.getEnvironment(listener);
 		EnvVars envVars = new EnvVars(environment);
 		
 		if (run instanceof AbstractBuild) {
 			AbstractBuild<?, ?> build = (AbstractBuild<?, ?>) run;
 			Map<String, String> buildVariables = build.getBuildVariables();
-			envVars.putAll(buildVariables);
+			envVars.overrideExpandingAll(buildVariables);
 		}
 		
 		// Just in case this job is running on a slave node that has not JAVA_HOME declared, avoid
@@ -231,9 +239,19 @@ public class KiuwanRunnable implements Runnable {
 		FilePath targetOutputFilePath = new FilePath(targetOutputFile);
 		FilePath tempOutputFilePath = commandBuilder.getTempOutputFilePath();
 		try {
-			tempOutputFilePath.copyTo(targetOutputFilePath);
+			if (tempOutputFilePath != null && tempOutputFilePath.exists() && tempOutputFilePath.length() > 0) {
+				tempOutputFilePath.copyTo(targetOutputFilePath);
+			} else {
+				loggerPrintStream.println("Output file will not be copied to master (empty file)");
+			}
 		} catch (IOException | InterruptedException e) {
 			loggerPrintStream.println("Could not copy output file to this run folder: " + e);
+		} finally {
+			try {
+				tempOutputFilePath.delete();
+			} catch (IOException | InterruptedException e) {
+				KiuwanUtils.logger().log(Level.WARNING, "Could not remove temporal file " + tempOutputFilePath + ": " + e);
+			}
 		}
 	}
 	
