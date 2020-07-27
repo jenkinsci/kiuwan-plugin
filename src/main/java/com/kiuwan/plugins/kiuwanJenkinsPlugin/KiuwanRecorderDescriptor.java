@@ -31,6 +31,43 @@ import jenkins.model.Jenkins;
 @Extension
 public class KiuwanRecorderDescriptor extends BuildStepDescriptor<Publisher> {
 
+	public static final String DEFAULT_SOURCE_PATH = "";
+
+	public static final String DEFAULT_APPLICATION_NAME = "${JOB_NAME}";
+	public static final String DEFAULT_LABEL = "#${BUILD_NUMBER}";
+	public static final String DEFAULT_ANALYSIS_SCOPE = DeliveryType.COMPLETE_DELIVERY.getValue();
+	public static final String DEFAULT_CHANGE_REQUEST = "";
+	public static final String DEFAULT_BRANCH = "";
+	public static final String DEFAULT_CHANGE_REQUEST_STATUS = ChangeRequestStatusType.RESOLVED.getValue();
+	public static final String DEFAULT_MEASURE = Measure.QUALITY_INDICATOR.getValue();
+	public static final String DEFAULT_ENCODING = "UTF-8";
+	public static final String DEFAULT_INCLUDES = "";
+	public static final String DEFAULT_EXCLUDES = "**/src/test/**,**/__MACOSX/**,**/*.min.js,**/*.Designer.vb," +
+		"**/*.designer.vb,**/*Reference.vb,**/*Service.vb,**/*Silverlight.vb,**/*.Designer.cs,**/*.designer.cs," +
+		"**/*Reference.cs,**/*Service.cs,**/*Silverlight.cs,**/.*,**/Pods/BuildHeaders/**/*.h,**/Pods/Headers/**/*.h," +
+		"**/node_modules/**,**/bower_components/**,**/target/**,**/bin/**,**/obj/**,**/dist/**,**/lib/**";
+	public static final Integer DEFAULT_TIMEOUT = 60;
+	
+	public static final Boolean DEFAULT_INDICATE_LANGUAGES = false;
+	public static final Boolean DEFAULT_WAIT_FOR_AUDIT_RESULTS = false;
+	
+	public static final String DEFAULT_LANGUAGES = "abap,actionscript,aspnet,c,cobol,cpp,csharp,go,groovy,html,informix," + 
+		"java,javascript,jcl,jsp,kotlin,natural,objectivec,oracleforms,other,perl,php,plsql,powerscript,python,rpg4," +
+		"ruby,scala,sqlscript,swift,transactsql,vb6,vbnet,xml";
+	
+	public static final String DEFAULT_MARK_BUILD_WHEN_NO_PASS = "UNSTABLE";
+	public static final String DEFAULT_COMMAND_ARGS = "-c -n \"" + DEFAULT_APPLICATION_NAME + "\" -l \"" + DEFAULT_LABEL + "\"";
+	public static final String DEFAULT_EXTRA_PARAMETERS = "encoding=\"" + DEFAULT_ENCODING + "\" " +
+		"supported.technologies=\"" + DEFAULT_LANGUAGES + "\" " +
+		"exclude.patterns=\"" + DEFAULT_EXCLUDES + "\"";
+	
+	public static final String DEFAULT_SUCCESS_RESULT_CODES = "0";
+	public static final String DEFAULT_UNSTABLE_RESULT_CODES = "10, 13";
+	public static final String DEFAULT_FAILURE_RESULT_CODES = "1, 11, 12, 14";
+	public static final String DEFAULT_NOT_BUILT_RESULT_CODES = "";
+	public static final String DEFAULT_ABORTED_RESULT_CODES = "";
+	public static final String DEFAULT_MARK_AS_IN_OTHER_CASES_RESULT_CODES = "FAILURE";
+
 	public KiuwanRecorderDescriptor() {
 		super(KiuwanRecorder.class);
 	}

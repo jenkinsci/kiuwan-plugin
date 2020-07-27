@@ -31,44 +31,48 @@ public class KiuwanRecorder extends Recorder implements SimpleBuildStep {
 	public final static Mode DEFAULT_MODE = Mode.STANDARD_MODE;
 	
 	private String connectionProfileUuid;
-	private String sourcePath;
+	private String sourcePath = KiuwanRecorderDescriptor.DEFAULT_SOURCE_PATH;
+	private Mode selectedMode = DEFAULT_MODE;
 	
-	private Mode selectedMode;
-
-	private String applicationName;
-	private String applicationName_dm;
-	private String label;
-	private String label_dm;
-	private String encoding;
-	private String encoding_dm;
-	private String includes;
-	private String includes_dm;
-	private String excludes;
-	private String excludes_dm;
-	private Integer timeout;
-	private Integer timeout_dm;
-	private Integer timeout_em;
-	private Boolean indicateLanguages;
-	private String measure;
-	private String languages;
-	private Boolean indicateLanguages_dm;
-	private String languages_dm;
+	// Baseline mode
+	private String applicationName = KiuwanRecorderDescriptor.DEFAULT_APPLICATION_NAME;
+	private String label = KiuwanRecorderDescriptor.DEFAULT_LABEL;
+	private String encoding = KiuwanRecorderDescriptor.DEFAULT_ENCODING;
+	private String includes = KiuwanRecorderDescriptor.DEFAULT_INCLUDES;
+	private String excludes = KiuwanRecorderDescriptor.DEFAULT_EXCLUDES;
+	private Integer timeout = KiuwanRecorderDescriptor.DEFAULT_TIMEOUT;
+	private Boolean indicateLanguages = KiuwanRecorderDescriptor.DEFAULT_INDICATE_LANGUAGES;
+	private String languages = KiuwanRecorderDescriptor.DEFAULT_LANGUAGES;
+	private String measure = KiuwanRecorderDescriptor.DEFAULT_MEASURE;
 	private Double unstableThreshold;
 	private Double failureThreshold;
-	private String changeRequest_dm;
-	private String analysisScope_dm;
-	private Boolean waitForAuditResults_dm;
-	private String branch_dm;
-	private String changeRequestStatus_dm;
-	private String commandArgs_em;
-	private String extraParameters_em;
-	private String markBuildWhenNoPass_dm;
-	private String successResultCodes_em;
-	private String unstableResultCodes_em;
-	private String failureResultCodes_em;
-	private String notBuiltResultCodes_em;
-	private String abortedResultCodes_em;
-	private String markAsInOtherCases_em;
+	
+	// Delivery mode
+	private String applicationName_dm = KiuwanRecorderDescriptor.DEFAULT_APPLICATION_NAME;
+	private String label_dm = KiuwanRecorderDescriptor.DEFAULT_LABEL;
+	private String changeRequest_dm = KiuwanRecorderDescriptor.DEFAULT_CHANGE_REQUEST;
+	private String analysisScope_dm = KiuwanRecorderDescriptor.DEFAULT_ANALYSIS_SCOPE;
+	private String branch_dm = KiuwanRecorderDescriptor.DEFAULT_BRANCH;
+	private String changeRequestStatus_dm = KiuwanRecorderDescriptor.DEFAULT_CHANGE_REQUEST_STATUS;
+	private String encoding_dm = KiuwanRecorderDescriptor.DEFAULT_ENCODING;
+	private String includes_dm = KiuwanRecorderDescriptor.DEFAULT_INCLUDES;
+	private String excludes_dm = KiuwanRecorderDescriptor.DEFAULT_EXCLUDES;
+	private Integer timeout_dm = KiuwanRecorderDescriptor.DEFAULT_TIMEOUT;
+	private Boolean indicateLanguages_dm = KiuwanRecorderDescriptor.DEFAULT_INDICATE_LANGUAGES;
+	private String languages_dm = KiuwanRecorderDescriptor.DEFAULT_LANGUAGES;
+	private Boolean waitForAuditResults_dm = KiuwanRecorderDescriptor.DEFAULT_WAIT_FOR_AUDIT_RESULTS;
+	private String markBuildWhenNoPass_dm = KiuwanRecorderDescriptor.DEFAULT_MARK_BUILD_WHEN_NO_PASS;
+
+	// Expert mode
+	private String commandArgs_em = KiuwanRecorderDescriptor.DEFAULT_COMMAND_ARGS;
+	private String extraParameters_em = KiuwanRecorderDescriptor.DEFAULT_EXTRA_PARAMETERS;
+	private Integer timeout_em = KiuwanRecorderDescriptor.DEFAULT_TIMEOUT;
+	private String successResultCodes_em = KiuwanRecorderDescriptor.DEFAULT_SUCCESS_RESULT_CODES;
+	private String unstableResultCodes_em = KiuwanRecorderDescriptor.DEFAULT_UNSTABLE_RESULT_CODES;
+	private String failureResultCodes_em = KiuwanRecorderDescriptor.DEFAULT_FAILURE_RESULT_CODES;
+	private String notBuiltResultCodes_em = KiuwanRecorderDescriptor.DEFAULT_NOT_BUILT_RESULT_CODES;
+	private String abortedResultCodes_em = KiuwanRecorderDescriptor.DEFAULT_ABORTED_RESULT_CODES;
+	private String markAsInOtherCases_em = KiuwanRecorderDescriptor.DEFAULT_MARK_AS_IN_OTHER_CASES_RESULT_CODES;
 	
 	@DataBoundConstructor
 	public KiuwanRecorder() {
@@ -109,7 +113,16 @@ public class KiuwanRecorder extends Recorder implements SimpleBuildStep {
 		
 		long endTime = startTime + TimeUnit.MILLISECONDS.convert(timeout, TimeUnit.MINUTES);
 		
-		Node node = Computer.currentComputer().getNode();
+		Computer computer = workspace.toComputer();
+		if (computer == null) {
+			throw new RuntimeException("Workspace yielded no computer. Make sure a workspace is defined.");
+		}
+
+		Node node = computer.getNode();
+		if (node == null) {
+			throw new RuntimeException("Computer yielded no node. Make sure the selected executor's node is online.");
+		}
+
 		AtomicReference<Throwable> exceptionReference = new AtomicReference<Throwable>();
 		AtomicReference<Result> resultReference = new AtomicReference<Result>();
 		

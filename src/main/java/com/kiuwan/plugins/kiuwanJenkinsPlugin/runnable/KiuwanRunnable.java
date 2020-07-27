@@ -121,6 +121,16 @@ public class KiuwanRunnable implements Runnable {
 		} catch (Throwable throwable) {
 			loggerPrintStream.println(ExceptionUtils.getFullStackTrace(throwable));
 			resultReference.set(Result.NOT_BUILT);
+		
+		} finally {
+			FilePath tempOutputFilePath = commandBuilder.getTempOutputFilePath();
+			try {
+				if (tempOutputFilePath != null && tempOutputFilePath.exists()) {
+					tempOutputFilePath.delete();
+				}
+			} catch (IOException | InterruptedException e) {
+				KiuwanUtils.logger().log(Level.WARNING, "Could not remove temporal file " + tempOutputFilePath + ": " + e);
+			}
 		}
 	}
 	
@@ -184,7 +194,7 @@ public class KiuwanRunnable implements Runnable {
 		if (run instanceof AbstractBuild) {
 			AbstractBuild<?, ?> build = (AbstractBuild<?, ?>) run;
 			Map<String, String> buildVariables = build.getBuildVariables();
-			envVars.overrideExpandingAll(buildVariables);
+			envVars.putAll(buildVariables);
 		}
 		
 		// Just in case this job is running on a slave node that has not JAVA_HOME declared, avoid
@@ -246,12 +256,6 @@ public class KiuwanRunnable implements Runnable {
 			}
 		} catch (IOException | InterruptedException e) {
 			loggerPrintStream.println("Could not copy output file to this run folder: " + e);
-		} finally {
-			try {
-				tempOutputFilePath.delete();
-			} catch (IOException | InterruptedException e) {
-				KiuwanUtils.logger().log(Level.WARNING, "Could not remove temporal file " + tempOutputFilePath + ": " + e);
-			}
 		}
 	}
 	
