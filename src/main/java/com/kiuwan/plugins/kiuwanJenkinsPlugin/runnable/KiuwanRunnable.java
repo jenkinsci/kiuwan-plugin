@@ -4,7 +4,6 @@ import static com.kiuwan.plugins.kiuwanJenkinsPlugin.model.results.AnalysisResul
 import static com.kiuwan.plugins.kiuwanJenkinsPlugin.util.KiuwanAnalyzerCommandBuilder.getAgentBinDir;
 import static com.kiuwan.plugins.kiuwanJenkinsPlugin.util.KiuwanAnalyzerCommandBuilder.getLocalAnalyzerCommandFilePath;
 import static com.kiuwan.plugins.kiuwanJenkinsPlugin.util.KiuwanAnalyzerCommandBuilder.getMasks;
-import static com.kiuwan.plugins.kiuwanJenkinsPlugin.util.KiuwanUtils.getOutputFile;
 import static com.kiuwan.plugins.kiuwanJenkinsPlugin.util.KiuwanUtils.getRemoteFileAbsolutePath;
 import static com.kiuwan.plugins.kiuwanJenkinsPlugin.util.KiuwanUtils.parseErrorCodes;
 import static com.kiuwan.plugins.kiuwanJenkinsPlugin.util.KiuwanUtils.readAnalysisResult;
@@ -32,10 +31,10 @@ import com.kiuwan.plugins.kiuwanJenkinsPlugin.action.KiuwanBuildSummaryView;
 import com.kiuwan.plugins.kiuwanJenkinsPlugin.filecallable.KiuwanRemoteEnvironment;
 import com.kiuwan.plugins.kiuwanJenkinsPlugin.model.Measure;
 import com.kiuwan.plugins.kiuwanJenkinsPlugin.model.Mode;
+import com.kiuwan.plugins.kiuwanJenkinsPlugin.model.results.AnalysisResult;
 import com.kiuwan.plugins.kiuwanJenkinsPlugin.util.KiuwanAnalyzerCommandBuilder;
 import com.kiuwan.plugins.kiuwanJenkinsPlugin.util.KiuwanAnalyzerInstaller;
 import com.kiuwan.plugins.kiuwanJenkinsPlugin.util.KiuwanUtils;
-import com.kiuwan.plugins.kiuwanJenkinsPlugin.model.results.AnalysisResult;
 
 import hudson.EnvVars;
 import hudson.FilePath;
@@ -87,8 +86,8 @@ public class KiuwanRunnable implements Runnable {
 
 	public void run() {
 		
-		// There is no need to check connection here, we will handle any error that comes from kla,
-		// included connection errors
+		// There is no need to check connection here (the plugin did in previous versions), 
+		// we will handle any error that comes from KLA including connection errors
 		try {
 			if (connectionProfile == null) {
 				String uuid = recorder.getConnectionProfileUuid();
@@ -152,10 +151,10 @@ public class KiuwanRunnable implements Runnable {
 		int klaReturnCode = runKiuwanLocalAnalyzer(args, envVars, localAnalyzerHome);
 		
 		// 6 - Copy results to master if needed
-		copyOutputFileToMaster();
+		File outputFile = copyOutputFileToMaster();
 		
 		// 7 - Read analysis results
-		AnalysisResult analysisResult = loadAnalysisResults();
+		AnalysisResult analysisResult = loadAnalysisResults(outputFile);
 		
 		// 8 - Process results
 		if (klaReturnCode == 0 && analysisResult == null) {
@@ -174,7 +173,7 @@ public class KiuwanRunnable implements Runnable {
 				onAnalysisFinishedExpertMode(klaReturnCode);
 			}
 			
-			KiuwanBuildSummaryView summaryView = new KiuwanBuildSummaryView(analysisResult);
+			KiuwanBuildSummaryView summaryView = new KiuwanBuildSummaryView(outputFile, analysisResult);
 			KiuwanBuildSummaryAction resultsSummaryAction = new KiuwanBuildSummaryAction(summaryView);
 			run.addAction(resultsSummaryAction);
 		}
@@ -244,24 +243,33 @@ public class KiuwanRunnable implements Runnable {
 		return klaReturnCode;
 	}
 	
-	private void copyOutputFileToMaster() {
-		File targetOutputFile = getOutputFile(run);
+	/** 
+	 * Copies the temporal output file (that can be stored in a remote node) back to the master node.
+	 * The location at the master node for the KLA output file is:
+	 * <code>$JENKINS_HOME/jobs/$JOBNAME/builds/#BUILD/kiuwan/output-[currentNanoTime].json</code>.
+	 * <p>{@link System#nanoTime()} is used to avoid colliding filenames when invoking the
+	 * plugin multiple times (which can be done in a pipeline).
+	 * @return the file location in the master node
+	 */
+	private File copyOutputFileToMaster() {
+		File targetOutputFile = new File(run.getRootDir(), "kiuwan/output-" + System.nanoTime() + ".json");
 		FilePath targetOutputFilePath = new FilePath(targetOutputFile);
 		FilePath tempOutputFilePath = commandBuilder.getTempOutputFilePath();
 		try {
 			if (tempOutputFilePath != null && tempOutputFilePath.exists() && tempOutputFilePath.length() > 0) {
 				tempOutputFilePath.copyTo(targetOutputFilePath);
+				loggerPrintStream.println("Output file successfully stored in master node: " + targetOutputFilePath.toURI());
 			} else {
 				loggerPrintStream.println("Output file will not be copied to master (empty file)");
 			}
 		} catch (IOException | InterruptedException e) {
 			loggerPrintStream.println("Could not copy output file to this run folder: " + e);
 		}
+		return targetOutputFile;
 	}
 	
-	private AnalysisResult loadAnalysisResults() {
+	private AnalysisResult loadAnalysisResults(File outputReportFile) {
 		AnalysisResult analysisResults = null;
-		File outputReportFile = getOutputFile(run);
 		if (outputReportFile != null && outputReportFile.exists() && outputReportFile.canRead()) {
 			try (InputStream is = new FileInputStream(outputReportFile)) {
 		  		analysisResults = readAnalysisResult(is);

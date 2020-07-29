@@ -11,9 +11,16 @@
 
 			<div class="kwn-summary">
 		
-				<!-- (1) Baseline + wait for results -->
+				<!-- Analysis main data -->
+				<p>
+					<div>Application name &amp;rarr; ${sv.analysisResult.name}</div>
+					<div>Analysis label &amp;rarr; ${sv.analysisResult.label}</div>
+					<div>Analysis code &amp;rarr; ${sv.analysisResult.analysisCode}</div>
+				</p>
+				
+				<!-- (1) Baseline -->
 				<j:if test="${sv.baseline}">
-					
+
 					<!-- Security summary -->
 					<j:if test="${sv.hasSecurity()}">
 						<h3>Security summary</h3>
@@ -214,7 +221,7 @@
 					<p><a href="${sv.url}" target="_blank" rel="noopener">See the details in Kiuwan</a></p>
 				</j:if>
 			
-				<!-- (2) Delivery + wait for results -->
+				<!-- (2) Delivery -->
 				<j:if test="${sv.delivery}">
 					
 					<!-- Audit results -->
@@ -276,6 +283,8 @@
 					<p><a href="${sv.url}" target="_blank" rel="noopener">See the audit results in Kiuwan</a></p>
 				</j:if>
 				
+				<!-- FIXME: this should point to something that Jenkins can open directly -->
+				<p><a href="${sv.outputFileUrl}" target="_blank" rel="noopener">See the output file</a></p>
 			</div>
 		</t:summary>
 	</j:if>

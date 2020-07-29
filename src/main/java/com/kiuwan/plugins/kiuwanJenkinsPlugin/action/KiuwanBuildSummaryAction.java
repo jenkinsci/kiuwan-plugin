@@ -23,15 +23,18 @@ public class KiuwanBuildSummaryAction implements Action {
 	@Exported public String getIcon() { return icon; }
 
 	public String getIconFileName() {
-		return summaryView.isAvailable() ? "/plugin/kiuwanJenkinsPlugin/images/kiuwan-sign.png" : null;
+		// return summaryView.isAvailable() ? "/plugin/kiuwanJenkinsPlugin/images/kiuwan-sign.png" : null;
+		return null;
 	}
 
 	public String getDisplayName() {
-		return summaryView.isAvailable() ? "Kiuwan Analysis Results" : "";
+		// return summaryView.isAvailable() ? "Kiuwan Analysis Results" : "";
+		return null;
 	}
 
 	public String getUrlName() {
-		return summaryView.isAvailable() ? "kiuwan" : null;
+		// return summaryView.isAvailable() ? "kiuwan" : null;
+		return null;
 	}
 
 }

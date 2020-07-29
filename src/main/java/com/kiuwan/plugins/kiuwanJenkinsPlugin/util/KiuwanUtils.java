@@ -28,7 +28,6 @@ import hudson.FilePath;
 import hudson.Launcher;
 import hudson.ProxyConfiguration;
 import hudson.model.Node;
-import hudson.model.Run;
 import hudson.model.TaskListener;
 import hudson.util.ListBoxModel;
 
@@ -87,16 +86,6 @@ public class KiuwanUtils {
 		return prefix + "_" + connectionProfile.getUuid();
 	}
 
-	/** 
-	 * Returns the location at the master node for the KLA output file:
-	 * $JENKINS_HOME/jobs/$JOBNAME/builds/#BUILD/kiuwan/output.json
-	 * @param run the current run object
-	 * @return the file location
-	 */
-	public static File getOutputFile(Run<?, ?> run) {
-		return new File(run.getRootDir(), "kiuwan/output.json");
-	}
-	
 	public static Double parseDouble(String value) {
 		Double doubleValue = null;
 		try {

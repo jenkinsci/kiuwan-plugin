@@ -4,6 +4,7 @@ import static com.kiuwan.plugins.kiuwanJenkinsPlugin.model.results.InsightsData.
 import static com.kiuwan.plugins.kiuwanJenkinsPlugin.model.results.InsightsData.OBSOLESCENCE_RISK;
 import static com.kiuwan.plugins.kiuwanJenkinsPlugin.model.results.InsightsData.VULNERABILITY_RISK;
 
+import java.io.File;
 import java.text.NumberFormat;
 import java.util.List;
 import java.util.Map;
@@ -23,11 +24,17 @@ import com.kiuwan.plugins.kiuwanJenkinsPlugin.util.KiuwanUtils;
  */
 public class KiuwanBuildSummaryView {
 
+	private File outputFile;
 	private AnalysisResult analysisResult;
 	
-	public KiuwanBuildSummaryView(AnalysisResult analysisResult) {
+	public KiuwanBuildSummaryView(File outputFile, AnalysisResult analysisResult) {
 		super();
+		this.outputFile = outputFile;
 		this.analysisResult = analysisResult;
+	}
+	
+	public AnalysisResult getAnalysisResult() {
+		return analysisResult;
 	}
 	
 	public boolean isAvailable() {
@@ -247,6 +254,10 @@ public class KiuwanBuildSummaryView {
 	
 	public String getUrl() {
 		return isBaseline() ? analysisResult.getAnalysisURL() : analysisResult.getAuditResultURL();
+	}
+	
+	public String getOutputFileUrl() {
+		return outputFile != null && outputFile.exists() ? outputFile.getAbsolutePath() : null;
 	}
 	
 	public boolean auditPassed() {

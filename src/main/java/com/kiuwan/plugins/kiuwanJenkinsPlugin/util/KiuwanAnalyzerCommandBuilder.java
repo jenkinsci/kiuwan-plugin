@@ -159,7 +159,7 @@ public class KiuwanAnalyzerCommandBuilder {
 		String toolsTempRelativePath = getToolsTempRelativePath(connectionProfile);
 		FilePath toolsTempDir = nodeJenkinsDir.child(toolsTempRelativePath);
 		toolsTempDir.mkdirs();
-		tempOutputFilePath = toolsTempDir.createTempFile("kiuwanJenkinsPlugin-" + run.getId() + "_", ".json");
+		tempOutputFilePath = toolsTempDir.createTempFile("kiuwanJenkinsPlugin-" + run.getDisplayName() + "_", ".json");
 		
 		args.add("-o");
 		args.add(buildArgument(launcher, getRemoteFileAbsolutePath(tempOutputFilePath, listener)));
