@@ -10,7 +10,6 @@ import static com.kiuwan.plugins.kiuwanJenkinsPlugin.util.KiuwanUtils.readAnalys
 import static com.kiuwan.plugins.kiuwanJenkinsPlugin.util.KiuwanUtils.roundDouble;
 
 import java.io.File;
-import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.PrintStream;
@@ -27,7 +26,6 @@ import com.kiuwan.plugins.kiuwanJenkinsPlugin.KiuwanConnectionProfile;
 import com.kiuwan.plugins.kiuwanJenkinsPlugin.KiuwanGlobalConfigDescriptor;
 import com.kiuwan.plugins.kiuwanJenkinsPlugin.KiuwanRecorder;
 import com.kiuwan.plugins.kiuwanJenkinsPlugin.action.KiuwanBuildSummaryAction;
-import com.kiuwan.plugins.kiuwanJenkinsPlugin.action.KiuwanBuildSummaryView;
 import com.kiuwan.plugins.kiuwanJenkinsPlugin.filecallable.KiuwanRemoteEnvironment;
 import com.kiuwan.plugins.kiuwanJenkinsPlugin.model.Measure;
 import com.kiuwan.plugins.kiuwanJenkinsPlugin.model.Mode;
@@ -150,11 +148,11 @@ public class KiuwanRunnable implements Runnable {
 		// 5 - Execute Kiuwan Local Analyzer
 		int klaReturnCode = runKiuwanLocalAnalyzer(args, envVars, localAnalyzerHome);
 		
-		// 6 - Copy results to master if needed
-		File outputFile = copyOutputFileToMaster();
+		// 6 - Read analysis results
+		AnalysisResult analysisResult = loadAnalysisResults();
 		
-		// 7 - Read analysis results
-		AnalysisResult analysisResult = loadAnalysisResults(outputFile);
+		// 7 - Copy results to master if needed
+		File outputFile = copyOutputFileToMaster(analysisResult);
 		
 		// 8 - Process results
 		if (klaReturnCode == 0 && analysisResult == null) {
@@ -172,9 +170,9 @@ public class KiuwanRunnable implements Runnable {
 			} else if (Mode.EXPERT_MODE.equals(recorder.getSelectedMode())) {
 				onAnalysisFinishedExpertMode(klaReturnCode);
 			}
-			
-			KiuwanBuildSummaryView summaryView = new KiuwanBuildSummaryView(outputFile, analysisResult);
-			KiuwanBuildSummaryAction resultsSummaryAction = new KiuwanBuildSummaryAction(summaryView);
+
+			// Add the results action to this run
+			KiuwanBuildSummaryAction resultsSummaryAction = new KiuwanBuildSummaryAction(analysisResult);
 			run.addAction(resultsSummaryAction);
 		}
 		
@@ -246,13 +244,14 @@ public class KiuwanRunnable implements Runnable {
 	/** 
 	 * Copies the temporal output file (that can be stored in a remote node) back to the master node.
 	 * The location at the master node for the KLA output file is:
-	 * <code>$JENKINS_HOME/jobs/$JOBNAME/builds/#BUILD/kiuwan/output-[currentNanoTime].json</code>.
-	 * <p>{@link System#nanoTime()} is used to avoid colliding filenames when invoking the
-	 * plugin multiple times (which can be done in a pipeline).
+	 * <code>$JENKINS_HOME/jobs/$JOBNAME/builds/#BUILD/kiuwan/output-[analysisCode].json</code>.
+	 * @param analysisResult needed to create the final name for the file
 	 * @return the file location in the master node
 	 */
-	private File copyOutputFileToMaster() {
-		File targetOutputFile = new File(run.getRootDir(), "kiuwan/output-" + System.nanoTime() + ".json");
+	private File copyOutputFileToMaster(AnalysisResult analysisResult) {
+		String filename = "kiuwan/output-" + (analysisResult != null ? 
+			analysisResult.getAnalysisCode() : System.nanoTime()) + ".json";
+		File targetOutputFile = new File(run.getRootDir(), filename);
 		FilePath targetOutputFilePath = new FilePath(targetOutputFile);
 		FilePath tempOutputFilePath = commandBuilder.getTempOutputFilePath();
 		try {
@@ -268,16 +267,19 @@ public class KiuwanRunnable implements Runnable {
 		return targetOutputFile;
 	}
 	
-	private AnalysisResult loadAnalysisResults(File outputReportFile) {
+	private AnalysisResult loadAnalysisResults() {
 		AnalysisResult analysisResults = null;
-		if (outputReportFile != null && outputReportFile.exists() && outputReportFile.canRead()) {
-			try (InputStream is = new FileInputStream(outputReportFile)) {
-		  		analysisResults = readAnalysisResult(is);
-		  	} catch (IOException e) {
-		  		loggerPrintStream.println("Could not read analysis results: " + e);
-		  	}
-		} else {
-			loggerPrintStream.println("Analysis results file not found: " + outputReportFile);
+		try {
+			FilePath outputReportFilePath = commandBuilder.getTempOutputFilePath();
+			if (outputReportFilePath != null && outputReportFilePath.exists()) {
+				try (InputStream is = outputReportFilePath.read()) {
+			  		analysisResults = readAnalysisResult(is);
+			  	}
+			} else {
+				loggerPrintStream.println("Analysis results file not found: " + outputReportFilePath);
+			}
+		} catch (IOException | InterruptedException e) {
+			loggerPrintStream.println("Could not read analysis results: " + e);
 		}
 		return analysisResults;
 	}
