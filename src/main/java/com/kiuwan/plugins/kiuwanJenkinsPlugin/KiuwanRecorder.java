@@ -89,6 +89,7 @@ public class KiuwanRecorder extends Recorder implements SimpleBuildStep {
 		return (KiuwanRecorderDescriptor) super.getDescriptor();
 	}
 
+	@Override
 	public BuildStepMonitor getRequiredMonitorService() {
 		return BuildStepMonitor.NONE;
 	}
@@ -169,11 +170,7 @@ public class KiuwanRecorder extends Recorder implements SimpleBuildStep {
 		if (result != null) {
 			run.setResult(result);
 		}
-
-	}
-
-	public boolean isInMode(String mode) {
-		return getMode().equals(mode) ? true : false;
+		
 	}
 
 	/*
