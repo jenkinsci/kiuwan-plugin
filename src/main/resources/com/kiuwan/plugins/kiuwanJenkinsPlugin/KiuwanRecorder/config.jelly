@@ -27,7 +27,10 @@
 	
 	<f:section>		
 		<!-- Baseline mode -->
-		<f:radioBlock title="Baseline Mode" name="mode" checked="${instance.isInMode('STANDARD_MODE')}" value="STANDARD_MODE" inline="true">
+		<f:radioBlock name="mode" inline="true" checked="${instance.isModeBaseline()}" 
+				title="${it.getBaselineMode().getDisplayName()}" 
+				value="${it.getBaselineMode().getValue()}">
+
 			<f:entry title="Kiuwan Application Name" name="applicationName" field="applicationName" help="/plugin/kiuwanJenkinsPlugin/help/help-appName.html">
 				<f:textbox default="${descriptor.DEFAULT_APPLICATION_NAME}"/>
 			</f:entry>
@@ -73,7 +76,10 @@
 		</f:radioBlock>
 	
 		<!-- Delivery mode -->
-		<f:radioBlock title="Delivery Mode" name="mode" checked="${instance.isInMode('DELIVERY_MODE')}" value="DELIVERY_MODE" inline="true">
+		<f:radioBlock name="mode" inline="true" checked="${instance.isModeDelivery()}" 
+				title="${it.getDeliveryMode().getDisplayName()}" 
+				value="${it.getDeliveryMode().getValue()}">
+
 			<f:entry title="Kiuwan Application Name" field="applicationName_dm" help="/plugin/kiuwanJenkinsPlugin/help/help-appName.html">
 				<f:textbox default="${descriptor.DEFAULT_APPLICATION_NAME}"/>
 			</f:entry>
@@ -125,7 +131,10 @@
 		</f:radioBlock>
 	
 		<!-- Expert mode -->
-		<f:radioBlock title="Expert Mode" name="mode" checked="${instance.isInMode('EXPERT_MODE')}" value="EXPERT_MODE" inline="true">
+		<f:radioBlock name="mode" inline="true" checked="${instance.isModeExpert()}" 
+				title="${it.getExpertMode().getDisplayName()}" 
+				value="${it.getExpertMode().getValue()}">
+
 	 		<f:entry title="Command Arguments" field="commandArgs_em" help="/plugin/kiuwanJenkinsPlugin/help/help-commandArgs.html">
 				<f:textbox default="${descriptor.DEFAULT_COMMAND_ARGS}" />
 			</f:entry>

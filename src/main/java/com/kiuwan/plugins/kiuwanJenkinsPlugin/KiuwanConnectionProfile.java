@@ -10,6 +10,7 @@ import org.kohsuke.stapler.DataBoundConstructor;
 import org.kohsuke.stapler.DataBoundSetter;
 
 import com.kiuwan.plugins.kiuwanJenkinsPlugin.model.KiuwanModelObject;
+import com.kiuwan.plugins.kiuwanJenkinsPlugin.model.ProxyMode;
 
 import hudson.model.Describable;
 import hudson.model.Descriptor;
@@ -20,12 +21,6 @@ public class KiuwanConnectionProfile implements Describable<KiuwanConnectionProf
 
 	private static final long serialVersionUID = 1768850962607295267L;
 
-	public static final String CONFIGURE_PROXY_NONE = "false";
-	public static final String CONFIGURE_PROXY_JENKINS = "jenkins";
-	public static final String CONFIGURE_PROXY_CUSTOM = "true";
-	
-	public static final int DEFAULT_PROXY_PORT = 3128;
-	
 	private String uuid;
 	private String name;
 	
@@ -36,9 +31,9 @@ public class KiuwanConnectionProfile implements Describable<KiuwanConnectionProf
 	private boolean configureKiuwanURL;
 	private String kiuwanURL;
 	
-	private String configureProxy = CONFIGURE_PROXY_NONE;
+	private String configureProxy = KiuwanConnectionProfileDescriptor.DEFAULT_CONFIGURE_PROXY;
 	private String proxyHost;
-	private int proxyPort;
+	private int proxyPort = KiuwanConnectionProfileDescriptor.DEFAULT_PROXY_PORT;
 	private String proxyProtocol;
 	private String proxyAuthentication;
 	private String proxyUsername;
@@ -76,18 +71,9 @@ public class KiuwanConnectionProfile implements Describable<KiuwanConnectionProf
 			profileHost = "www.kiuwan.com";
 		}
 		
-		String profileProxy = null;
-		if (CONFIGURE_PROXY_NONE.equals(configureProxy)) {
-			profileProxy = "No proxy";
-			
-		} else if (CONFIGURE_PROXY_JENKINS.equals(configureProxy)) {
-			profileProxy = "Jenkins proxy";
-
-		} else if (CONFIGURE_PROXY_CUSTOM.equals(configureProxy)) {
-			profileProxy = "Custom proxy";
-		}
+		String profileProxyMode = configureProxy != null ? ProxyMode.valueOf(configureProxy).getDisplayName() : "?";
 		
-		return profileName + " - " + profileUsername + "@" + profileHost + " - " + profileProxy + " for KLA (" + this.uuid + ")";
+		return profileName + " - " + profileUsername + "@" + profileHost + " - " + profileProxyMode + " for KLA (" + this.uuid + ")";
 	}
 	
 	@Override
@@ -95,9 +81,9 @@ public class KiuwanConnectionProfile implements Describable<KiuwanConnectionProf
 		return uuid;
 	}
 	
-	public boolean isConfigureProxyNone() { return CONFIGURE_PROXY_NONE.equals(configureProxy); }
-	public boolean isConfigureProxyJenkins() { return CONFIGURE_PROXY_JENKINS.equals(configureProxy); }
-	public boolean isConfigureProxyCustom() { return CONFIGURE_PROXY_CUSTOM.equals(configureProxy); }
+	public boolean isConfigureProxyNone() { return ProxyMode.NONE.getValue().equals(configureProxy); }
+	public boolean isConfigureProxyJenkins() { return ProxyMode.JENKINS.getValue().equals(configureProxy); }
+	public boolean isConfigureProxyCustom() { return ProxyMode.CUSTOM.getValue().equals(configureProxy); }
 	
 	public String generateUuid() {
 		int length = 8;

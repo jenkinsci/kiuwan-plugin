@@ -15,6 +15,7 @@ import org.kohsuke.stapler.QueryParameter;
 import com.kiuwan.plugins.kiuwanJenkinsPlugin.model.ChangeRequestStatusType;
 import com.kiuwan.plugins.kiuwanJenkinsPlugin.model.DeliveryType;
 import com.kiuwan.plugins.kiuwanJenkinsPlugin.model.Measure;
+import com.kiuwan.plugins.kiuwanJenkinsPlugin.model.Mode;
 import com.kiuwan.plugins.kiuwanJenkinsPlugin.model.SelectableResult;
 import com.kiuwan.plugins.kiuwanJenkinsPlugin.util.KiuwanUtils;
 
@@ -32,6 +33,8 @@ import jenkins.model.Jenkins;
 public class KiuwanRecorderDescriptor extends BuildStepDescriptor<Publisher> {
 
 	public static final String DEFAULT_SOURCE_PATH = "";
+	public static final String DEFAULT_OUTPUT_FILENAME = "kiuwan/output.json";
+	public static final String DEFAULT_MODE = Mode.STANDARD_MODE.getValue();
 
 	public static final String DEFAULT_APPLICATION_NAME = "${JOB_NAME}";
 	public static final String DEFAULT_LABEL = "#${BUILD_NUMBER}";
@@ -88,6 +91,10 @@ public class KiuwanRecorderDescriptor extends BuildStepDescriptor<Publisher> {
 		List<KiuwanConnectionProfile> connectionProfiles = descriptor.getConnectionProfiles();
 		return connectionProfiles != null && !connectionProfiles.isEmpty();
 	}
+	
+	public Mode getBaselineMode() { return Mode.STANDARD_MODE; }
+	public Mode getDeliveryMode() { return Mode.DELIVERY_MODE; }
+	public Mode getExpertMode() { return Mode.EXPERT_MODE; }
 	
 	public ListBoxModel doFillConnectionProfileUuidItems(@QueryParameter("connectionProfileUuid") String connectionProfileUuid) {
 		ListBoxModel items = new ListBoxModel();

@@ -1,6 +1,5 @@
 package com.kiuwan.plugins.kiuwanJenkinsPlugin;
 
-import static com.kiuwan.plugins.kiuwanJenkinsPlugin.KiuwanConnectionProfile.DEFAULT_PROXY_PORT;
 import static com.kiuwan.plugins.kiuwanJenkinsPlugin.util.KiuwanUtils.createListBoxModel;
 
 import java.net.MalformedURLException;
@@ -14,6 +13,7 @@ import org.kohsuke.stapler.QueryParameter;
 import com.kiuwan.plugins.kiuwanJenkinsPlugin.client.KiuwanClientException;
 import com.kiuwan.plugins.kiuwanJenkinsPlugin.client.KiuwanClientUtils;
 import com.kiuwan.plugins.kiuwanJenkinsPlugin.model.ProxyAuthentication;
+import com.kiuwan.plugins.kiuwanJenkinsPlugin.model.ProxyMode;
 import com.kiuwan.plugins.kiuwanJenkinsPlugin.model.ProxyProtocol;
 import com.kiuwan.plugins.kiuwanJenkinsPlugin.util.KiuwanAnalyzerInstaller;
 import com.kiuwan.plugins.kiuwanJenkinsPlugin.util.KiuwanUtils;
@@ -30,6 +30,9 @@ import hudson.util.ListBoxModel;
 @Extension
 public class KiuwanConnectionProfileDescriptor extends Descriptor<KiuwanConnectionProfile> {
 
+	public static final String DEFAULT_CONFIGURE_PROXY = ProxyMode.NONE.getValue();
+	public static final int DEFAULT_PROXY_PORT = 3128;
+	
 	public KiuwanConnectionProfileDescriptor() {
 		super(KiuwanConnectionProfile.class);
 	}
@@ -39,9 +42,9 @@ public class KiuwanConnectionProfileDescriptor extends Descriptor<KiuwanConnecti
 		return "Kiuwan Connection Profile";
 	}
 	
-	public int getDefaultPort() {
-		return DEFAULT_PROXY_PORT;
-	}
+	public ProxyMode getConfigureProxyNone() { return ProxyMode.NONE; }
+	public ProxyMode getConfigureProxyJenkins() { return ProxyMode.JENKINS; }
+	public ProxyMode getConfigureProxyCustom() { return ProxyMode.CUSTOM; }
 	
 	public FormValidation doCheckName(@QueryParameter("name") String name) {
 		if (StringUtils.isEmpty(name)) {

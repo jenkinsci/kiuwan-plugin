@@ -9,7 +9,6 @@ import static com.kiuwan.plugins.kiuwanJenkinsPlugin.util.KiuwanUtils.parseError
 import static com.kiuwan.plugins.kiuwanJenkinsPlugin.util.KiuwanUtils.readAnalysisResult;
 import static com.kiuwan.plugins.kiuwanJenkinsPlugin.util.KiuwanUtils.roundDouble;
 
-import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.PrintStream;
@@ -17,7 +16,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicReference;
-import java.util.logging.Level;
 
 import org.apache.commons.lang.StringUtils;
 import org.apache.commons.lang.exception.ExceptionUtils;
@@ -77,8 +75,8 @@ public class KiuwanRunnable implements Runnable {
 		this.listener = listener;
 		this.exceptionReference = exceptionReference;
 		this.resultReference = resultReference;
-		this.commandBuilder = new KiuwanAnalyzerCommandBuilder(recorder, workspace, connectionProfile, 
-			descriptor, node, run, launcher, listener);
+		this.commandBuilder = new KiuwanAnalyzerCommandBuilder(
+			recorder, workspace, connectionProfile, descriptor, run, launcher, listener);
 		this.loggerPrintStream = listener.getLogger();
 	}
 
@@ -118,16 +116,6 @@ public class KiuwanRunnable implements Runnable {
 		} catch (Throwable throwable) {
 			loggerPrintStream.println(ExceptionUtils.getFullStackTrace(throwable));
 			resultReference.set(Result.NOT_BUILT);
-		
-		} finally {
-			FilePath tempOutputFilePath = commandBuilder.getTempOutputFilePath();
-			try {
-				if (tempOutputFilePath != null && tempOutputFilePath.exists()) {
-					tempOutputFilePath.delete();
-				}
-			} catch (IOException | InterruptedException e) {
-				KiuwanUtils.logger().log(Level.WARNING, "Could not remove temporal file " + tempOutputFilePath + ": " + e);
-			}
 		}
 	}
 	
@@ -151,9 +139,6 @@ public class KiuwanRunnable implements Runnable {
 		// 6 - Read analysis results
 		AnalysisResult analysisResult = loadAnalysisResults();
 		
-		// 7 - Copy results to master if needed
-		File outputFile = copyOutputFileToMaster(analysisResult);
-		
 		// 8 - Process results
 		if (klaReturnCode == 0 && analysisResult == null) {
 			loggerPrintStream.println("Kiuwan Local Analyzer returned a success status code but " + 
@@ -161,13 +146,13 @@ public class KiuwanRunnable implements Runnable {
 			resultReference.set(Result.NOT_BUILT);
 			
 		} else {
-			if (Mode.STANDARD_MODE.equals(recorder.getSelectedMode())) {
+			if (Mode.STANDARD_MODE.getValue().equals(recorder.getMode())) {
 				onAnalysisFinishedStandardMode(klaReturnCode, analysisResult);
 			
-			} else if (Mode.DELIVERY_MODE.equals(recorder.getSelectedMode())) {
+			} else if (Mode.DELIVERY_MODE.getValue().equals(recorder.getMode())) {
 				onAnalysisFinishedDeliveryMode(klaReturnCode);
 				
-			} else if (Mode.EXPERT_MODE.equals(recorder.getSelectedMode())) {
+			} else if (Mode.EXPERT_MODE.getValue().equals(recorder.getMode())) {
 				onAnalysisFinishedExpertMode(klaReturnCode);
 			}
 
@@ -211,10 +196,10 @@ public class KiuwanRunnable implements Runnable {
 		loggerPrintStream.println("Script: " + getRemoteFileAbsolutePath(script, listener));
 		loggerPrintStream.println("Connection profile: " + connectionProfile.getDisplayName());
 		
-		if (Mode.STANDARD_MODE.equals(recorder.getSelectedMode())) {
+		if (Mode.STANDARD_MODE.getValue().equals(recorder.getMode())) {
 			loggerPrintStream.println("Threshold measure: " + recorder.getMeasure());
 			
-			if (!Measure.NONE.name().equalsIgnoreCase(recorder.getMeasure())) {
+			if (!Measure.NONE.getValue().equals(recorder.getMeasure())) {
 				loggerPrintStream.println("Unstable threshold: " + recorder.getUnstableThreshold());
 				loggerPrintStream.println("Failure threshold: " + recorder.getFailureThreshold());
 			}
@@ -241,36 +226,10 @@ public class KiuwanRunnable implements Runnable {
 		return klaReturnCode;
 	}
 	
-	/** 
-	 * Copies the temporal output file (that can be stored in a remote node) back to the master node.
-	 * The location at the master node for the KLA output file is:
-	 * <code>$JENKINS_HOME/jobs/$JOBNAME/builds/#BUILD/kiuwan/output-[analysisCode].json</code>.
-	 * @param analysisResult needed to create the final name for the file
-	 * @return the file location in the master node
-	 */
-	private File copyOutputFileToMaster(AnalysisResult analysisResult) {
-		String filename = "kiuwan/output-" + (analysisResult != null ? 
-			analysisResult.getAnalysisCode() : System.nanoTime()) + ".json";
-		File targetOutputFile = new File(run.getRootDir(), filename);
-		FilePath targetOutputFilePath = new FilePath(targetOutputFile);
-		FilePath tempOutputFilePath = commandBuilder.getTempOutputFilePath();
-		try {
-			if (tempOutputFilePath != null && tempOutputFilePath.exists() && tempOutputFilePath.length() > 0) {
-				tempOutputFilePath.copyTo(targetOutputFilePath);
-				loggerPrintStream.println("Output file successfully stored in master node: " + targetOutputFilePath.toURI());
-			} else {
-				loggerPrintStream.println("Output file will not be copied to master (empty file)");
-			}
-		} catch (IOException | InterruptedException e) {
-			loggerPrintStream.println("Could not copy output file to this run folder: " + e);
-		}
-		return targetOutputFile;
-	}
-	
 	private AnalysisResult loadAnalysisResults() {
 		AnalysisResult analysisResults = null;
 		try {
-			FilePath outputReportFilePath = commandBuilder.getTempOutputFilePath();
+			FilePath outputReportFilePath = new FilePath(workspace, recorder.getOutputFilename());
 			if (outputReportFilePath != null && outputReportFilePath.exists()) {
 				try (InputStream is = outputReportFilePath.read()) {
 			  		analysisResults = readAnalysisResult(is);
@@ -289,13 +248,13 @@ public class KiuwanRunnable implements Runnable {
 			loggerPrintStream.println("Kiuwan Local Analyzer has returned a failure status.");
 			resultReference.set(Result.NOT_BUILT);
 		
-		} else if (!Measure.NONE.name().equals(recorder.getMeasure())) {
+		} else if (!Measure.NONE.getValue().equals(recorder.getMeasure())) {
 			if (ANALYSIS_STATUS_FINISHED.equalsIgnoreCase(analysisResult.getAnalysisStatus())) {
 				Double qualityIndicator = null;
 				if (analysisResult.getQualityIndicator() != null) {
 					qualityIndicator = roundDouble(analysisResult.getQualityIndicator().getValue());
 				}
-				
+
 				Double effortToTarget = null;
 				if (analysisResult.getEffortToTarget() != null) {
 					effortToTarget = roundDouble(analysisResult.getEffortToTarget().getValue());
@@ -306,9 +265,7 @@ public class KiuwanRunnable implements Runnable {
 					riskIndex = roundDouble(analysisResult.getRiskIndex().getValue());
 				}
 					
-				// TODO: is this still needed?
 				printStandardModeConsoleSummary(qualityIndicator, effortToTarget, riskIndex);
-				
 				checkThresholds(qualityIndicator, effortToTarget, riskIndex);
 			
 			// In any other case, an error happened when processing the results in Kiuwan
@@ -376,7 +333,7 @@ public class KiuwanRunnable implements Runnable {
 	private void checkThresholds(Double qualityIndicator, Double effortToTarget, Double riskIndex) {
 		String measure = recorder.getMeasure();
 
-		if (Measure.QUALITY_INDICATOR.name().equals(measure)) {
+		if (Measure.QUALITY_INDICATOR.getValue().equals(measure)) {
 			if (qualityIndicator == null) {
 				loggerPrintStream.println("Global indicator value is unknown, cannot check configured value");
 				
@@ -389,7 +346,7 @@ public class KiuwanRunnable implements Runnable {
 				loggerPrintStream.println("Global indicator is lower than " + recorder.getUnstableThreshold());
 			}
 		
-		} else if (Measure.EFFORT_TO_TARGET.name().equals(measure)) {
+		} else if (Measure.EFFORT_TO_TARGET.getValue().equals(measure)) {
 			if (effortToTarget == null) {
 				loggerPrintStream.println("Effort to target value is unknown, cannot check configured value");
 			
@@ -402,7 +359,7 @@ public class KiuwanRunnable implements Runnable {
 				loggerPrintStream.println("Effort to target is greater than " + recorder.getUnstableThreshold());
 			}
 		
-		} else if (Measure.RISK_INDEX.name().equals(measure)) {
+		} else if (Measure.RISK_INDEX.getValue().equals(measure)) {
 			if (riskIndex == null) {
 				loggerPrintStream.println("Risk index value is unknown, cannot check configured value");
 			
