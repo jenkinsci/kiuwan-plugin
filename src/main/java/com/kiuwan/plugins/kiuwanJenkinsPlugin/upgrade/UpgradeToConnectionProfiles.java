@@ -121,7 +121,7 @@ public class UpgradeToConnectionProfiles {
 		
 		// Retrieve jobs with a Kiuwan publisher
 		Map<AbstractProject, KiuwanRecorder> jobsWithKiuwanPublisherMap = new LinkedHashMap<>();
-		for (AbstractProject<?, ?> job : Jenkins.get().getAllItems(AbstractProject.class)) {
+		for (AbstractProject<?, ?> job : Jenkins.getInstance().getAllItems(AbstractProject.class)) {
 			DescribableList<Publisher, Descriptor<Publisher>> publishers = job.getPublishersList();
 			for (Publisher publisher : publishers) {
 				if (publisher instanceof KiuwanRecorder) {

@@ -146,7 +146,7 @@ public class KiuwanAnalyzerInstaller {
 		FilePath klaHome = nodeToolsDir.child(LOCAL_ANALYZER_DIRECTORY);
 		if (!klaHome.exists()) {
 			listener.getLogger().println("Installing Kiuwan Local Analyzer for connection profile " + 
-				connectionProfile.getDisplayName() + " to " + nodeToolsDir);
+				connectionProfile.getDisplayName() + " into " + nodeToolsDir);
 			
 			try {
 				klaHome.mkdirs();
@@ -210,7 +210,7 @@ public class KiuwanAnalyzerInstaller {
 	private static File getLocalCacheFile(URL src, KiuwanConnectionProfile connectionProfile) throws MalformedURLException {
 		String s = src.toExternalForm();
 		String fileName = s.substring(s.lastIndexOf('/') + 1);
-		File rootDir = Jenkins.get().getRootDir();
+		File rootDir = Jenkins.getInstance().getRootDir();
 		String cacheRelativePath = KiuwanUtils.getCacheRelativePath(connectionProfile);
 		File parentDir = new File(rootDir, cacheRelativePath);
 		return new File(parentDir, fileName);

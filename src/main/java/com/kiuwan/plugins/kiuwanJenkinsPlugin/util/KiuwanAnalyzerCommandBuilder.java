@@ -142,13 +142,11 @@ public class KiuwanAnalyzerCommandBuilder {
 
 		FilePath srcFolder = resolveSrcFolder();
 		args.add("-s");
-		args.add(buildArgument(launcher, getRemoteFileAbsolutePath(srcFolder, listener)));
+		args.add(buildArgument(launcher, srcFolder.getRemote()));
 		
-		// Create the output folder if needed before passing the absolute path to the file to KLA
 		FilePath outputFile = new FilePath(workspace, recorder.getOutputFilename());
-		outputFile.mkdirs();
 		args.add("-o");
-		args.add(buildArgument(launcher, getRemoteFileAbsolutePath(outputFile, listener)));
+		args.add(buildArgument(launcher, outputFile.getRemote()));
 
 		args.add("--user");
 		args.add(buildArgument(launcher, connectionProfile.getUsername()));

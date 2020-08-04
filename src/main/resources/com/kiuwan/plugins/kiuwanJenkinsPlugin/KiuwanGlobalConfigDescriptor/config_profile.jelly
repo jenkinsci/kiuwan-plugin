@@ -46,23 +46,24 @@
 
 		<f:section title="Proxy for Kiuwan Local Analyzer">
 			<f:radioBlock name="configureProxy" inline="true"
-				checked="${instance != null ? instance.isConfigureProxyNone() : 'true'}" 
-				title="${it.getProxyNone().getDisplayName()}" 
-				value="${it.getProxyNone().getValue()}"
-				help="/plugin/kiuwanJenkinsPlugin/help/help-proxy-none.html">
+				checked="${instance == null || instance.isConfigureProxyNone()}" 
+				title="${descriptor.getConfigureProxyNone().getDisplayName()}" 
+				value="${descriptor.getConfigureProxyNone().getValue()}"
+				help="/plugin/kiuwanJenkinsPlugin/help/help-proxy-none.html" />
 			
 			<f:radioBlock name="configureProxy" inline="true"
-				checked="${instance != null ? instance.isConfigureProxyJenkins() : 'true'}" 
-				title="${it.getProxyJenkins().getDisplayName()}" 
-				value="${it.getProxyJenkins().getValue()}"
-				help="/plugin/kiuwanJenkinsPlugin/help/help-proxy-none.html">
+				checked="${instance != null ? instance.isConfigureProxyJenkins() : 'false'}" 
+				title="${descriptor.getConfigureProxyJenkins().getDisplayName()}" 
+				value="${descriptor.getConfigureProxyJenkins().getValue()}"
+				help="/plugin/kiuwanJenkinsPlugin/help/help-proxy-jenkins.html" />
 			
 			<f:radioBlock name="configureProxy" inline="true"
-				checked="${instance != null ? instance.isConfigureProxyCustom() : 'true'}" 
-				title="${it.getProxyNone().getDisplayName()}" 
-				value="${it.getProxyNone().getValue()}"
-				help="/plugin/kiuwanJenkinsPlugin/help/help-proxy-none.html">
+				checked="${instance != null ? instance.isConfigureProxyCustom() : 'false'}" 
+				title="${descriptor.getConfigureProxyCustom().getDisplayName()}" 
+				value="${descriptor.getConfigureProxyCustom().getValue()}"
+				help="/plugin/kiuwanJenkinsPlugin/help/help-proxy-custom.html">
 		
+			<!-- 
 			<f:radioBlock name="configureProxy" title="No proxy" inline="true" value="false" 
 					checked="${instance != null ? instance.isConfigureProxyNone() : 'true'}"
 					help="/plugin/kiuwanJenkinsPlugin/help/help-proxy-none.html" />
@@ -74,12 +75,13 @@
 			<f:radioBlock name="configureProxy" title="Use custom proxy" inline="true" value="true" 
 					checked="${instance != null ? instance.isConfigureProxyCustom() : 'false'}" 
 					help="/plugin/kiuwanJenkinsPlugin/help/help-proxy-custom.html">
-				
+			 -->
+			
 				<f:entry title="Proxy Host" field="proxyHost">
 					<f:textbox />
 				</f:entry>
 				<f:entry title="Proxy Port" field="proxyPort">
-					<f:number />
+					<f:number default="${descriptor.DEFAULT_PROXY_PORT}" />
 				</f:entry>
 				<f:entry title="Proxy Protocol" field="proxyProtocol">
 					<f:select />

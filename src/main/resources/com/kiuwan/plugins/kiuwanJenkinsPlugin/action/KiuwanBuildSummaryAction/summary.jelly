@@ -281,8 +281,7 @@
 					
 					<p><a href="${it.url}" target="_blank" rel="noopener">See the audit results in Kiuwan</a></p>
 				</j:if>
-				${it.doDownloadKiuwanOutputFile()}
-				<p><a href="downloadKiuwanOutputFile" target="_blank" rel="noopener">Download the output JSON file</a></p>
+
 			</div>
 		</t:summary>
 	</j:if>

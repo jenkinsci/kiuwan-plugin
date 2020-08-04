@@ -28,7 +28,8 @@
 	</scm>
 	
 	<properties>
-		<jenkins.version>2.100</jenkins.version> <!-- Jenkins version to build the plugin. Users must have this version or newer to run. -->
+		<!-- 1.580.1, 2.60.3, 2.107.3, 2.176.4 -->
+		<jenkins.version>1.580.1</jenkins.version> <!-- Jenkins version to build the plugin. Users must have this version or newer to run. -->
 		<java.level>8</java.level>
 		<hpi.dependencyResolution>runtime</hpi.dependencyResolution>
 	</properties>
@@ -72,15 +73,17 @@
 			<version>2.8.2004.5</version>
 		</dependency>
 		<dependency>
-			<groupId>org.kohsuke</groupId>
-			<artifactId>access-modifier-checker</artifactId>
-			<version>1.4</version>
-		</dependency>
-		<dependency>
 			<groupId>com.fasterxml.jackson.core</groupId>
 			<artifactId>jackson-databind</artifactId>
 			<version>2.9.8</version>
 		</dependency>
+		<!-- 
+		<dependency>
+			<groupId>org.kohsuke</groupId>
+			<artifactId>access-modifier-checker</artifactId>
+			<version>1.4</version>
+		</dependency>
+		-->
 		<dependency>
 			<groupId>org.jenkins-ci.plugins</groupId>
 			<artifactId>structs</artifactId>

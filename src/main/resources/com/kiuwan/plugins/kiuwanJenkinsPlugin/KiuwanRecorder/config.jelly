@@ -28,15 +28,15 @@
 	<f:section>		
 		<!-- Baseline mode -->
 		<f:radioBlock name="mode" inline="true" checked="${instance.isModeBaseline()}" 
-				title="${it.getBaselineMode().getDisplayName()}" 
-				value="${it.getBaselineMode().getValue()}">
+				title="${descriptor.getBaselineMode().getDisplayName()}" 
+				value="${descriptor.getBaselineMode().getValue()}">
 
 			<f:entry title="Kiuwan Application Name" name="applicationName" field="applicationName" help="/plugin/kiuwanJenkinsPlugin/help/help-appName.html">
 				<f:textbox default="${descriptor.DEFAULT_APPLICATION_NAME}"/>
 			</f:entry>
 			
 			<f:entry title="Analysis label" name="label" field="label" help="/plugin/kiuwanJenkinsPlugin/help/help-analysisLabel.html">
-				<f:textbox default="${descriptor.DEFAULT_LABEL}"/>
+				<f:textbox default="${descriptor.DEFAULT_LABEL}" />
 			</f:entry>
 		
 			<f:advanced>
@@ -77,8 +77,8 @@
 	
 		<!-- Delivery mode -->
 		<f:radioBlock name="mode" inline="true" checked="${instance.isModeDelivery()}" 
-				title="${it.getDeliveryMode().getDisplayName()}" 
-				value="${it.getDeliveryMode().getValue()}">
+				title="${descriptor.getDeliveryMode().getDisplayName()}" 
+				value="${descriptor.getDeliveryMode().getValue()}">
 
 			<f:entry title="Kiuwan Application Name" field="applicationName_dm" help="/plugin/kiuwanJenkinsPlugin/help/help-appName.html">
 				<f:textbox default="${descriptor.DEFAULT_APPLICATION_NAME}"/>
@@ -132,8 +132,8 @@
 	
 		<!-- Expert mode -->
 		<f:radioBlock name="mode" inline="true" checked="${instance.isModeExpert()}" 
-				title="${it.getExpertMode().getDisplayName()}" 
-				value="${it.getExpertMode().getValue()}">
+				title="${descriptor.getExpertMode().getDisplayName()}" 
+				value="${descriptor.getExpertMode().getValue()}">
 
 	 		<f:entry title="Command Arguments" field="commandArgs_em" help="/plugin/kiuwanJenkinsPlugin/help/help-commandArgs.html">
 				<f:textbox default="${descriptor.DEFAULT_COMMAND_ARGS}" />

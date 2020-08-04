@@ -120,7 +120,7 @@ public class KiuwanGlobalConfigDescriptor extends GlobalConfiguration implements
 		FormValidation ret = null;
 		if (upgradeConfigOk && upgradeJobsOk) {
 			ret = FormValidation.okWithMarkup("Upgrade done! Please reload the <a href=\"" + 
-				Jenkins.get().getRootUrl() + "configure\">settings page</a>.");
+				Jenkins.getInstance().getRootUrl() + "configure\">settings page</a>.");
 		} else {
 			ret = FormValidation.warning("Upgrade failed! Please check Jenkins logs to diagnose the problem.");
 		}
@@ -130,7 +130,7 @@ public class KiuwanGlobalConfigDescriptor extends GlobalConfiguration implements
 
 	@SuppressWarnings("rawtypes")
 	public boolean existMisconfiguredJobs() {
-		List<AbstractProject> jobs = Jenkins.get().getAllItems(AbstractProject.class);
+		List<AbstractProject> jobs = Jenkins.getInstance().getAllItems(AbstractProject.class);
 		for (AbstractProject<?, ?> job : jobs) {
 			DescribableList<Publisher, Descriptor<Publisher>> publishers = job.getPublishersList();
 			for (Publisher publisher : publishers) {
@@ -155,7 +155,7 @@ public class KiuwanGlobalConfigDescriptor extends GlobalConfiguration implements
 	@SuppressWarnings("rawtypes")
 	public List<String> getMisconfiguredJobs() {
 		List<String> misconfiguredJobs = new ArrayList<>();
-		List<AbstractProject> jobs = Jenkins.get().getAllItems(AbstractProject.class);
+		List<AbstractProject> jobs = Jenkins.getInstance().getAllItems(AbstractProject.class);
 		for (AbstractProject<?, ?> job : jobs) {
 			DescribableList<Publisher, Descriptor<Publisher>> publishers = job.getPublishersList();
 			for (Publisher publisher : publishers) {
@@ -224,12 +224,12 @@ public class KiuwanGlobalConfigDescriptor extends GlobalConfiguration implements
 	}
 
 	public static File getGlobalConfigFile() {
-		return new File(Jenkins.get().getRootDir(), 
+		return new File(Jenkins.getInstance().getRootDir(), 
 			"com.kiuwan.plugins.kiuwanJenkinsPlugin.KiuwanGlobalConfig.xml");
 	}
 
 	public static File getOldGlobalConfigFile() {
-		return new File(Jenkins.get().getRootDir(), 
+		return new File(Jenkins.getInstance().getRootDir(), 
 			"com.kiuwan.plugins.kiuwanJenkinsPlugin.KiuwanRecorder.xml");
 	}
 

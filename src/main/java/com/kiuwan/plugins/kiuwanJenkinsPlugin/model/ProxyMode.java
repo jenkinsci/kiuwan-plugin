@@ -17,6 +17,17 @@ public enum ProxyMode implements KiuwanModelObject {
 		this.value = value;
 	}
 	
+	public static ProxyMode valueFrom(String value) {
+		ProxyMode matchingProxyMode = null;
+		for (ProxyMode proxyMode : ProxyMode.values()) {
+			if (proxyMode.getValue().equals(value)) {
+				matchingProxyMode = proxyMode;
+				break;
+			}
+		}
+		return matchingProxyMode;
+	}
+	
 	@Override public String getDisplayName() { return this.displayName; }
 	@Override public String getValue() { return value; }
 	

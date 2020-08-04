@@ -46,7 +46,7 @@ public class KiuwanConnectionProfile implements Describable<KiuwanConnectionProf
 	
 	@Override
 	public Descriptor<KiuwanConnectionProfile> getDescriptor() {
-		return Jenkins.get().getDescriptorByType(KiuwanConnectionProfileDescriptor.class);
+		return Jenkins.getInstance().getDescriptorByType(KiuwanConnectionProfileDescriptor.class);
 	}
 
 	@Override
@@ -71,7 +71,8 @@ public class KiuwanConnectionProfile implements Describable<KiuwanConnectionProf
 			profileHost = "www.kiuwan.com";
 		}
 		
-		String profileProxyMode = configureProxy != null ? ProxyMode.valueOf(configureProxy).getDisplayName() : "?";
+		ProxyMode selectedProxyMode = ProxyMode.valueFrom(configureProxy);
+		String profileProxyMode = selectedProxyMode != null ? selectedProxyMode.getDisplayName() : "?";
 		
 		return profileName + " - " + profileUsername + "@" + profileHost + " - " + profileProxyMode + " for KLA (" + this.uuid + ")";
 	}
