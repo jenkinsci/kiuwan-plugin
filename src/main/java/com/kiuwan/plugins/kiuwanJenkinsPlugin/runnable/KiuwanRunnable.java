@@ -20,10 +20,10 @@ import java.util.concurrent.atomic.AtomicReference;
 import org.apache.commons.lang.StringUtils;
 import org.apache.commons.lang.exception.ExceptionUtils;
 
+import com.kiuwan.plugins.kiuwanJenkinsPlugin.KiuwanBuildSummaryAction;
 import com.kiuwan.plugins.kiuwanJenkinsPlugin.KiuwanConnectionProfile;
 import com.kiuwan.plugins.kiuwanJenkinsPlugin.KiuwanGlobalConfigDescriptor;
 import com.kiuwan.plugins.kiuwanJenkinsPlugin.KiuwanRecorder;
-import com.kiuwan.plugins.kiuwanJenkinsPlugin.action.KiuwanBuildSummaryAction;
 import com.kiuwan.plugins.kiuwanJenkinsPlugin.filecallable.KiuwanRemoteEnvironment;
 import com.kiuwan.plugins.kiuwanJenkinsPlugin.model.Measure;
 import com.kiuwan.plugins.kiuwanJenkinsPlugin.model.Mode;
@@ -146,13 +146,13 @@ public class KiuwanRunnable implements Runnable {
 			resultReference.set(Result.NOT_BUILT);
 			
 		} else {
-			if (Mode.STANDARD_MODE.getValue().equals(recorder.getMode())) {
+			if (Mode.STANDARD_MODE.getValue().equals(recorder.getSelectedMode())) {
 				onAnalysisFinishedStandardMode(klaReturnCode, analysisResult);
 			
-			} else if (Mode.DELIVERY_MODE.getValue().equals(recorder.getMode())) {
+			} else if (Mode.DELIVERY_MODE.getValue().equals(recorder.getSelectedMode())) {
 				onAnalysisFinishedDeliveryMode(klaReturnCode);
 				
-			} else if (Mode.EXPERT_MODE.getValue().equals(recorder.getMode())) {
+			} else if (Mode.EXPERT_MODE.getValue().equals(recorder.getSelectedMode())) {
 				onAnalysisFinishedExpertMode(klaReturnCode);
 			}
 
@@ -196,7 +196,7 @@ public class KiuwanRunnable implements Runnable {
 		loggerPrintStream.println("Script: " + getRemoteFileAbsolutePath(script, listener));
 		loggerPrintStream.println("Connection profile: " + connectionProfile.getDisplayName());
 		
-		if (Mode.STANDARD_MODE.getValue().equals(recorder.getMode())) {
+		if (Mode.STANDARD_MODE.getValue().equals(recorder.getSelectedMode())) {
 			loggerPrintStream.println("Threshold measure: " + recorder.getMeasure());
 			
 			if (!Measure.NONE.getValue().equals(recorder.getMeasure())) {

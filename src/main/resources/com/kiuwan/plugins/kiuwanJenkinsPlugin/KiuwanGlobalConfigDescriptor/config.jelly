@@ -56,7 +56,7 @@
 			<j:scope>
 				<f:repeatable field="connectionProfiles" name="connectionProfiles" var="connectionProfile" minimum="0" header="Connection profile">
 					<table width="100%">
-						<st:include page="/com/kiuwan/plugins/kiuwanJenkinsPlugin/KiuwanGlobalConfigDescriptor/config_profile.jelly" />
+						<st:include page="config.jelly" class="com.kiuwan.plugins.kiuwanJenkinsPlugin.KiuwanConnectionProfileDescriptor" />
 						<f:entry>
 							<div align="right">
 								<f:repeatableDeleteButton />

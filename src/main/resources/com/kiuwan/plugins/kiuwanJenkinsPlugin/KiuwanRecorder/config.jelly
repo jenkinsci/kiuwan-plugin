@@ -27,7 +27,7 @@
 	
 	<f:section>		
 		<!-- Baseline mode -->
-		<f:radioBlock name="mode" inline="true" checked="${instance.isModeBaseline()}" 
+		<f:radioBlock name="selectedMode" inline="true" checked="${instance.isModeBaseline()}" 
 				title="${descriptor.getBaselineMode().getDisplayName()}" 
 				value="${descriptor.getBaselineMode().getValue()}">
 
@@ -76,7 +76,7 @@
 		</f:radioBlock>
 	
 		<!-- Delivery mode -->
-		<f:radioBlock name="mode" inline="true" checked="${instance.isModeDelivery()}" 
+		<f:radioBlock name="selectedMode" inline="true" checked="${instance.isModeDelivery()}" 
 				title="${descriptor.getDeliveryMode().getDisplayName()}" 
 				value="${descriptor.getDeliveryMode().getValue()}">
 
@@ -131,7 +131,7 @@
 		</f:radioBlock>
 	
 		<!-- Expert mode -->
-		<f:radioBlock name="mode" inline="true" checked="${instance.isModeExpert()}" 
+		<f:radioBlock name="selectedMode" inline="true" checked="${instance.isModeExpert()}" 
 				title="${descriptor.getExpertMode().getDisplayName()}" 
 				value="${descriptor.getExpertMode().getValue()}">
 

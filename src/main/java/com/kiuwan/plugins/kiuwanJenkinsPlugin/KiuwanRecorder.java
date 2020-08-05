@@ -33,7 +33,7 @@ public class KiuwanRecorder extends Recorder implements SimpleBuildStep {
 	private String connectionProfileUuid;
 	private String sourcePath = KiuwanRecorderDescriptor.DEFAULT_SOURCE_PATH;
 	private String outputFilename = KiuwanRecorderDescriptor.DEFAULT_OUTPUT_FILENAME;
-	private String mode = KiuwanRecorderDescriptor.DEFAULT_MODE;
+	private String selectedMode = KiuwanRecorderDescriptor.DEFAULT_MODE;
 	
 	// Baseline mode
 	private String applicationName = KiuwanRecorderDescriptor.DEFAULT_APPLICATION_NAME;
@@ -102,11 +102,11 @@ public class KiuwanRecorder extends Recorder implements SimpleBuildStep {
 		long startTime = System.currentTimeMillis();
 
 		Integer timeout = null;
-		Mode selectedMode = Mode.valueOf(mode != null ? mode : KiuwanRecorderDescriptor.DEFAULT_MODE);
-		if (Mode.DELIVERY_MODE.equals(selectedMode)) {
+		Mode mode = Mode.valueOf(selectedMode != null ? selectedMode : KiuwanRecorderDescriptor.DEFAULT_MODE);
+		if (Mode.DELIVERY_MODE.equals(mode)) {
 			timeout = getTimeout_dm();
 			
-		} else if (Mode.EXPERT_MODE.equals(selectedMode)) {
+		} else if (Mode.EXPERT_MODE.equals(mode)) {
 			timeout = getTimeout_em();
 			
 		} else {
@@ -178,9 +178,9 @@ public class KiuwanRecorder extends Recorder implements SimpleBuildStep {
 	 * Configuration getters
 	 */
 	
-	public boolean isModeBaseline() { return Mode.STANDARD_MODE.getValue().equals(mode); }
-	public boolean isModeDelivery() { return Mode.DELIVERY_MODE.getValue().equals(mode); }
-	public boolean isModeExpert() { return Mode.EXPERT_MODE.getValue().equals(mode); }
+	public boolean isModeBaseline() { return Mode.STANDARD_MODE.getValue().equals(selectedMode); }
+	public boolean isModeDelivery() { return Mode.DELIVERY_MODE.getValue().equals(selectedMode); }
+	public boolean isModeExpert() { return Mode.EXPERT_MODE.getValue().equals(selectedMode); }
 	
 	public Double getUnstableThreshold() {
         Double ret = new Double(0);
@@ -200,7 +200,7 @@ public class KiuwanRecorder extends Recorder implements SimpleBuildStep {
 
 	public String getConnectionProfileUuid() { return connectionProfileUuid; }
 	public String getSourcePath() { return sourcePath; }
-	public String getMode() { return mode; }
+	public String getSelectedMode() { return selectedMode; }
 	public String getOutputFilename() { return outputFilename; }
 	public String getApplicationName() { return this.applicationName; }
 	public String getLabel() { return this.label; }
@@ -238,7 +238,7 @@ public class KiuwanRecorder extends Recorder implements SimpleBuildStep {
 	@DataBoundSetter public void setConnectionProfileUuid(String connectionProfileUuid) { this.connectionProfileUuid = connectionProfileUuid; }
 	@DataBoundSetter public void setSourcePath(String sourcePath) { this.sourcePath = sourcePath; }
 	@DataBoundSetter public void setOutputFilename(String outputFilename) { this.outputFilename = outputFilename; }
-	@DataBoundSetter public void setMode(String mode) { this.mode = mode; }
+	@DataBoundSetter public void setSelectedMode(String selectedMode) { this.selectedMode = selectedMode; }
 	@DataBoundSetter public void setApplicationName(String applicationName) { this.applicationName = applicationName; }
 	@DataBoundSetter public void setApplicationName_dm(String applicationName_dm) { this.applicationName_dm = applicationName_dm; }
 	@DataBoundSetter public void setLabel(String label) { this.label = label; }

@@ -1,4 +1,4 @@
-package com.kiuwan.plugins.kiuwanJenkinsPlugin.action;
+package com.kiuwan.plugins.kiuwanJenkinsPlugin;
 
 import static com.kiuwan.plugins.kiuwanJenkinsPlugin.model.results.InsightsData.LICENSE_RISK;
 import static com.kiuwan.plugins.kiuwanJenkinsPlugin.model.results.InsightsData.OBSOLESCENCE_RISK;
@@ -28,8 +28,16 @@ public class KiuwanBuildSummaryAction implements Action, Serializable {
 	private static final long serialVersionUID = 351165444201348768L;
 	
 	private AnalysisResult analysisResult;
+	private String url;
 	private String icon;
 
+	/** @deprecated Needed to keep retro compatibility */
+	@Deprecated
+	public KiuwanBuildSummaryAction(String url) {
+		this((AnalysisResult) null);
+		this.url = url;
+	}
+	
 	@DataBoundConstructor
 	public KiuwanBuildSummaryAction(AnalysisResult analysisResult) {
 		super();
@@ -266,6 +274,7 @@ public class KiuwanBuildSummaryAction implements Action, Serializable {
 	}
 	
 	public String getUrl() {
+		if (url != null && !url.isEmpty()) return url;
 		return isBaseline() ? analysisResult.getAnalysisURL() : analysisResult.getAuditResultURL();
 	}
 	

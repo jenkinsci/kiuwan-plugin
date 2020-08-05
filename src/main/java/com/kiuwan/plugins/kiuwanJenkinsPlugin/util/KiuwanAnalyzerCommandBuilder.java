@@ -83,7 +83,7 @@ public class KiuwanAnalyzerCommandBuilder {
 		String analysisLabel = null;
 		String analysisEncoding = null;
 		{
-			if (Mode.DELIVERY_MODE.getValue().equals(recorder.getMode())) {
+			if (Mode.DELIVERY_MODE.getValue().equals(recorder.getSelectedMode())) {
 				name = recorder.getApplicationName_dm();
 				analysisLabel = recorder.getLabel_dm();
 				analysisEncoding = recorder.getEncoding_dm();
@@ -112,13 +112,13 @@ public class KiuwanAnalyzerCommandBuilder {
 		String excludes = null;
 		String languages = null;
 		
-		if (Mode.DELIVERY_MODE.getValue().equals(recorder.getMode())) {
+		if (Mode.DELIVERY_MODE.getValue().equals(recorder.getSelectedMode())) {
 			timeout = recorder.getTimeout_dm();
 			includes = recorder.getIncludes_dm();
 			excludes = recorder.getExcludes_dm();
 			languages = recorder.getLanguages_dm();
 			
-		} else if (Mode.EXPERT_MODE.getValue().equals(recorder.getMode())) {
+		} else if (Mode.EXPERT_MODE.getValue().equals(recorder.getSelectedMode())) {
 			timeout = recorder.getTimeout_em();
 			
 		} else {
@@ -159,7 +159,7 @@ public class KiuwanAnalyzerCommandBuilder {
 			args.add(buildArgument(launcher, domain));
 		}
 
-		if (Mode.STANDARD_MODE.getValue().equals(recorder.getMode())) {
+		if (Mode.STANDARD_MODE.getValue().equals(recorder.getSelectedMode())) {
 			args.add("-n");
 			args.add(buildArgument(launcher, name));
 			args.add("-l");
@@ -171,7 +171,7 @@ public class KiuwanAnalyzerCommandBuilder {
 				args.add("-wr");
 			}
 			
-		} else if (Mode.DELIVERY_MODE.getValue().equals(recorder.getMode())) {
+		} else if (Mode.DELIVERY_MODE.getValue().equals(recorder.getSelectedMode())) {
 			args.add("-n");
 			args.add(buildArgument(launcher, name));
 			args.add("-l");
@@ -211,7 +211,7 @@ public class KiuwanAnalyzerCommandBuilder {
 				args.add(buildArgument(launcher, changeRequestStatus));
 			}
 			
-		} else if (Mode.EXPERT_MODE.getValue().equals(recorder.getMode())) {
+		} else if (Mode.EXPERT_MODE.getValue().equals(recorder.getSelectedMode())) {
 			parseOptions(args, launcher);
 			parseParameters(args, launcher);
 		}
@@ -219,9 +219,9 @@ public class KiuwanAnalyzerCommandBuilder {
 		args.add(buildAdditionalParameterExpression(launcher, "timeout", timeoutAsStringMillis));
 		args.add(buildAdditionalParameterExpression(launcher, "results.timeout", timeoutAsStringSeconds));
 
-		if (!Mode.EXPERT_MODE.getValue().equals(recorder.getMode())) {
+		if (!Mode.EXPERT_MODE.getValue().equals(recorder.getSelectedMode())) {
 			if (StringUtils.isNotBlank(includes)) {
-				launcher.getListener().getLogger().println("Setting includes pattern -> "+includes);
+				launcher.getListener().getLogger().println("Setting includes pattern -> " + includes);
 				args.add(buildAdditionalParameterExpression(launcher, "include.patterns", includes));
 			}
 			if (StringUtils.isNotBlank(excludes)) {
@@ -229,8 +229,8 @@ public class KiuwanAnalyzerCommandBuilder {
 			}
 			
 			args.add(buildAdditionalParameterExpression(launcher, "encoding", analysisEncoding));
-			if ((Mode.STANDARD_MODE.getValue().equals(recorder.getMode()) && Boolean.TRUE.equals(recorder.getIndicateLanguages())) || 
-				(Mode.DELIVERY_MODE.getValue().equals(recorder.getMode()) && Boolean.TRUE.equals(recorder.getIndicateLanguages_dm()))) {
+			if ((Mode.STANDARD_MODE.getValue().equals(recorder.getSelectedMode()) && Boolean.TRUE.equals(recorder.getIndicateLanguages())) || 
+				(Mode.DELIVERY_MODE.getValue().equals(recorder.getSelectedMode()) && Boolean.TRUE.equals(recorder.getIndicateLanguages_dm()))) {
 				args.add(buildAdditionalParameterExpression(launcher, "supported.technologies", languages));
 			}
 		}
