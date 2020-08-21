@@ -34,6 +34,7 @@ public class UpgradeToConnectionProfiles {
 	 * Older versions only allowed for a single connection configuration to Kiuwan.
 	 * This method will read old configurations and create a new one that contains the existing
 	 * configuration profile.
+	 * @return <code>true</code> if the upgrade was successful or not needed
 	 */
 	@Initializer(before = InitMilestone.PLUGINS_STARTED)
 	public static boolean upgradeConfiguration() {

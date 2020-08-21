@@ -61,7 +61,10 @@ public class ProxyConfig {
 	public String getUsername() { return username; }
 	public String getPassword() { return password; }
 	
-	/** One of 'http' or 'socks' */
+	/** 
+	 * Gets the proxy protocol option for KLA configuration
+	 * @return the string "http", "socks" or empty string
+	 */
 	public String getLocalAnalyzerProtocolOption() {
 		String localAnalyzerProtocol = null;
 		
@@ -76,7 +79,10 @@ public class ProxyConfig {
 		return localAnalyzerProtocol;
 	}
 	
-	/** One of 'None' or 'Basic' */
+	/** 
+	 * Gets the proxy authentication option for KLA configuration
+	 * @return the string "None", "Basic" or empty string
+	 */
 	public String getLocalAnalyzerAuthenticationOption() {
 		String localAnalyzerAuthentication = null;
 		

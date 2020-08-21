@@ -16,6 +16,11 @@ public class KiuwanClientUtils {
 
 	/**
 	 * Creates a Kiuwan API client object using the current Jenkins proxy configuration and the specified connection settings
+	 * @param isConfigureKiuwanURL <code>true</code> if <code>kiuwanURL</code> should inspected
+	 * @param kiuwanURL the URL where Kiuwan is deployed, only inspected if <code>isConfigureKiuwanURL</code> is <code>true</code>
+	 * @param username the configured Kiuwan account's username
+	 * @param password the configured Kiuwan account's password
+	 * @param domain the configured Kiuwan account's domain 
 	 * @return a {@link ApiClient} object ready to use
 	 */
 	public static ApiClient instantiateClient(boolean isConfigureKiuwanURL, String kiuwanURL, 

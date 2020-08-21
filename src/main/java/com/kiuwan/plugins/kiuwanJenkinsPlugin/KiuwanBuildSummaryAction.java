@@ -31,7 +31,11 @@ public class KiuwanBuildSummaryAction implements Action, Serializable {
 	private String url;
 	private String icon;
 
-	/** @deprecated Needed to keep retro compatibility */
+	/** 
+	 * Old default constructor.
+	 * @param url the analysis url in kiuwan
+	 * @deprecated Needed to keep retro compatibility, use {@link #KiuwanBuildSummaryAction(AnalysisResult)}
+	 */
 	@Deprecated
 	public KiuwanBuildSummaryAction(String url) {
 		this((AnalysisResult) null);
