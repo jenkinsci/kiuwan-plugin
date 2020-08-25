@@ -133,10 +133,13 @@ public class KiuwanRunnable implements Runnable {
 		// 4 - Get the command line arguments to use
 		List<String> args = commandBuilder.buildLocalAnalyzerCommand(localAnalyzerHome, envVars);
 		
-		// 5 - Execute Kiuwan Local Analyzer
+		// 5 - Init analysis results file
+		initAnalysisResults();
+		
+		// 6 - Execute Kiuwan Local Analyzer
 		int klaReturnCode = runKiuwanLocalAnalyzer(args, envVars, localAnalyzerHome);
 		
-		// 6 - Read analysis results
+		// 7 - Read analysis results
 		AnalysisResult analysisResult = loadAnalysisResults();
 		
 		// 8 - Process results
@@ -224,6 +227,22 @@ public class KiuwanRunnable implements Runnable {
 		loggerPrintStream.println("Result code: " + klaReturnCode);
 
 		return klaReturnCode;
+	}
+	
+	/**
+	 * Deletes the analysis output file if it exists. This is needed if the workspace is being reused and 
+	 * a previous execution of the job created the file, so we do not read a previous job's results as this one's.
+	 */
+	private void initAnalysisResults() {
+		try {
+			FilePath outputReportFilePath = new FilePath(workspace, recorder.getOutputFilename());
+			if (outputReportFilePath != null && outputReportFilePath.exists()) {
+				outputReportFilePath.delete();
+				loggerPrintStream.println("Previous analysis results deleted: " + outputReportFilePath);
+			}
+		} catch (IOException | InterruptedException e) {
+			loggerPrintStream.println("Could not delete previous analysis results: " + e);
+		}
 	}
 	
 	private AnalysisResult loadAnalysisResults() {
@@ -315,7 +334,7 @@ public class KiuwanRunnable implements Runnable {
 		
 		} else {
 			String markAsInOtherCases = recorder.getMarkAsInOtherCases_em();
-			loggerPrintStream.println("Kiuwan Local Analyzer has returned an exit code not configured: " + 
+			loggerPrintStream.println("Kiuwan Local Analyzer has returned an exit code that does not match any of the configured exit codes: " + 
 				klaReturnCode + ". Marking build as " + markAsInOtherCases + ".");
 			resultReference.set(Result.fromString(markAsInOtherCases));
 		}

@@ -124,7 +124,7 @@ public class KiuwanAnalyzerInstaller {
 		engineNeedsUpdate = cachedEngineVersion == null || !cachedEngineVersion.equals(remoteEngineVersion);
 		logger().info("Kiuwan Engine needs update = " + engineNeedsUpdate);
 		
-		listener.getLogger().println("Cached Engine version: " + cachedEngineVersion == null ? "[NONE]" : cachedEngineVersion);
+		listener.getLogger().println("Cached Engine version: " + (cachedEngineVersion == null ? "[NONE]" : cachedEngineVersion));
 		listener.getLogger().println("Remote Engine version: " + remoteEngineVersion);
 		
 		// 4 - Clean cache and store remote Kiuwan Engine files
