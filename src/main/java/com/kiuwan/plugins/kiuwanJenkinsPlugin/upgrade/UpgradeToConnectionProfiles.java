@@ -15,6 +15,7 @@ import org.apache.commons.lang.StringUtils;
 import com.kiuwan.plugins.kiuwanJenkinsPlugin.KiuwanConnectionProfile;
 import com.kiuwan.plugins.kiuwanJenkinsPlugin.KiuwanGlobalConfigDescriptor;
 import com.kiuwan.plugins.kiuwanJenkinsPlugin.KiuwanRecorder;
+import com.kiuwan.plugins.kiuwanJenkinsPlugin.KiuwanRecorderDescriptor;
 import com.kiuwan.plugins.kiuwanJenkinsPlugin.util.KiuwanUtils;
 
 import hudson.XmlFile;
@@ -33,7 +34,7 @@ public class UpgradeToConnectionProfiles {
 	 * This method handles the configuration data upgrade from old versions.
 	 * Older versions only allowed for a single connection configuration to Kiuwan.
 	 * This method will read old configurations and create a new one that contains the existing
-	 * configuration profile.
+	 * configuration profile, keeping the old configuration file in case a plugin downgrade is needed.
 	 * @return <code>true</code> if the upgrade was successful or not needed
 	 */
 	@Initializer(before = InitMilestone.PLUGINS_STARTED)
@@ -68,9 +69,11 @@ public class UpgradeToConnectionProfiles {
 				xstream2.addCompatibilityAlias("com.kiuwan.plugins.kiuwanJenkinsPlugin.KiuwanDescriptor", 
 					com.kiuwan.plugins.kiuwanJenkinsPlugin.KiuwanConnectionProfile.class);
 				
+				// Read the old configuration file as a new connection profile
 				XmlFile oldXmlFile = new XmlFile(xstream2, oldConfigFile);
 				oldXmlFile.unmarshal(connectionProfile);
 				oldDataRead = true;
+				
 			} catch (IOException e) {
 				logger().log(Level.SEVERE, "Could not read old data from " + oldConfigFile, e);
 			}
@@ -86,12 +89,13 @@ public class UpgradeToConnectionProfiles {
 				instance.save();
 				
 				upgradeSuccessful = true;
-				oldConfigFile.delete();
 			}
 
 			logger().log(Level.INFO, "Kiuwan CONFIG upgrade to connection profiles " + 
 				"process finished " + (upgradeSuccessful ? "successfully" : "with errors"));
 
+		// Just consider the upgrade is done in case no configuration for the plugin exists
+		// (this should only happen be the first time the plugin is installed)
 		} else if (!oldConfigFile.exists() && !configFile.exists()) {
 			instance.setUpgradeConfigToConnectionProfilesTimestamp(KiuwanUtils.getCurrentTimestampString());
 			instance.save();
@@ -120,7 +124,7 @@ public class UpgradeToConnectionProfiles {
 			}
 		}
 		
-		// Retrieve jobs with a Kiuwan publisher
+		// Retrieve jobs that contain a Kiuwan publisher
 		Map<AbstractProject, KiuwanRecorder> jobsWithKiuwanPublisherMap = new LinkedHashMap<>();
 		for (AbstractProject<?, ?> job : Jenkins.getInstance().getAllItems(AbstractProject.class)) {
 			DescribableList<Publisher, Descriptor<Publisher>> publishers = job.getPublishersList();
@@ -149,6 +153,7 @@ public class UpgradeToConnectionProfiles {
 				// If the assigned connection profile is null, the upgrade has not been run on this job.
 				// An empty string would mean that the user has manually set an empty profile afterwards.
 				if (connectionProfileUuid == null) {
+					kiuwanRecorder.setOutputFilename(KiuwanRecorderDescriptor.DEFAULT_OUTPUT_FILENAME);
 					kiuwanRecorder.setConnectionProfileUuid(defaultConnectionProfileUuid);
 					try {
 						job.save();

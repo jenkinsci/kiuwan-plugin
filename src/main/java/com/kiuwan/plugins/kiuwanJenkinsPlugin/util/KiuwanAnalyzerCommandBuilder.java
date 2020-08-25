@@ -4,6 +4,7 @@ import static com.kiuwan.plugins.kiuwanJenkinsPlugin.KiuwanRecorder.TIMEOUT_MARG
 import static com.kiuwan.plugins.kiuwanJenkinsPlugin.KiuwanRecorder.TIMEOUT_MARGIN_SECONDS;
 import static com.kiuwan.plugins.kiuwanJenkinsPlugin.util.KiuwanUtils.buildAdditionalParameterExpression;
 import static com.kiuwan.plugins.kiuwanJenkinsPlugin.util.KiuwanUtils.buildArgument;
+import static com.kiuwan.plugins.kiuwanJenkinsPlugin.util.KiuwanUtils.getRemoteFile;
 import static com.kiuwan.plugins.kiuwanJenkinsPlugin.util.KiuwanUtils.getRemoteFileAbsolutePath;
 
 import java.io.BufferedReader;
@@ -22,6 +23,7 @@ import org.apache.commons.lang.StringUtils;
 import com.kiuwan.plugins.kiuwanJenkinsPlugin.KiuwanConnectionProfile;
 import com.kiuwan.plugins.kiuwanJenkinsPlugin.KiuwanGlobalConfigDescriptor;
 import com.kiuwan.plugins.kiuwanJenkinsPlugin.KiuwanRecorder;
+import com.kiuwan.plugins.kiuwanJenkinsPlugin.KiuwanRecorderDescriptor;
 import com.kiuwan.plugins.kiuwanJenkinsPlugin.model.ChangeRequestStatusType;
 import com.kiuwan.plugins.kiuwanJenkinsPlugin.model.DeliveryType;
 import com.kiuwan.plugins.kiuwanJenkinsPlugin.model.Measure;
@@ -144,9 +146,20 @@ public class KiuwanAnalyzerCommandBuilder {
 		args.add("-s");
 		args.add(buildArgument(launcher, srcFolder.getRemote()));
 		
-		FilePath outputFile = new FilePath(workspace, recorder.getOutputFilename());
+		// Just in case outputFilename is null or empty (a value that could be forced from a pipeline script)
+		String outputFilename = recorder.getOutputFilename();
+		if (StringUtils.isEmpty(outputFilename)) {
+			outputFilename = KiuwanRecorderDescriptor.DEFAULT_OUTPUT_FILENAME;
+		}
+		
+		// Avoid path traversal
+		FilePath outputFilePath = new FilePath(workspace, outputFilename);
+		if (!KiuwanUtils.isDescendant(getRemoteFile(workspace), getRemoteFile(outputFilePath))) {
+			throw new IOException("Specified outputFilename does not belong to current workspace");
+		}
+		
 		args.add("-o");
-		args.add(buildArgument(launcher, outputFile.getRemote()));
+		args.add(buildArgument(launcher, outputFilePath.getRemote()));
 
 		args.add("--user");
 		args.add(buildArgument(launcher, connectionProfile.getUsername()));

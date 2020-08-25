@@ -47,9 +47,18 @@ public class KiuwanBuildSummaryAction implements Action, Serializable {
 		super();
 		this.analysisResult = analysisResult;
 		this.icon = "/plugin/kiuwanJenkinsPlugin/images/kiuwan-logo.png";
+		
+		// In case of a downgrade of the plugin, let's make this action 
+		// still readable from old versions of the plugin by keeping the url
+		// variable directly accessible
+		if (analysisResult != null) {
+			this.url = isBaseline() ? analysisResult.getAnalysisURL() : analysisResult.getAuditResultURL();
+		}
 	}
 
 	public String getIcon() { return icon; }
+	public String getUrl() { return url; }
+	
 	public String getIconFileName() { return null; }
 	public String getDisplayName() { return null; }
 	public String getUrlName() { return null; }
@@ -275,11 +284,6 @@ public class KiuwanBuildSummaryAction implements Action, Serializable {
 	
 	public Integer getInsightLicenseRiskUnknown() {
 		return getInsightRiskMap(LICENSE_RISK, InsightsData.UNKNOWN);
-	}
-	
-	public String getUrl() {
-		if (url != null && !url.isEmpty()) return url;
-		return isBaseline() ? analysisResult.getAnalysisURL() : analysisResult.getAuditResultURL();
 	}
 	
 	public boolean auditPassed() {

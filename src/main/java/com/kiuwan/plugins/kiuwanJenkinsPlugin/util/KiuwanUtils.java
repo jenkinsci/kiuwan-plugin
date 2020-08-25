@@ -7,6 +7,8 @@ import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.net.InetSocketAddress;
 import java.net.Proxy;
+import java.nio.file.InvalidPathException;
+import java.nio.file.Path;
 import java.util.HashSet;
 import java.util.Set;
 import java.util.logging.Level;
@@ -17,6 +19,7 @@ import org.apache.commons.lang.StringUtils;
 import com.fasterxml.jackson.core.JsonParser.Feature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.kiuwan.plugins.kiuwanJenkinsPlugin.KiuwanConnectionProfile;
+import com.kiuwan.plugins.kiuwanJenkinsPlugin.filecallable.KiuwanRemoteFile;
 import com.kiuwan.plugins.kiuwanJenkinsPlugin.filecallable.KiuwanRemoteFilePath;
 import com.kiuwan.plugins.kiuwanJenkinsPlugin.model.KiuwanModelObject;
 import com.kiuwan.plugins.kiuwanJenkinsPlugin.model.ProxyAuthentication;
@@ -49,6 +52,10 @@ public class KiuwanUtils {
 			listener.fatalError("File: " + filePath + " not found.");
 		}
 		return path;
+	}
+	
+	public static File getRemoteFile(FilePath filePath) throws IOException, InterruptedException {
+		return filePath.act(new KiuwanRemoteFile());
 	}
 	
 	public static FilePath getNodeJenkinsDirectory(Node node, FilePath workspace) {
@@ -224,6 +231,32 @@ public class KiuwanUtils {
 		}
 		
 		return proxy;
+	}
+
+	/**
+	 * A check if a file path is a descendant of a parent path. Copied from a newer
+	 * version of Jenkins core (since 2.80).
+	 * @param forParent the parent the child should be a descendant of
+	 * @param potentialChild the path to check
+	 * @return true if so
+	 * @throws IOException for invalid paths
+	 */
+	public static boolean isDescendant(File forParent, File potentialChild) throws IOException {
+		Path child = fileToPath(potentialChild.getAbsoluteFile()).normalize();
+		Path parent = fileToPath(forParent.getAbsoluteFile()).normalize();
+		return child.startsWith(parent);
+	}
+
+	/**
+	 * Converts a {@link File} into a {@link Path} and checks runtime exceptions.
+	 * @throws IOException if {@code f.toPath()} throws {@link InvalidPathException}.
+	 */
+	private static Path fileToPath(File file) throws IOException {
+		try {
+			return file.toPath();
+		} catch (InvalidPathException e) {
+			throw new IOException(e);
+		}
 	}
 
 }

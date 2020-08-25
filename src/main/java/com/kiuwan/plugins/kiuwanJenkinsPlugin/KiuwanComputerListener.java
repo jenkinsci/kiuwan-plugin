@@ -34,7 +34,9 @@ public class KiuwanComputerListener extends ComputerListener {
 	public void process(Computer computer, FilePath root, TaskListener listener) throws IOException, InterruptedException {
 		KiuwanGlobalConfigDescriptor descriptor = KiuwanGlobalConfigDescriptor.get();
 		if (descriptor.getConnectionProfiles() != null) {
-			KiuwanUtils.logger().log(Level.INFO, "Checking Kiuwan Local Analyzer installations on node " + computer.getDisplayName());
+			String message = "Checking Kiuwan Local Analyzer installations on node " + computer.getDisplayName();
+			KiuwanUtils.logger().log(Level.INFO, message);
+			listener.getLogger().println(message);
 			for (KiuwanConnectionProfile connectionProfile : descriptor.getConnectionProfiles()) {
 				try {
 					KiuwanAnalyzerInstaller.installKiuwanLocalAnalyzer(root, listener, connectionProfile);

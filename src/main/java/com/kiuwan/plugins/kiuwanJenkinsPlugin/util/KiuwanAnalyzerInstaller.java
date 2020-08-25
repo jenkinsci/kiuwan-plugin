@@ -79,6 +79,9 @@ public class KiuwanAnalyzerInstaller {
 			logger().info("Kiuwan Local Analyzer remote version = " + remoteKlaVersion);
 			
 			klaNeedsUpdate = !cachedKlaVersion.equals(remoteKlaVersion);
+			
+			listener.getLogger().println("Cached KLA version: " + cachedKlaVersion);
+			listener.getLogger().println("Remote KLA version: " + remoteKlaVersion);
 		}
 		
 		logger().info("Kiuwan Local Analyzer needs update = " + klaNeedsUpdate);
@@ -87,7 +90,9 @@ public class KiuwanAnalyzerInstaller {
 		URL klaURL = getDownloadURL(connectionProfile, KIUWAN_LOCAL_ANALYZER_DOWNLOAD_FILE);
 		File cachedKlaFile = getLocalCacheFile(klaURL, connectionProfile);
 		if (klaNeedsUpdate) {
-			logger().info("Updating cached Kiuwan Local Analyzer from " + klaURL);
+			String message = "Updating cached Kiuwan Local Analyzer from " + klaURL;
+			listener.getLogger().println(message);
+			logger().info(message);
 			
 			// Clean current cache
 			cachedKlaVersionFile.delete();
@@ -119,12 +124,17 @@ public class KiuwanAnalyzerInstaller {
 		engineNeedsUpdate = cachedEngineVersion == null || !cachedEngineVersion.equals(remoteEngineVersion);
 		logger().info("Kiuwan Engine needs update = " + engineNeedsUpdate);
 		
+		listener.getLogger().println("Cached Engine version: " + cachedEngineVersion == null ? "[NONE]" : cachedEngineVersion);
+		listener.getLogger().println("Remote Engine version: " + remoteEngineVersion);
+		
 		// 4 - Clean cache and store remote Kiuwan Engine files
 		String engineDownloadFileName = String.format(KIUWAN_LOCAL_ANALYZER_ENGINE_DOWNLOAD_FILE, remoteEngineVersion);
 		URL engineURL = getDownloadURL(connectionProfile, engineDownloadFileName);
 		File engineCacheFile = getLocalCacheFile(engineURL, connectionProfile);
 		if (engineNeedsUpdate && remoteEngineVersion != null) {
-			logger().info("Updating cached Kiuwan Engine from " + engineURL);
+			String message = "Updating cached Kiuwan Engine from " + engineURL;
+			listener.getLogger().println(message);
+			logger().info(message);
 			
 			cachedEngineVersionFile.delete();
 			engineCacheFile.delete();
