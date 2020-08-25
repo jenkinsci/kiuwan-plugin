@@ -9,6 +9,7 @@ import java.text.NumberFormat;
 import java.util.List;
 import java.util.Map;
 
+import org.apache.commons.lang.StringUtils;
 import org.kohsuke.stapler.DataBoundConstructor;
 import org.kohsuke.stapler.export.ExportedBean;
 
@@ -73,6 +74,10 @@ public class KiuwanBuildSummaryAction implements Action, Serializable {
 
 	public boolean isResultAvailable() {
 		return analysisResult != null;
+	}
+	
+	public boolean isSimpleSummary() {
+		return analysisResult == null && !StringUtils.isEmpty(icon) && !StringUtils.isEmpty(url);
 	}
 	
 	public boolean isBaseline() {

@@ -141,7 +141,8 @@
 							</table>
 						</div>
 						
-						<p>Global indicator distribution:
+						<p>
+							Global indicator distribution:
 							Efficiency <span class="kwn-global-indicator">${it.efficiency}</span> |
 							Maintainability <span class="kwn-global-indicator">${it.maintainability}</span> |
 							Portability <span class="kwn-global-indicator">${it.portability}</span> |
@@ -283,6 +284,13 @@
 				</j:if>
 
 			</div>
+		</t:summary>
+	</j:if>
+	
+	<!-- Old summary for old executions -->
+	<j:if test="${it.simpleSummary}">
+		<t:summary icon="${it.icon}">
+			<a href="${it.url}" target="_blank" rel="noopener">View results in kiuwan</a>
 		</t:summary>
 	</j:if>
     
