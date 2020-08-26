@@ -248,25 +248,8 @@ public class KiuwanAnalyzerCommandBuilder {
 			}
 		}
 		
-		ProxyConfig proxyConfig = null;
-				
-		// No proxy
-		if (ProxyMode.NONE.getValue().equals(connectionProfile.getConfigureProxy())) {
-			proxyConfig = ProxyConfig.EMPTY;
-		
-		// Use jenkins proxy
-		} else if (ProxyMode.JENKINS.getValue().equals(connectionProfile.getConfigureProxy())) {
-			proxyConfig = KiuwanUtils.getJenkinsProxy(null);
-		
-		// Use custom proxy
-		} else if (ProxyMode.CUSTOM.getValue().equals(connectionProfile.getConfigureProxy())) {
-			proxyConfig = new ProxyConfig(connectionProfile.getProxyHost(), connectionProfile.getProxyPort(), 
-				connectionProfile.getProxyProtocol(), connectionProfile.getProxyAuthentication(),
-				connectionProfile.getProxyUsername(), connectionProfile.getProxyPassword());
-		}
-		
 		FilePath agentBinDir = getAgentBinDir(agentHome);
-		writeConfigToProperties(agentBinDir, proxyConfig);
+		writeConfigToProperties(agentBinDir);
 		
 		return args;
 	}
@@ -438,13 +421,18 @@ public class KiuwanAnalyzerCommandBuilder {
 		return srcFolder;
 	}
 	
-	private void writeConfigToProperties(FilePath agentBinDir, ProxyConfig proxyConfig) 
-			throws IOException, InterruptedException {
+	private void writeConfigToProperties(FilePath agentBinDir) throws IOException, InterruptedException {
 		
 		FilePath agentPropertiesPath = agentBinDir.getParent().child(AGENT_CONF_DIR_NAME).child(AGENT_PROPERTIES_FILE_NAME);
 		StringBuilder newFileContent = new StringBuilder();
 		boolean updateConfig = true;
 		String configSaveStamp = descriptor.getConfigSaveTimestamp();
+		ProxyMode proxyMode = ProxyMode.valueFrom(connectionProfile.getConfigureProxy());
+		
+		// KLA proxy configuration will be updated either if the Kiuwan global descriptor has been changed since
+		// the last agent.properties update or if the current connection profile proxy configuration is
+		// delegated to the Jenkins proxy config, as we cannot know if it has been changed or not.
+		boolean forceUpdate = ProxyMode.JENKINS.equals(proxyMode);
 		
 		try (BufferedReader reader = new BufferedReader(new InputStreamReader(agentPropertiesPath.read()))) {
 			boolean firstLineProcessed = false;
@@ -456,7 +444,7 @@ public class KiuwanAnalyzerCommandBuilder {
 					if (matcher.find()) {
 						if (configSaveStamp != null) {
 							String stamp = matcher.group(1);
-							if (configSaveStamp.equals(stamp)) {
+							if (!forceUpdate && configSaveStamp.equals(stamp)) {
 								updateConfig = false;
 							}
 						
@@ -492,14 +480,30 @@ public class KiuwanAnalyzerCommandBuilder {
 		}
 				
 		if (updateConfig) {
-			newFileContent.append(PROXY_HOST + "=" + proxyConfig.getHost() + "\n");
-			newFileContent.append(PROXY_PORT + "=" + proxyConfig.getPort() + "\n");
-			newFileContent.append(PROXY_PROTOCOL + "=" + proxyConfig.getLocalAnalyzerProtocolOption() + "\n");
-			newFileContent.append(PROXY_AUTHENTICATION + "=" + proxyConfig.getLocalAnalyzerAuthenticationOption() + "\n");
-			newFileContent.append(PROXY_USERNAME + "=" + proxyConfig.getUsername() + "\n");
-			newFileContent.append(PROXY_PASSWORD + "=" + proxyConfig.getPassword() + "\n");
+			ProxyConfig proxyConfig = null;
 			
-			agentPropertiesPath.write(newFileContent.toString(), "UTF-8");
+			if (ProxyMode.NONE.equals(proxyMode)) {
+				proxyConfig = ProxyConfig.EMPTY;
+				
+			} else if (ProxyMode.JENKINS.equals(proxyMode)) {
+				proxyConfig = KiuwanUtils.getJenkinsProxy(null);
+				
+			} else if (ProxyMode.CUSTOM.equals(proxyMode)) {
+				proxyConfig = new ProxyConfig(connectionProfile.getProxyHost(), connectionProfile.getProxyPort(), 
+					connectionProfile.getProxyProtocol(), connectionProfile.getProxyAuthentication(),
+					connectionProfile.getProxyUsername(), connectionProfile.getProxyPassword());
+			}
+			
+			if (proxyConfig != null) {
+				newFileContent.append(PROXY_HOST + "=" + proxyConfig.getHost() + "\n");
+				newFileContent.append(PROXY_PORT + "=" + proxyConfig.getPort() + "\n");
+				newFileContent.append(PROXY_PROTOCOL + "=" + proxyConfig.getLocalAnalyzerProtocolOption() + "\n");
+				newFileContent.append(PROXY_AUTHENTICATION + "=" + proxyConfig.getLocalAnalyzerAuthenticationOption() + "\n");
+				newFileContent.append(PROXY_USERNAME + "=" + proxyConfig.getUsername() + "\n");
+				newFileContent.append(PROXY_PASSWORD + "=" + proxyConfig.getPassword() + "\n");
+			
+				agentPropertiesPath.write(newFileContent.toString(), "UTF-8");
+			}
 		}
 	}
 	

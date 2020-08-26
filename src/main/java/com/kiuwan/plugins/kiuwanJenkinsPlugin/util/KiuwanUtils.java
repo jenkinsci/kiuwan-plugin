@@ -206,7 +206,7 @@ public class KiuwanUtils {
 			logger().severe("Could not retrieve Jenkins proxy configuration: " + e.getLocalizedMessage());
 		}
 		
-		ProxyConfig proxy = null;
+		ProxyConfig proxy = ProxyConfig.EMPTY;
 		if (jenkinsProxyConfiguration != null) {
 			String proxyUsername = jenkinsProxyConfiguration.getUserName();
 			String proxyPassword = jenkinsProxyConfiguration.getPassword();
