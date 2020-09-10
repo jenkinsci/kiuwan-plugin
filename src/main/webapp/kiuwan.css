@@ -1,0 +1,144 @@
+.kwn-summary {
+	padding: 0 12px 0 24px;
+	border-left: 3px solid #dedede;
+}
+
+.kwn-table {
+	border-collapse: collapse;
+	display: inline-block;
+}
+
+.kwn-table td {
+	vertical-align: middle;
+}
+
+.kwn-vuln-scores {
+	border-collapse: collapse;
+	max-width: 640px;
+}
+
+.kwn-ins-scores {
+	border-collapse: collapse;
+	max-width: 520px;
+}
+
+.kwn-vuln-scores td,
+.kwn-ins-scores td,
+.kwn-risk,
+.kwn-quality-indicator,
+.kwn-effort-to-target {
+	color: white;
+	padding: 6px 12px;
+	text-align: center;
+	width: 160px;
+}
+
+.kwn-ins-scores td {
+	border-right: 1px solid white;
+}
+	
+.kwn-vh { background-color: #c21b2c; }
+.kwn-h  { background-color: #e34b1d; }
+.kwn-n  { background-color: #e3971d; }
+.kwn-l  { background-color: #e3d31d; }
+
+.kwn-risk { background-color: #ecc2c6; }
+.kwn-quality-indicator { background-color: #42acc0; }
+.kwn-effort-to-target { background-color: #42acc0; }
+
+.kwn-risk-bg,
+.kwn-quality-indicator-bg,
+.kwn-effort-to-target-bg {
+	background-size: contain;
+	height: 12px;
+}
+
+.kwn-risk-bg { background-image: url('images/risk-legend.png'); }
+.kwn-quality-indicator-bg { background-image: url('images/qa-legend.png'); }
+
+.kwn-global-indicator {
+	color: #42acc0;
+	font-weight: bold;
+	font-size: 110%;
+}
+
+.kwn-star {
+	width: 24px;
+	height: 30px;
+	background-position: center;
+	background-repeat: no-repeat;
+	display: inline-block;
+	vertical-align: middle;
+}
+
+.kwn-star.kwn-star-yes { background-image: url('images/star-yes.png'); }
+.kwn-star.kwn-star-no  { background-image: url('images/star-no.png'); }
+
+.kwn-ins-h { background-color: #c21b2c; }
+.kwn-ins-m { background-color: #faa61a; }
+.kwn-ins-l { background-color: #d4e658; }
+.kwn-ins-n { background-color: #d4e658; }
+.kwn-ins-u { background-color: #d0d0d0; }
+
+.kwn-separator-v {
+	height: 12px;
+}
+
+.kwn-result-pill {
+	text-align: center;
+	padding: 0px 6px;
+}
+
+.kwn-result-pill span {
+	border-radius: 12px;
+	text-transform: uppercase;
+	font-weight: bold;
+	font-size: smaller;
+	color: white;			
+}
+
+.kwn-result-pill-ok {
+	background: #6c6;
+	padding: 0 10px;
+}
+
+.kwn-result-pill-ko {
+	background: #e04822;
+	padding: 0 6px;
+}
+
+.kwn-result-ok {
+	color: #6c6;
+}
+
+.kwn-result-ko {
+	color: #e04822;
+}
+
+.kwn-audit-result img {
+	vertical-align: bottom;
+}
+
+.kwn-audit-result div {
+	display: inline-block;
+	vertical-align: baseline;
+}
+
+.kwn-audit-result-h1 {
+	font-size: 36px;
+	padding-left: 12px;
+}
+
+.kwn-audit-result-h2 {
+	font-size: 30px;
+	padding-left: 12px;
+}
+
+.kwn-audit-result-h3 {
+	font-size: 18px;
+	padding-left: 36px;
+}
+
+.kwn-audit-subtitle {
+	font-size: 18px;
+}

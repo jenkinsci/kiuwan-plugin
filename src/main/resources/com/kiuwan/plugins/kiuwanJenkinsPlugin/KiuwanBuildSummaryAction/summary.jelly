@@ -1,6 +1,297 @@
 <?jelly escape-by-default='true'?>
 <j:jelly xmlns:j="jelly:core" xmlns:st="jelly:stapler" xmlns:d="jelly:define" xmlns:l="/lib/layout" xmlns:t="/lib/hudson" xmlns:f="/lib/form">
-  <t:summary icon="${it.icon}">
-    <a href="${it.url}" target="_blank">View results in kiuwan</a>
-  </t:summary>
+
+	<link rel="stylesheet" type="text/css" href="${resURL}/plugin/kiuwanJenkinsPlugin/kiuwan.css"/>
+	<j:set var="imagesDir" value="${resURL}/plugin/kiuwanJenkinsPlugin/images"/>
+	
+	<j:if test="${it.resultAvailable}">
+		<t:summary icon="${it.icon}">
+			<p><span>Kiuwan analysis summary</span></p>
+
+			<div class="kwn-summary">
+		
+				<!-- Analysis main data -->
+				<p>
+					<div>Application name &amp;rarr; ${it.analysisResult.name}</div>
+					<div>Analysis label &amp;rarr; ${it.analysisResult.label}</div>
+					<div>Analysis code &amp;rarr; ${it.analysisResult.analysisCode}</div>
+				</p>
+				
+				<!-- (1) Baseline -->
+				<j:if test="${it.baseline}">
+
+					<!-- Security summary -->
+					<j:if test="${it.hasSecurity()}">
+						<h3>Security summary</h3>
+						<p>
+							<b>${it.securityVulnerabilitiesTotal}</b> vulnerabilities found in 
+							<b>${it.linesOfCode}</b> lines of code
+						</p>
+						
+						<table class="kwn-table">
+							<col style="width: 30px"></col>
+							<col></col>
+							<col style="width: 12px"></col>
+							<col></col>
+							<tbody>
+								<tr>
+									<td></td>
+									<td>Security Rating</td>
+									<td></td>
+									<td>
+										<div class="kwn-star ${it.hasSecurityRating(1) ? 'kwn-star-yes' : 'kwn-star-no'}"></div>
+										<div class="kwn-star ${it.hasSecurityRating(2) ? 'kwn-star-yes' : 'kwn-star-no'}"></div>
+										<div class="kwn-star ${it.hasSecurityRating(3) ? 'kwn-star-yes' : 'kwn-star-no'}"></div>
+										<div class="kwn-star ${it.hasSecurityRating(4) ? 'kwn-star-yes' : 'kwn-star-no'}"></div>
+										<div class="kwn-star ${it.hasSecurityRating(5) ? 'kwn-star-yes' : 'kwn-star-no'}"></div>
+									</td>
+								</tr>
+								<tr>
+									<td></td>
+									<td>Vulnerabilities</td>
+									<td></td>
+									<td>
+										<table class="kwn-vuln-scores">
+											<tr>
+												<td class="kwn-vh"><b>${it.securityVulnerabilitiesVeryHigh}</b> VERY HIGH</td>
+												<td class="kwn-h"><b>${it.securityVulnerabilitiesHigh}</b> HIGH</td>
+												<td class="kwn-n"><b>${it.securityVulnerabilitiesNormal}</b> NORMAL</td>
+												<td class="kwn-l"><b>${it.securityVulnerabilitiesLow}</b> LOW</td>
+											</tr>
+										</table>
+									</td>
+								</tr>
+							</tbody>				
+						</table>
+					</j:if>
+					
+					<!-- Quality summary -->
+					<j:if test="${it.hasQuality()}">
+						<h3>Quality summary</h3>
+						<p>
+							<b>${it.totalDefects}</b> defects found in 
+							<b>${it.linesOfCode}</b> lines of code
+						</p>
+						
+						<div>
+							<!-- Risk index -->
+							<table class="kwn-table">
+								<col style="width: 30px"></col>
+								<col></col>
+								<col style="width: 12px"></col>
+								<col></col>
+								<tbody>
+									<tr>
+										<td></td>
+										<td>Risk index</td>
+										<td></td>
+										<td class="kwn-risk"><b>${it.riskIndex}</b></td>
+									</tr>
+									<tr>
+										<td></td>
+										<td></td>
+										<td></td>
+										<td class="kwn-risk-bg"></td>
+									</tr>
+								</tbody>
+							</table>
+							
+							<!-- Quality indicator -->
+							<table class="kwn-table">
+								<col style="width: 30px"></col>
+								<col></col>
+								<col style="width: 12px"></col>
+								<col></col>
+								<tbody>
+									<tr>
+										<td></td>
+										<td>Quality indicator</td>
+										<td></td>
+										<td class="kwn-quality-indicator"><b>${it.qualityIndicator}</b></td>
+									</tr>
+									<tr>
+										<td></td>
+										<td></td>
+										<td></td>
+										<td class="kwn-quality-indicator-bg"></td>
+									</tr>
+								</tbody>
+							</table>
+							
+							<!-- Effort to target -->
+							<table class="kwn-table">
+								<col style="width: 30px"></col>
+								<col></col>
+								<col style="width: 12px"></col>
+								<col></col>
+								<tbody>
+									<tr>
+										<td></td>
+										<td>Effort to target</td>
+										<td></td>
+										<td class="kwn-effort-to-target"><b>${it.effortToTarget}</b></td>
+									</tr>
+									<tr>
+										<td></td>
+										<td></td>
+										<td></td>
+										<td class="kwn-effort-to-target-bg"></td>
+									</tr>
+								</tbody>
+							</table>
+						</div>
+						
+						<p>
+							Global indicator distribution:
+							Efficiency <span class="kwn-global-indicator">${it.efficiency}</span> |
+							Maintainability <span class="kwn-global-indicator">${it.maintainability}</span> |
+							Portability <span class="kwn-global-indicator">${it.portability}</span> |
+							Reliability <span class="kwn-global-indicator">${it.reliability}</span> |
+							Security <span class="kwn-global-indicator">${it.security}</span> 
+						</p>
+					</j:if>
+					
+					<!-- Insights summary -->
+					<j:if test="${it.hasInsights()}">
+						<h3>Insights summary</h3>
+						<p><b>${it.totalComponents}</b> components found</p> 
+						<p>
+							<b>${it.insightVulnerabilityRiskHigh}</b> components have high security risk,
+							<b>${it.duplicatedComponents}</b> components are duplicated
+						</p>
+						
+						<!-- Insights risks distributions -->
+						<table class="kwn-table">
+							<col style="width: 30px"></col>
+							<col></col>
+							<col style="width: 12px"></col>
+							<col></col>
+							<tbody>
+								<tr>
+									<td></td>
+									<td>Security risk distribution</td>
+									<td></td>
+									<td>
+										<table class="kwn-ins-scores">
+											<tr>
+												<td class="kwn-ins-h"><b>${it.insightVulnerabilityRiskHigh}</b> HIGH</td>
+												<td class="kwn-ins-m"><b>${it.insightVulnerabilityRiskMedium}</b> MEDIUM</td>
+												<td class="kwn-ins-l"><b>${it.insightVulnerabilityRiskLow}</b> LOW</td>
+												<td class="kwn-ins-n"><b>${it.insightVulnerabilityRiskNone}</b> NONE</td>
+											</tr>
+										</table>
+									</td>
+								</tr>
+								<tr class="kwn-separator-v"></tr>
+								<tr>
+									<td></td>
+									<td>Obsolescence risk distribution</td>
+									<td></td>
+									<td>
+										<table class="kwn-ins-scores">
+											<tr>
+												<td class="kwn-ins-h"><b>${it.insightObsolescenceRiskHigh}</b> HIGH</td>
+												<td class="kwn-ins-m"><b>${it.insightObsolescenceRiskMedium}</b> MEDIUM</td>
+												<td class="kwn-ins-l"><b>${it.insightObsolescenceRiskLow}</b> LOW</td>
+												<td class="kwn-ins-n"><b>${it.insightObsolescenceRiskNone}</b> NONE</td>
+											</tr>
+										</table>
+									</td>
+								</tr>
+								<tr class="kwn-separator-v"></tr>
+								<tr>
+									<td></td>
+									<td>License risk distribution</td>
+									<td></td>
+									<td>
+										<table class="kwn-ins-scores" width="100%">
+											<tr>
+												<td class="kwn-ins-h"><b>${it.insightLicenseRiskHigh}</b> HIGH</td>
+												<td class="kwn-ins-n"><b>${it.insightLicenseRiskNone}</b> NONE</td>
+												<td class="kwn-ins-u"><b>${it.insightLicenseRiskUnknown}</b> UNKNOWN</td>
+											</tr>
+										</table>
+									</td>
+								</tr>
+							</tbody>
+						</table>
+						
+					</j:if>
+					
+					<p><a href="${it.url}" target="_blank" rel="noopener">See the details in Kiuwan</a></p>
+				</j:if>
+			
+				<!-- (2) Delivery -->
+				<j:if test="${it.delivery}">
+					
+					<!-- Audit results -->
+					<j:if test="${it.hasAuditResults()}">
+						<h3>Kiuwan audit result</h3>
+						
+						<j:set var="auditPassed" value="${it.auditPassed()}"/>
+						
+						<!-- Thumbs up / down -->
+						<div class="kwn-audit-result">
+							<j:if test="${auditPassed}"><img src="${imagesDir}/ball-green.png"></img></j:if>
+							<j:if test="${!auditPassed}"><img src="${imagesDir}/ball-red.png"></img></j:if>
+						
+							<div>
+								<j:if test="${auditPassed}"><span class="kwn-audit-result-h1 kwn-result-ok">OK</span></j:if>
+								<j:if test="${!auditPassed}"><span class="kwn-audit-result-h1 kwn-result-ko">FAIL</span></j:if>
+							</div>
+							
+							<div class="kwn-audit-result-h3">SCORE:</div>
+							<div class="kwn-audit-result-h2">
+								<j:if test="${auditPassed}"><span class="kwn-result-ok">${it.auditScore}</span></j:if>
+								<j:if test="${!auditPassed}"><span class="kwn-result-ko">${it.auditScore}</span></j:if>
+							</div>
+						</div>
+						
+						<p class="kwn-audit-subtitle">${it.failedCheckpointsCount} out of ${it.totalCheckpointsCount} checkpoints failed</p>
+						
+						<!-- Checkpoint details -->
+						<table class="kwn-table">
+							<col style="width: 30px"></col>
+							<col></col>
+							<col></col>
+							<col></col>
+							<tbody>
+								<j:forEach var="cr" items="${it.checkpointResults}" varStatus="loop">
+									<tr>
+										<td></td>
+										<td>${loop.count}</td>
+										<td class="kwn-result-pill">
+											<j:set var="crOK" value='${it.isCheckpointResultOK(cr)}'/>
+											<j:if test="${crOK}"><span class="kwn-result-pill-ok">OK</span></j:if>
+											<j:if test="${!crOK}"><span class="kwn-result-pill-ko">FAIL</span></j:if>
+										</td>
+										<td>${cr.name}</td>
+									</tr>
+								</j:forEach>
+							</tbody>
+						</table>
+						
+						<p>
+							Number of files analyzed: <b>${it.deliveryTotalFilesCount}</b>
+							<br></br>
+							Number of defects to fix: <b>${it.auditFixTotalDefectsCount}</b>
+							<br></br>
+							Total effort needed to fix the failed checkpoints: <b>${it.auditEffort}</b>
+						</p>
+					</j:if>
+					
+					<p><a href="${it.url}" target="_blank" rel="noopener">See the audit results in Kiuwan</a></p>
+				</j:if>
+
+			</div>
+		</t:summary>
+	</j:if>
+	
+	<!-- Old summary for old executions -->
+	<j:if test="${it.simpleSummary}">
+		<t:summary icon="${it.icon}">
+			<a href="${it.url}" target="_blank" rel="noopener">View results in kiuwan</a>
+		</t:summary>
+	</j:if>
+    
 </j:jelly>

@@ -1,10 +1,14 @@
 package com.kiuwan.plugins.kiuwanJenkinsPlugin.util;
 
+import static com.kiuwan.plugins.kiuwanJenkinsPlugin.KiuwanRecorder.TIMEOUT_MARGIN_MILLIS;
+import static com.kiuwan.plugins.kiuwanJenkinsPlugin.KiuwanRecorder.TIMEOUT_MARGIN_SECONDS;
 import static com.kiuwan.plugins.kiuwanJenkinsPlugin.util.KiuwanUtils.buildAdditionalParameterExpression;
 import static com.kiuwan.plugins.kiuwanJenkinsPlugin.util.KiuwanUtils.buildArgument;
+import static com.kiuwan.plugins.kiuwanJenkinsPlugin.util.KiuwanUtils.getRemoteFile;
 import static com.kiuwan.plugins.kiuwanJenkinsPlugin.util.KiuwanUtils.getRemoteFileAbsolutePath;
 
 import java.io.BufferedReader;
+import java.io.File;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.util.ArrayList;
@@ -16,15 +20,22 @@ import java.util.regex.Pattern;
 
 import org.apache.commons.lang.StringUtils;
 
-import com.kiuwan.plugins.kiuwanJenkinsPlugin.KiuwanDescriptor;
+import com.kiuwan.plugins.kiuwanJenkinsPlugin.KiuwanConnectionProfile;
+import com.kiuwan.plugins.kiuwanJenkinsPlugin.KiuwanGlobalConfigDescriptor;
 import com.kiuwan.plugins.kiuwanJenkinsPlugin.KiuwanRecorder;
+import com.kiuwan.plugins.kiuwanJenkinsPlugin.KiuwanRecorderDescriptor;
 import com.kiuwan.plugins.kiuwanJenkinsPlugin.model.ChangeRequestStatusType;
 import com.kiuwan.plugins.kiuwanJenkinsPlugin.model.DeliveryType;
+import com.kiuwan.plugins.kiuwanJenkinsPlugin.model.Measure;
 import com.kiuwan.plugins.kiuwanJenkinsPlugin.model.Mode;
+import com.kiuwan.plugins.kiuwanJenkinsPlugin.model.ProxyConfig;
+import com.kiuwan.plugins.kiuwanJenkinsPlugin.model.ProxyMode;
 
 import hudson.EnvVars;
 import hudson.FilePath;
 import hudson.Launcher;
+import hudson.model.AbstractBuild;
+import hudson.model.Run;
 import hudson.model.TaskListener;
 
 public class KiuwanAnalyzerCommandBuilder {
@@ -49,33 +60,67 @@ public class KiuwanAnalyzerCommandBuilder {
 	private final static String kiuwanJenkinsPluginHeaderSuffix = " ###";
 	private final static String kiuwanJenkinsPluginHeaderPattern = kiuwanJenkinsPluginHeaderPrefix + "(.*)" + kiuwanJenkinsPluginHeaderSuffix;
 	
-	private KiuwanDescriptor descriptor;
 	private KiuwanRecorder recorder;
+	private FilePath workspace;
+	private KiuwanConnectionProfile connectionProfile;
+	private KiuwanGlobalConfigDescriptor descriptor;
+	private Run<?, ?> run;
+	private Launcher launcher;
+	private TaskListener listener;
 	
-	public KiuwanAnalyzerCommandBuilder(KiuwanDescriptor descriptor, KiuwanRecorder recorder) {
+	public KiuwanAnalyzerCommandBuilder(KiuwanRecorder recorder, FilePath workspace, KiuwanConnectionProfile connectionProfile, 
+			KiuwanGlobalConfigDescriptor descriptor, Run<?, ?> run, Launcher launcher, TaskListener listener) {
 		super();
-		this.descriptor = descriptor;
 		this.recorder = recorder;
+		this.workspace = workspace;
+		this.connectionProfile = connectionProfile;
+		this.descriptor = descriptor;
+		this.run = run;
+		this.launcher = launcher;
+		this.listener = listener;
 	}
 
-	public List<String> buildAgentCommand(Launcher launcher, String name, 
-			String analysisLabel, String analysisEncoding, FilePath srcFolder, 
-			String command, FilePath agentBinDir, TaskListener listener,
-			EnvVars envVars) throws IOException, InterruptedException {
-		
+	public List<String> buildLocalAnalyzerCommand(FilePath agentHome, EnvVars envVars) throws IOException, InterruptedException {
+		String name = null;
+		String analysisLabel = null;
+		String analysisEncoding = null;
+		{
+			if (Mode.DELIVERY_MODE.getValue().equals(recorder.getSelectedMode())) {
+				name = recorder.getApplicationName_dm();
+				analysisLabel = recorder.getLabel_dm();
+				analysisEncoding = recorder.getEncoding_dm();
+			
+			} else {
+				name = recorder.getApplicationName();
+				analysisLabel = recorder.getLabel();
+				analysisEncoding = recorder.getEncoding();
+			}
+			
+			if (StringUtils.isEmpty(name)) {
+				name = run.getParent().getName();
+			}
+				
+			if (StringUtils.isEmpty(analysisLabel)) {
+				analysisLabel = "#" + run.getNumber();
+			}
+					
+			if (StringUtils.isEmpty(analysisEncoding)) {
+				analysisEncoding = "UTF-8";
+			}
+		}
+
 		Integer timeout = null;
 		String includes = null;
 		String excludes = null;
 		String languages = null;
 		
-		Mode selectedMode = recorder.getSelectedMode();
-		if (Mode.DELIVERY_MODE.equals(selectedMode)) {
+		if (Mode.DELIVERY_MODE.getValue().equals(recorder.getSelectedMode())) {
 			timeout = recorder.getTimeout_dm();
 			includes = recorder.getIncludes_dm();
 			excludes = recorder.getExcludes_dm();
 			languages = recorder.getLanguages_dm();
 			
-		} else if (Mode.EXPERT_MODE.equals(selectedMode)) {
+		} else if (Mode.EXPERT_MODE.getValue().equals(recorder.getSelectedMode())) {
 			timeout = recorder.getTimeout_em();
 			
 		} else {
@@ -85,52 +130,78 @@ public class KiuwanAnalyzerCommandBuilder {
 			languages = recorder.getLanguages();
 		}
 		
-		String timeoutAsString = Long.toString(TimeUnit.MILLISECONDS.convert(timeout, TimeUnit.MINUTES) - KiuwanRecorder.TIMEOUT_MARGIN);
+		long timeoutMillis = TimeUnit.MILLISECONDS.convert(timeout, TimeUnit.MINUTES);
+		long timeoutSeconds = TimeUnit.SECONDS.convert(timeout, TimeUnit.MINUTES);
+		String timeoutAsStringMillis = Long.toString(timeoutMillis - TIMEOUT_MARGIN_MILLIS);
+		String timeoutAsStringSeconds = Long.toString(timeoutSeconds - TIMEOUT_MARGIN_SECONDS);
 
 		List<String> args = new ArrayList<String>();
 
 		// Always quote command absolute path under windows
-		String commandAbsolutePath = getRemoteFileAbsolutePath(agentBinDir.child(command), listener);
+		FilePath command = getLocalAnalyzerCommandFilePath(launcher, agentHome);
+		String commandAbsolutePath = getRemoteFileAbsolutePath(command, listener);
 		args.add(launcher.isUnix() ? commandAbsolutePath : "\"" + commandAbsolutePath + "\"");
 
+		FilePath srcFolder = resolveSrcFolder();
 		args.add("-s");
-		args.add(buildArgument(launcher, getRemoteFileAbsolutePath(srcFolder, listener)));
+		args.add(buildArgument(launcher, srcFolder.getRemote()));
+		
+		// Just in case outputFilename is null or empty (a value that could be forced from a pipeline script)
+		String outputFilename = recorder.getOutputFilename();
+		if (StringUtils.isEmpty(outputFilename)) {
+			outputFilename = KiuwanRecorderDescriptor.DEFAULT_OUTPUT_FILENAME;
+		}
+		
+		// Avoid path traversal
+		FilePath outputFilePath = new FilePath(workspace, outputFilename);
+		if (!KiuwanUtils.isDescendant(getRemoteFile(workspace), getRemoteFile(outputFilePath))) {
+			throw new IOException("Specified outputFilename does not belong to current workspace");
+		}
+		
+		args.add("-o");
+		args.add(buildArgument(launcher, outputFilePath.getRemote()));
 
 		args.add("--user");
-		args.add(buildArgument(launcher, descriptor.getUsername()));
+		args.add(buildArgument(launcher, connectionProfile.getUsername()));
 		args.add("--pass");
-		args.add(buildArgument(launcher, descriptor.getPassword()));
+		args.add(buildArgument(launcher, connectionProfile.getPassword()));
 		
-		String domain = descriptor.getDomain();
+		String domain = connectionProfile.getDomain();
 		if(StringUtils.isNotBlank(domain)) {
 			args.add("--domain-id");
 			args.add(buildArgument(launcher, domain));
 		}
 
-		if (Mode.STANDARD_MODE.equals(recorder.getSelectedMode())) {
+		if (Mode.STANDARD_MODE.getValue().equals(recorder.getSelectedMode())) {
 			args.add("-n");
 			args.add(buildArgument(launcher, name));
 			args.add("-l");
 			args.add(buildArgument(launcher, analysisLabel));
 			args.add("-c");
 			
-		} else if (Mode.DELIVERY_MODE.equals(recorder.getSelectedMode())) {
+			// In standard mode, wait for results only if a measure to check thresholds is specified 
+			if (!Measure.NONE.getValue().equals(recorder.getMeasure())) {
+				args.add("-wr");
+			}
+			
+		} else if (Mode.DELIVERY_MODE.getValue().equals(recorder.getSelectedMode())) {
 			args.add("-n");
 			args.add(buildArgument(launcher, name));
 			args.add("-l");
 			args.add(buildArgument(launcher, analysisLabel));
+			args.add("-c");
 			args.add("-cr");
 			args.add(buildArgument(launcher, recorder.getChangeRequest_dm()));
 			args.add("-as");
 			
 			String deliveryType = recorder.getAnalysisScope_dm();
-			if (DeliveryType.COMPLETE_DELIVERY.name().equals(deliveryType)) {
+			if (DeliveryType.COMPLETE_DELIVERY.getValue().equals(deliveryType)) {
 				deliveryType = "completeDelivery";
-			} else if (DeliveryType.PARTIAL_DELIVERY.name().equals(deliveryType)) {
+			} else if (DeliveryType.PARTIAL_DELIVERY.getValue().equals(deliveryType)) {
 				deliveryType = "partialDelivery";
 			}
-			
 			args.add(buildArgument(launcher, deliveryType));
+			
 			if (recorder.getWaitForAuditResults_dm()) {
 				args.add("-wr");
 			}
@@ -144,7 +215,7 @@ public class KiuwanAnalyzerCommandBuilder {
 			String changeRequestStatus = recorder.getChangeRequestStatus_dm();
 			if (StringUtils.isNotBlank(changeRequestStatus)) {
 				args.add("-crs");
-				if (ChangeRequestStatusType.INPROGRESS.name().equals(changeRequestStatus)) {
+				if (ChangeRequestStatusType.INPROGRESS.getValue().equals(changeRequestStatus)) {
 					changeRequestStatus = "inprogress";
 				} else {
 					changeRequestStatus = "resolved";
@@ -153,16 +224,17 @@ public class KiuwanAnalyzerCommandBuilder {
 				args.add(buildArgument(launcher, changeRequestStatus));
 			}
 			
-		} else if (Mode.EXPERT_MODE.equals(recorder.getSelectedMode())) {
+		} else if (Mode.EXPERT_MODE.getValue().equals(recorder.getSelectedMode())) {
 			parseOptions(args, launcher);
 			parseParameters(args, launcher);
 		}
 
-		args.add(buildAdditionalParameterExpression(launcher, "timeout", timeoutAsString));
+		args.add(buildAdditionalParameterExpression(launcher, "timeout", timeoutAsStringMillis));
+		args.add(buildAdditionalParameterExpression(launcher, "results.timeout", timeoutAsStringSeconds));
 
-		if (!Mode.EXPERT_MODE.equals(recorder.getSelectedMode())) {
+		if (!Mode.EXPERT_MODE.getValue().equals(recorder.getSelectedMode())) {
 			if (StringUtils.isNotBlank(includes)) {
-				launcher.getListener().getLogger().println("Setting includes pattern -> "+includes);
+				launcher.getListener().getLogger().println("Setting includes pattern -> " + includes);
 				args.add(buildAdditionalParameterExpression(launcher, "include.patterns", includes));
 			}
 			if (StringUtils.isNotBlank(excludes)) {
@@ -170,40 +242,49 @@ public class KiuwanAnalyzerCommandBuilder {
 			}
 			
 			args.add(buildAdditionalParameterExpression(launcher, "encoding", analysisEncoding));
-			if (
-				(Mode.STANDARD_MODE.equals(recorder.getSelectedMode()) && (recorder.getIndicateLanguages() != null && recorder.getIndicateLanguages() == true))
-				|| 
-				(Mode.DELIVERY_MODE.equals(recorder.getSelectedMode()) && (recorder.getIndicateLanguages_dm() != null && recorder.getIndicateLanguages_dm() == true))
-			) {
+			if ((Mode.STANDARD_MODE.getValue().equals(recorder.getSelectedMode()) && Boolean.TRUE.equals(recorder.getIndicateLanguages())) || 
+				(Mode.DELIVERY_MODE.getValue().equals(recorder.getSelectedMode()) && Boolean.TRUE.equals(recorder.getIndicateLanguages_dm()))) {
 				args.add(buildAdditionalParameterExpression(launcher, "supported.technologies", languages));
 			}
 		}
 		
-		String proxyHost = descriptor.getProxyHost();
-		String proxyPort = Integer.toString(descriptor.getProxyPort());
-		String proxyProtocol = descriptor.getProxyProtocol();
-		String proxyAuthentication = KiuwanDescriptor.PROXY_AUTHENTICATION_BASIC;
-		String proxyUsername = descriptor.getProxyUsername();
-		String proxyPassword = descriptor.getProxyPassword();
-		String configSaveStamp = descriptor.getConfigSaveStamp();
-				
-		if (!descriptor.isConfigureProxy()) {
-			proxyHost = "";
-			proxyAuthentication = KiuwanDescriptor.PROXY_AUTHENTICATION_NONE;
-		
-		} else if (!KiuwanDescriptor.PROXY_AUTHENTICATION_BASIC.equals(descriptor.getProxyAuthentication())) {
-			proxyAuthentication = KiuwanDescriptor.PROXY_AUTHENTICATION_NONE;
-			proxyUsername = "";
-			proxyPassword = "";
-		}
-			
-		writeConfigToProperties(agentBinDir, 
-			proxyHost, proxyPort, proxyProtocol, proxyAuthentication,
-			proxyUsername, proxyPassword, configSaveStamp);
+		FilePath agentBinDir = getAgentBinDir(agentHome);
+		writeConfigToProperties(agentBinDir);
 		
 		return args;
 	}
+
+	public static FilePath getAgentBinDir(FilePath agentHome) {
+		return agentHome.child("bin");
+	}
+
+	public static String getLocalAnalyzerCommandFileName(Launcher launcher) {
+		return launcher.isUnix() ? "agent.sh" : "agent.cmd";
+	}
 	
+	public static FilePath getLocalAnalyzerCommandFilePath(Launcher launcher, FilePath agentHome) {
+		String command = getLocalAnalyzerCommandFileName(launcher);
+		FilePath binDir = getAgentBinDir(agentHome);
+		FilePath script = binDir.child(command);
+		return script;
+	}
+
+	public static boolean[] getMasks(List<String> args) {
+		boolean[] masks = new boolean[args.size()];
+		boolean mask = false;
+		for (int i = 1; i < masks.length; i++) {
+			masks[i] = mask;
+			if ("--user".equals(args.get(i)) || "--pass".equals(args.get(i))) {
+				mask = true;
+			} else if (args.get(i).contains("username") || args.get(i).contains("password")) {
+				masks[i] = true;
+			} else {
+				mask = false;
+			}
+		}
+		return masks;
+	}
+
 	private void parseOptions(List<String> args, Launcher launcher) {
 		String commandArgs = recorder.getCommandArgs_em();
 		String escapedBackslash = null;
@@ -317,13 +398,41 @@ public class KiuwanAnalyzerCommandBuilder {
 		}
 	}
 	
-	private void writeConfigToProperties(FilePath agentBinDir, 
-			String proxyHost, String proxyPort, String proxyProtocol, String proxyAuthentication, 
-			String proxyUsername, String proxyPassword, String configSaveStamp) throws IOException, InterruptedException {
+	private FilePath resolveSrcFolder() throws IOException {
+		FilePath srcFolder = null;
+		if (StringUtils.isNotEmpty(recorder.getSourcePath())) {
+			String sourcePath = recorder.getSourcePath();
+			File sourcePathFile = new File(sourcePath);
+			if (sourcePathFile.isAbsolute()) {
+				srcFolder = new FilePath(sourcePathFile);
+			} else {
+				srcFolder = new FilePath(workspace, sourcePath);
+			}
+		
+		} else if (run instanceof AbstractBuild) {
+			AbstractBuild<?, ?> build = (AbstractBuild<?, ?>) run;
+			srcFolder = build.getModuleRoot();
+		}
+		
+		if (srcFolder == null) {
+			throw new IOException("Could not resolver source folder. Source path = \"" + recorder.getSourcePath() + "\"");
+		}
+		
+		return srcFolder;
+	}
+	
+	private void writeConfigToProperties(FilePath agentBinDir) throws IOException, InterruptedException {
 		
 		FilePath agentPropertiesPath = agentBinDir.getParent().child(AGENT_CONF_DIR_NAME).child(AGENT_PROPERTIES_FILE_NAME);
 		StringBuilder newFileContent = new StringBuilder();
 		boolean updateConfig = true;
+		String configSaveStamp = descriptor.getConfigSaveTimestamp();
+		ProxyMode proxyMode = ProxyMode.valueFrom(connectionProfile.getConfigureProxy());
+		
+		// KLA proxy configuration will be updated either if the Kiuwan global descriptor has been changed since
+		// the last agent.properties update or if the current connection profile proxy configuration is
+		// delegated to the Jenkins proxy config, as we cannot know if it has been changed or not.
+		boolean forceUpdate = ProxyMode.JENKINS.equals(proxyMode);
 		
 		try (BufferedReader reader = new BufferedReader(new InputStreamReader(agentPropertiesPath.read()))) {
 			boolean firstLineProcessed = false;
@@ -335,7 +444,7 @@ public class KiuwanAnalyzerCommandBuilder {
 					if (matcher.find()) {
 						if (configSaveStamp != null) {
 							String stamp = matcher.group(1);
-							if(configSaveStamp.equals(stamp)){
+							if (!forceUpdate && configSaveStamp.equals(stamp)) {
 								updateConfig = false;
 							}
 						
@@ -371,14 +480,30 @@ public class KiuwanAnalyzerCommandBuilder {
 		}
 				
 		if (updateConfig) {
-			newFileContent.append(PROXY_HOST + "=" + proxyHost + "\n");
-			newFileContent.append(PROXY_PORT + "=" + proxyPort + "\n");
-			newFileContent.append(PROXY_PROTOCOL + "=" + proxyProtocol + "\n");
-			newFileContent.append(PROXY_AUTHENTICATION + "=" + proxyAuthentication + "\n");
-			newFileContent.append(PROXY_USERNAME + "=" + proxyUsername + "\n");
-			newFileContent.append(PROXY_PASSWORD + "=" + proxyPassword + "\n");
+			ProxyConfig proxyConfig = null;
 			
-			agentPropertiesPath.write(newFileContent.toString(), "UTF-8");
+			if (ProxyMode.NONE.equals(proxyMode)) {
+				proxyConfig = ProxyConfig.EMPTY;
+				
+			} else if (ProxyMode.JENKINS.equals(proxyMode)) {
+				proxyConfig = KiuwanUtils.getJenkinsProxy(null);
+				
+			} else if (ProxyMode.CUSTOM.equals(proxyMode)) {
+				proxyConfig = new ProxyConfig(connectionProfile.getProxyHost(), connectionProfile.getProxyPort(), 
+					connectionProfile.getProxyProtocol(), connectionProfile.getProxyAuthentication(),
+					connectionProfile.getProxyUsername(), connectionProfile.getProxyPassword());
+			}
+			
+			if (proxyConfig != null) {
+				newFileContent.append(PROXY_HOST + "=" + proxyConfig.getHost() + "\n");
+				newFileContent.append(PROXY_PORT + "=" + proxyConfig.getPort() + "\n");
+				newFileContent.append(PROXY_PROTOCOL + "=" + proxyConfig.getLocalAnalyzerProtocolOption() + "\n");
+				newFileContent.append(PROXY_AUTHENTICATION + "=" + proxyConfig.getLocalAnalyzerAuthenticationOption() + "\n");
+				newFileContent.append(PROXY_USERNAME + "=" + proxyConfig.getUsername() + "\n");
+				newFileContent.append(PROXY_PASSWORD + "=" + proxyConfig.getPassword() + "\n");
+			
+				agentPropertiesPath.write(newFileContent.toString(), "UTF-8");
+			}
 		}
 	}
 	

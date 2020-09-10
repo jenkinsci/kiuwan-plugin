@@ -1,13 +1,13 @@
 package com.kiuwan.plugins.kiuwanJenkinsPlugin.filecallable;
 
-import hudson.EnvVars;
-import hudson.FilePath.FileCallable;
-import hudson.remoting.VirtualChannel;
-
 import java.io.File;
 import java.io.IOException;
 
-public class KiuwanRemoteEnvironment implements FileCallable<EnvVars> {
+import hudson.EnvVars;
+import hudson.remoting.VirtualChannel;
+import jenkins.MasterToSlaveFileCallable;
+
+public class KiuwanRemoteEnvironment extends MasterToSlaveFileCallable<EnvVars> {
 
 	private static final long serialVersionUID = 4706152993217221631L;
 

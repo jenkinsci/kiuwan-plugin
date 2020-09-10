@@ -1,0 +1,88 @@
+<?jelly escape-by-default='true'?>
+<j:jelly xmlns:j="jelly:core" xmlns:st="jelly:stapler" xmlns:d="jelly:define" xmlns:l="/lib/layout" xmlns:t="/lib/hudson" xmlns:f="/lib/form">
+
+<!--
+	This Jelly script is used to produce the global configuration option. 
+	Jenkins uses a set of tag libraries to provide uniformity in forms.
+	To determine where this tag is defined, first check the namespace URI, 
+	and then look under $JENKINS/views/.
+	For example, <f:section> is defined in $JENKINS/views/lib/form/section.jelly. 
+	It's also often useful to just check other similar scripts to see what tags they use. 
+	Views are always organized according to its owner class, 
+	so it should be straightforward to find them.
+-->
+
+	<f:section>
+		<f:entry title="Profile name" field="name" help="/plugin/kiuwanJenkinsPlugin/help/help-profileName.html">
+			<f:textbox clazz="required" />
+		</f:entry>
+		
+		<j:if test="${not empty instance.uuid}">
+			<f:entry title="Profile unique identifier" field="uuid" help="/plugin/kiuwanJenkinsPlugin/help/help-profileUuid.html">
+				<f:readOnlyTextbox clazz="disabled" />
+			</f:entry>
+		</j:if>
+		
+		<f:section title="Connection settings">
+			<f:entry title="Kiuwan account username" field="username" help="/plugin/kiuwanJenkinsPlugin/help/help-username.html">
+				<f:textbox clazz="required" />
+			</f:entry>
+			<f:entry title="Kiuwan account password" field="password" help="/plugin/kiuwanJenkinsPlugin/help/help-password.html">
+				<f:password clazz="required" />
+			</f:entry>
+			<f:entry title="Kiuwan SSO domain" field="domain" help="/plugin/kiuwanJenkinsPlugin/help/help-domain.html">
+				<f:textbox />
+			</f:entry>
+			<f:optionalBlock name="configureKiuwanURL" field="configureKiuwanURL" title="Configure Kiuwan URL" 
+					inline="true" help="/plugin/kiuwanJenkinsPlugin/help/help-configureKiuwanURL.html">
+				<f:entry title="Kiuwan server URL" field="kiuwanURL" help="/plugin/kiuwanJenkinsPlugin/help/help-kiuwanURL.html">
+					<f:textbox />
+				</f:entry>
+			</f:optionalBlock>
+	
+			<f:validateButton title="Check Credentials" progress="Validating..." method="checkCredentials"
+				with="username,password,domain,configureKiuwanURL,kiuwanURL" />
+		</f:section>
+
+		<f:section title="Proxy for Kiuwan Local Analyzer">
+			<f:radioBlock name="configureProxy" inline="true"
+				checked="${instance == null || instance.isConfigureProxyNone()}" 
+				title="${descriptor.getConfigureProxyNone().getDisplayName()}" 
+				value="${descriptor.getConfigureProxyNone().getValue()}"
+				help="/plugin/kiuwanJenkinsPlugin/help/help-proxy-none.html" />
+			
+			<f:radioBlock name="configureProxy" inline="true"
+				checked="${instance != null ? instance.isConfigureProxyJenkins() : 'false'}" 
+				title="${descriptor.getConfigureProxyJenkins().getDisplayName()}" 
+				value="${descriptor.getConfigureProxyJenkins().getValue()}"
+				help="/plugin/kiuwanJenkinsPlugin/help/help-proxy-jenkins.html" />
+			
+			<f:radioBlock name="configureProxy" inline="true"
+				checked="${instance != null ? instance.isConfigureProxyCustom() : 'false'}" 
+				title="${descriptor.getConfigureProxyCustom().getDisplayName()}" 
+				value="${descriptor.getConfigureProxyCustom().getValue()}"
+				help="/plugin/kiuwanJenkinsPlugin/help/help-proxy-custom.html">
+		
+				<f:entry title="Proxy Host" field="proxyHost">
+					<f:textbox />
+				</f:entry>
+				<f:entry title="Proxy Port" field="proxyPort">
+					<f:number default="${descriptor.DEFAULT_PROXY_PORT}" />
+				</f:entry>
+				<f:entry title="Proxy Protocol" field="proxyProtocol">
+					<f:select />
+				</f:entry>
+				<f:entry title="Proxy Authentication" field="proxyAuthentication">
+					<f:select />
+				</f:entry>
+				<f:entry title="Proxy Username" field="proxyUsername">
+					<f:textbox />
+				</f:entry>
+				<f:entry title="Proxy Password" field="proxyPassword">
+					<f:password />
+				</f:entry>
+			</f:radioBlock>
+		</f:section>
+
+	</f:section>
+</j:jelly>
