@@ -4,10 +4,13 @@ import static com.kiuwan.plugins.kiuwanJenkinsPlugin.util.KiuwanUtils.createList
 
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.util.Objects;
 import java.util.logging.Level;
 
+import jenkins.model.Jenkins;
 import org.apache.commons.lang.StringUtils;
 import org.apache.commons.lang.exception.ExceptionUtils;
+import org.kohsuke.stapler.AncestorInPath;
 import org.kohsuke.stapler.QueryParameter;
 
 import com.kiuwan.plugins.kiuwanJenkinsPlugin.client.KiuwanClientException;
@@ -24,8 +27,10 @@ import com.kiuwan.rest.client.model.UserInformationResponse;
 
 import hudson.Extension;
 import hudson.model.Descriptor;
+import hudson.model.Item;
 import hudson.util.FormValidation;
 import hudson.util.ListBoxModel;
+import org.kohsuke.stapler.interceptor.RequirePOST;
 
 @Extension
 public class KiuwanConnectionProfileDescriptor extends Descriptor<KiuwanConnectionProfile> {
@@ -91,10 +96,20 @@ public class KiuwanConnectionProfileDescriptor extends Descriptor<KiuwanConnecti
 	public ListBoxModel doFillProxyAuthenticationItems(@QueryParameter("proxyAuthentication") String proxyAuthentication) {
 		return createListBoxModel(ProxyAuthentication.values(), proxyAuthentication);
 	}
-	
-	public FormValidation doCheckCredentials(@QueryParameter String username, 
+
+	@RequirePOST
+	public FormValidation doCheckCredentials(@AncestorInPath Item item,
+			@QueryParameter String username,
 			@QueryParameter String password, @QueryParameter String domain,
 			@QueryParameter boolean configureKiuwanURL, @QueryParameter String kiuwanURL) {
+
+		if (item == null) {
+			if (!Objects.requireNonNull(Jenkins.getInstance()).hasPermission(Jenkins.ADMINISTER)) {
+				return FormValidation.ok();
+			}
+		} else if (!item.hasPermission(Item.CONFIGURE))	{
+			return FormValidation.ok();
+		}
 
 		// 1 - Check credentials using Kiuwan rest client
 		String customerEngineVersion = null;
@@ -103,20 +118,21 @@ public class KiuwanConnectionProfileDescriptor extends Descriptor<KiuwanConnecti
 			ApiClient client = KiuwanClientUtils.instantiateClient(configureKiuwanURL, kiuwanURL, username, password, domain);
 			InformationApi api = new InformationApi(client);
 			UserInformationResponse information = api.getInformation();
-			customerEngineVersion = information.getEngineVersion() + (information.isEngineFrozen() ? " [FROZEN]" : "");
+			customerEngineVersion = hudson.Util.xmlEscape(information.getEngineVersion() +
+					(information.isEngineFrozen() ? " [FROZEN]" : ""));
 			
 		} catch (ApiException e) {
 			KiuwanClientException krce = KiuwanClientException.from(e);
 			KiuwanUtils.logger().log(Level.WARNING, krce.toString());
 			Throwable rootCause = ExceptionUtils.getRootCause(krce);
-			credentialsErrorMessage = "Authentication failed. Reason: " + krce.getLocalizedMessage() + 
-				(rootCause != null ? " (" + rootCause + ")" : "");
+			credentialsErrorMessage = hudson.Util.xmlEscape("Authentication failed. Reason: " +
+					krce.getLocalizedMessage() + (rootCause != null ? " (" + rootCause + ")" : ""));
 		
 		} catch (Throwable t) {
 			KiuwanUtils.logger().log(Level.SEVERE, t.toString());
 			Throwable rootCause = ExceptionUtils.getRootCause(t);
-			credentialsErrorMessage = "Could not initiate the authentication process. Reason: "  + t.getLocalizedMessage() + 
-				(rootCause != null ? " (" + rootCause + ")" : "");
+			credentialsErrorMessage = hudson.Util.xmlEscape("Could not initiate the authentication process. Reason: " +
+					t.getLocalizedMessage() + (rootCause != null ? " (" + rootCause + ")" : ""));
 		}
 		
 		// 2 - Check connection from Jenkins (when connecting through an authenticating proxy, 
@@ -125,15 +141,18 @@ public class KiuwanConnectionProfileDescriptor extends Descriptor<KiuwanConnecti
 		String currentKlaVersion = null;
 		String connectionErrorMessage = null;
 		try {
-			currentKlaVersion = KiuwanAnalyzerInstaller.getCurrentKlaVersion(configureKiuwanURL, kiuwanURL);
-		
+			currentKlaVersion =	KiuwanAnalyzerInstaller.getCurrentKlaVersion(configureKiuwanURL, kiuwanURL);
 		} catch (Throwable t) {
 			KiuwanUtils.logger().log(Level.SEVERE, t.toString());
 			Throwable rootCause = ExceptionUtils.getRootCause(t);
-			connectionErrorMessage = "Cannot reach Kiuwan using Jenkins connection API. Reason: " + t + 
-				(rootCause != null ? " (" + rootCause + ")" : "");
+			connectionErrorMessage =  hudson.Util.xmlEscape(
+				"Cannot reach Kiuwan using Jenkins connection API. Reason: " + t +
+				(rootCause != null ? " (" + rootCause + ")" : ""));
 		}
-		
+		if (currentKlaVersion != null) {
+			currentKlaVersion = hudson.Util.xmlEscape(currentKlaVersion);
+		}
+
 		// Success
 		FormValidation formValidation = null;
 		if (customerEngineVersion != null && currentKlaVersion != null) {
