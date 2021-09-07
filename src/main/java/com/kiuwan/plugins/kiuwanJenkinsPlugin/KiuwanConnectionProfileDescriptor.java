@@ -72,7 +72,7 @@ public class KiuwanConnectionProfileDescriptor extends Descriptor<KiuwanConnecti
 		return FormValidation.ok();
 	}
 
-	public FormValidation doCheckFilterAgentName(
+	public FormValidation doCheckFilterByLabel(
 			@QueryParameter("configureFilterByLabel") boolean configureFilterByLabel,
 			@QueryParameter("filterByLabel") String filterByLabel) {
 
