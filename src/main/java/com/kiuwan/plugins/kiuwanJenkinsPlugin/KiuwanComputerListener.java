@@ -41,12 +41,12 @@ public class KiuwanComputerListener extends ComputerListener {
 			KiuwanUtils.logger().log(Level.INFO, message);
 			listener.getLogger().println(message);
 
-			Stream<String> nodeLabels = Arrays.stream(computer.getNode().getLabelString().toLowerCase().split(" "));
+			List<String> nodeLabels = Arrays.asList(computer.getNode().getLabelString().toLowerCase().split(" "));
 			for (KiuwanConnectionProfile connectionProfile : descriptor.getConnectionProfiles()) {
 				try {
 					if(connectionProfile.isConfigureFilterByLabel()) {
 						List<String> profileFilterLabels = Arrays.asList(connectionProfile.getFilterByLabel().toLowerCase().split(","));
-						boolean installOnNode = nodeLabels.anyMatch(profileFilterLabels::contains);
+						boolean installOnNode = nodeLabels.stream().anyMatch(profileFilterLabels::contains);
 						if( installOnNode ) {
 							listener.getLogger().println(" *** The agent has a label for KLA installation: '"+connectionProfile.getFilterByLabel()+"' -> installing ...");
 							KiuwanAnalyzerInstaller.installKiuwanLocalAnalyzer(root, listener, connectionProfile);
