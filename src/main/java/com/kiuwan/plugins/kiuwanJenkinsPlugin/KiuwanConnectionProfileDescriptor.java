@@ -72,6 +72,16 @@ public class KiuwanConnectionProfileDescriptor extends Descriptor<KiuwanConnecti
 		return FormValidation.ok();
 	}
 
+	public FormValidation doCheckFilterByLabel(
+			@QueryParameter("configureFilterByLabel") boolean configureFilterByLabel,
+			@QueryParameter("filterByLabel") String filterByLabel) {
+
+		if (configureFilterByLabel && (StringUtils.isEmpty(filterByLabel))) {
+			return FormValidation.error("Field is required");
+		}
+		return FormValidation.ok();
+	}
+
 	public FormValidation doCheckProxyHost(
 			@QueryParameter("configureProxy") boolean configureProxy, 
 			@QueryParameter("proxyHost") String proxyHost) {

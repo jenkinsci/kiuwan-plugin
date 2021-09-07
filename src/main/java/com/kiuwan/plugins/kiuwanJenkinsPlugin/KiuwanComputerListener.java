@@ -1,7 +1,10 @@
 package com.kiuwan.plugins.kiuwanJenkinsPlugin;
 
 import java.io.IOException;
+import java.util.Arrays;
+import java.util.List;
 import java.util.logging.Level;
+import java.util.stream.Stream;
 
 import com.kiuwan.plugins.kiuwanJenkinsPlugin.util.KiuwanAnalyzerInstaller;
 import com.kiuwan.plugins.kiuwanJenkinsPlugin.util.KiuwanUtils;
@@ -37,9 +40,25 @@ public class KiuwanComputerListener extends ComputerListener {
 			String message = "Checking Kiuwan Local Analyzer installations on node " + computer.getDisplayName();
 			KiuwanUtils.logger().log(Level.INFO, message);
 			listener.getLogger().println(message);
+
+			List<String> nodeLabels = Arrays.asList(computer.getNode().getLabelString().toLowerCase().split(" "));
 			for (KiuwanConnectionProfile connectionProfile : descriptor.getConnectionProfiles()) {
 				try {
-					KiuwanAnalyzerInstaller.installKiuwanLocalAnalyzer(root, listener, connectionProfile);
+					if(connectionProfile.isConfigureFilterByLabel()) {
+						List<String> profileFilterLabels = Arrays.asList(connectionProfile.getFilterByLabel().toLowerCase().split(","));
+						boolean installOnNode = nodeLabels.stream().anyMatch(profileFilterLabels::contains);
+						if( installOnNode ) {
+							listener.getLogger().println(" *** The agent has a label for KLA installation: '"+connectionProfile.getFilterByLabel()+"' -> installing ...");
+							KiuwanAnalyzerInstaller.installKiuwanLocalAnalyzer(root, listener, connectionProfile);
+						}
+						else {
+							listener.getLogger().println(" *** Agent filtered: KLA will not installed on this node");
+						}
+					}
+					else {
+						listener.getLogger().println(" *** Filter is disabled for conection profile: "+connectionProfile.getUuid() + " please go to global configuration and set the filter by labels.");
+						//KiuwanAnalyzerInstaller.installKiuwanLocalAnalyzer(root, listener, connectionProfile);
+					}
 					
 				} catch (IOException e) {
 					String error = "Failed to install Kiuwan Local Analyzer: " + e;
