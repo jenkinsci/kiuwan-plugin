@@ -38,6 +38,9 @@ public class KiuwanConnectionProfile implements Describable<KiuwanConnectionProf
 	private String proxyAuthentication;
 	private String proxyUsername;
 	private String proxyPassword;
+
+	private String filterByLabel;
+	private boolean configureFilterByLabel;
 	
 	@DataBoundConstructor
 	public KiuwanConnectionProfile() {
@@ -109,6 +112,8 @@ public class KiuwanConnectionProfile implements Describable<KiuwanConnectionProf
 	public String getProxyAuthentication() { return proxyAuthentication; }
 	public String getProxyUsername() { return proxyUsername; }
 	public String getProxyPassword() { return decrypt(proxyPassword); }
+	public String getFilterByLabel() { return filterByLabel; }
+	public boolean isConfigureFilterByLabel() { return configureFilterByLabel; }
 
 	@DataBoundSetter public void setUuid(String uuid) { this.uuid = uuid; }
 	@DataBoundSetter public void setName(String name) { this.name = name; }
@@ -124,7 +129,9 @@ public class KiuwanConnectionProfile implements Describable<KiuwanConnectionProf
 	@DataBoundSetter public void setProxyAuthentication(String proxyAuthentication) { this.proxyAuthentication = proxyAuthentication; }
 	@DataBoundSetter public void setProxyUsername(String proxyUsername) { this.proxyUsername = proxyUsername; }
 	@DataBoundSetter public void setProxyPassword(String proxyPassword) { this.proxyPassword = encrypt(proxyPassword); }
-	
+	@DataBoundSetter public void setFilterByLabel(String filterByLabel) { this.filterByLabel = filterByLabel; }
+	@DataBoundSetter public void setConfigureFilterByLabel(boolean configureFilterByLabel) { this.configureFilterByLabel = configureFilterByLabel; }
+
 	private static String encrypt(String value) {
 		return Secret.fromString(value).getEncryptedValue();
 	}

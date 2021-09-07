@@ -23,6 +23,16 @@
 			</f:entry>
 		</j:if>
 		
+		<f:section title="Kiuwan filter installation tool">
+            <f:optionalBlock name="configureFilterByLabel" field="configureFilterByLabel" title="Configure filter installation tool"
+                    inline="true" help="/plugin/kiuwanJenkinsPlugin/help/help-configureKiuwanFilterTool.html"
+                    checked="${instance != null ? instance.isConfigureFilterByLabel() : 'false'}">
+                <f:entry title="Filter by labels" field="filterByLabel" help="/plugin/kiuwanJenkinsPlugin/help/help-filterTool.html">
+                    <f:textbox />
+                </f:entry>
+            </f:optionalBlock>
+        </f:section>
+		
 		<f:section title="Connection settings">
 			<f:entry title="Kiuwan account username" field="username" help="/plugin/kiuwanJenkinsPlugin/help/help-username.html">
 				<f:textbox clazz="required" />
